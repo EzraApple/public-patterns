@@ -6,6 +6,9 @@ working recommendations, and unresolved questions.
 
 ## Current map
 
+- [`project-engineering`](../.agents/skills/project-engineering/SKILL.md) —
+  routed MVCS, data-contract, TypeScript, testing, evolution, observability,
+  and review guidance for agents
 - [`sources/`](./sources/) — source contracts, schemas, volume snapshots,
   ingestion notes, and retention risks
 - [`operations/deployment.md`](./operations/deployment.md) — CI deployment and
