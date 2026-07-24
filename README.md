@@ -16,11 +16,31 @@ flowchart LR
     F -->|"new context"| E
 ```
 
-The project is SF-first and intentionally exploratory. The current architecture and open questions live in [ARCHITECTURE.md](./ARCHITECTURE.md).
+The project is SF-first and intentionally exploratory. The current architecture
+and open questions live in [ARCHITECTURE.md](./ARCHITECTURE.md); dataset
+research lives in [`docs/sources/`](./docs/sources/).
 
 ## Status
 
-I had the idea after finding DataSF and started the repository a couple hours later. There is nothing working yet.
+I had the idea after finding DataSF and started the repository a couple hours later. The first thing here is a small coming-soon page while I work out the first dataset and detector.
+
+## Development
+
+This is a pnpm workspace organized around independently deployable Cloudflare
+Workers:
+
+- `apps/web` — the site and public API
+- `apps/pipeline` — future ingestion and anomaly detection
+- `apps/investigator` — future agent investigations
+
+Only `apps/web` is executable today.
+
+```sh
+pnpm install
+pnpm dev
+```
+
+Node 22 or newer is required.
 
 ## License
 

@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset=".48" stop-color="#f4fafc"/>
+      <stop offset="1" stop-color="#ffffff"/>
+    </linearGradient>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7bb8d1" stop-opacity="0"/>
+      <stop offset=".62" stop-color="#72b1cb" stop-opacity=".08"/>
+      <stop offset="1" stop-color="#5ea9c7" stop-opacity=".34"/>
+    </linearGradient>
+    <linearGradient id="water" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#529ebe" stop-opacity=".3"/>
+      <stop offset=".45" stop-color="#72b5cf" stop-opacity=".12"/>
+      <stop offset="1" stop-color="#9acde0" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="edge-fade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".9"/>
+      <stop offset=".17" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset=".83" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity=".9"/>
+    </linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#27637e" stroke-opacity=".035"/>
+    </pattern>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#background)"/>
+  <rect width="1200" height="420" fill="url(#grid)"/>
+  <rect width="1200" height="306" fill="url(#sky)"/>
+  <rect y="306" width="1200" height="174" fill="url(#water)"/>
+  <rect width="1200" height="480" fill="url(#edge-fade)"/>
+  <path d="M0 306.5H1200" stroke="#347794" stroke-opacity=".24"/>
+
+  <g fill="none" stroke="#e6533b" stroke-width="5" stroke-dasharray="3 7" shape-rendering="crispEdges">
+    <path d="M0 244C126 244 230 205 330 108"/>
+    <path d="M330 108Q600 360 870 108"/>
+    <path d="M870 108C970 205 1074 244 1200 244"/>
+
+    <path d="M28 238V283M82 231V283M136 217V283M190 196V283M244 165V283M298 126V283"/>
+    <path d="M384 153V283M438 190V283M492 216V283M546 231V283M600 235V283M654 231V283M708 216V283M762 190V283M816 153V283"/>
+    <path d="M902 126V283M956 165V283M1010 196V283M1064 217V283M1118 231V283M1172 238V283"/>
+
+    <path d="M313 112V305M347 112V305M853 112V305M887 112V305" stroke-width="7"/>
+    <path d="M313 137H347M313 188H347M313 239H347M853 137H887M853 188H887M853 239H887"/>
+    <path d="M313 112L330 93L347 112M853 112L870 93L887 112"/>
+
+    <path d="M0 283H1200M0 290H1200M0 298H1200"/>
+  </g>
+
+  <text x="600" y="453" text-anchor="middle" fill="#173d55" font-family="Georgia, 'Times New Roman', serif" font-size="78" letter-spacing="-4">Public Patterns</text>
+  <text x="600" y="518" text-anchor="middle" fill="#53758a" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="18" font-weight="600" letter-spacing="5">COMING SOON</text>
+</svg>

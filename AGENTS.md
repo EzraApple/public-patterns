@@ -2,6 +2,17 @@
 
 Before substantive work, read `README.md` and `ARCHITECTURE.md`.
 
+## Project documentation
+
+- Start at `docs/README.md` to find durable project research.
+- Before adding or changing a source adapter, read `docs/sources/README.md`,
+  `docs/sources/datasf-api.md`, and that source's dossier.
+- Update the relevant dossier when implementation reveals new schema,
+  cadence, cursor, retention, or quality behavior.
+- Keep publisher-stated behavior, dated direct observations, working
+  recommendations, and unresolved questions visibly distinct.
+- Do not treat dated row counts or API behavior as current without rechecking.
+
 ## Working principles
 
 - Keep the product SF-first.

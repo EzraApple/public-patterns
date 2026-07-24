@@ -1,0 +1,23 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "public-patterns-web",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-07-23",
+  "assets": {
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  "routes": [
+    {
+      "pattern": "publicpatterns.com",
+      "custom_domain": true
+    },
+    {
+      "pattern": "www.publicpatterns.com",
+      "custom_domain": true
+    }
+  ],
+  "observability": {
+    "enabled": true
+  }
+}
