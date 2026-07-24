@@ -120,4 +120,3 @@ export function createBridgePixels(): BridgePixel[] {
 
   return Array.from(pixels.values(), ({ key: _key, ...pixel }) => pixel);
 }
-

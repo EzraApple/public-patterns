@@ -6,4 +6,3 @@ revisions through a constrained tool surface.
 
 This directory is intentionally documentation-only until the first
 investigation proves which harness and runtime it needs.
-

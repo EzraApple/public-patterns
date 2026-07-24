@@ -12,4 +12,3 @@
     "dev": "pnpm --filter @public-patterns/web dev"
   }
 }
-
