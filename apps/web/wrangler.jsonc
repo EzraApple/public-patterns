@@ -3,6 +3,9 @@
   "name": "public-patterns-web",
   "main": "src/worker.ts",
   "compatibility_date": "2026-07-23",
+  "vars": {
+    "PUBLIC_PATTERNS_ENV": "production"
+  },
   "assets": {
     "not_found_handling": "single-page-application",
     "run_worker_first": ["/api/*"]
@@ -19,5 +22,14 @@
   ],
   "observability": {
     "enabled": true
+  },
+  "env": {
+    "dev": {
+      "workers_dev": true,
+      "routes": [],
+      "vars": {
+        "PUBLIC_PATTERNS_ENV": "dev"
+      }
+    }
   }
 }
