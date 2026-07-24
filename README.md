@@ -40,6 +40,21 @@ pnpm install
 pnpm dev
 ```
 
+`pnpm dev` runs the React application and web Worker together in local
+Workerd at `http://127.0.0.1:5173`. It selects the Cloudflare `dev`
+environment, preserves local binding data under `apps/web/.wrangler/state`,
+and does not contact or modify deployed Cloudflare resources.
+
+```sh
+pnpm dev:smoke
+```
+
+The smoke test starts an isolated local server, verifies the application shell
+and Worker health endpoint, and confirms the Worker reports the `dev`
+environment. A separately named `public-patterns-web-dev` Worker can be
+deployed only through the manual **Deploy dev** GitHub Actions workflow when
+an edge-hosted test is necessary.
+
 Node 22 or newer is required.
 
 ## License

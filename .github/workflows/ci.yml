@@ -42,6 +42,9 @@ jobs:
       - name: Build
         run: pnpm build
 
+      - name: Run local smoke test
+        run: pnpm dev:smoke
+
   deploy-web:
     name: Deploy web
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'

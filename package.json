@@ -7,8 +7,11 @@
   },
   "scripts": {
     "build": "pnpm --filter @public-patterns/web build",
+    "build:dev": "pnpm --filter @public-patterns/web build:dev",
     "check": "pnpm --filter @public-patterns/web check",
     "deploy:web": "pnpm --filter @public-patterns/web run deploy",
-    "dev": "pnpm --filter @public-patterns/web dev"
+    "deploy:web:dev:ci": "pnpm --filter @public-patterns/web run deploy:dev:ci",
+    "dev": "pnpm --filter @public-patterns/web dev",
+    "dev:smoke": "node scripts/smoke-local-dev.mjs"
   }
 }
