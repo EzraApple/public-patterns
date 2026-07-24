@@ -17,6 +17,8 @@ type Particle = BridgePixel & {
 
 const CYCLE_SECONDS = 13;
 const BRIDGE_PIXELS = createBridgePixels();
+const BRIDGE_TOP = Math.min(...BRIDGE_PIXELS.map((pixel) => pixel.y));
+const BRIDGE_BOTTOM = Math.max(...BRIDGE_PIXELS.map((pixel) => pixel.y)) + 1;
 const COLORS = {
   dark: "#c43d2d",
   lit: "#f86f54",
@@ -64,15 +66,16 @@ function drawScene(
 ) {
   const width = canvas.clientWidth;
   const height = canvas.clientHeight;
-  const scale = Math.min(width / (BRIDGE_WIDTH + 18), height / 118);
+  const scale = width / (BRIDGE_WIDTH - 8);
+  const bridgeHeight = (BRIDGE_BOTTOM - BRIDGE_TOP) * scale;
+  const waterY = Math.max(height * 0.66, 20 + bridgeHeight);
   const originX = (width - BRIDGE_WIDTH * scale) / 2;
-  const originY = Math.max(20, height * 0.1);
+  const originY = waterY - BRIDGE_BOTTOM * scale;
   const pixelSize = Math.max(1.35, scale * 0.76);
   const cycle = reducedMotion ? 0.62 : (elapsedSeconds % CYCLE_SECONDS) / CYCLE_SECONDS;
 
   context.clearRect(0, 0, width, height);
 
-  const waterY = originY + 67 * scale;
   const skyGradient = context.createLinearGradient(0, 0, 0, waterY);
   skyGradient.addColorStop(0, "rgba(111, 184, 213, 0)");
   skyGradient.addColorStop(0.58, "rgba(111, 184, 213, 0.08)");
@@ -160,12 +163,21 @@ export function GoldenGateScene() {
     const resize = () => {
       const ratio = Math.min(window.devicePixelRatio || 1, 2);
       const bounds = canvas.getBoundingClientRect();
-      canvas.width = Math.round(bounds.width * ratio);
-      canvas.height = Math.round(bounds.height * ratio);
+      const width = Math.round(bounds.width * ratio);
+      const height = Math.round(bounds.height * ratio);
+
+      if (canvas.width === width && canvas.height === height) {
+        return false;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
       context.setTransform(ratio, 0, 0, ratio, 0, 0);
+
+      return true;
     };
 
-    const render = (now: number) => {
+    const draw = (now: number) => {
       drawScene(
         context,
         canvas,
@@ -173,9 +185,12 @@ export function GoldenGateScene() {
         (now - startTime) / 1000,
         reducedMotion,
       );
+    };
 
+    const animate = (now: number) => {
+      draw(now);
       if (!reducedMotion) {
-        animationFrame = requestAnimationFrame(render);
+        animationFrame = requestAnimationFrame(animate);
       }
     };
 
@@ -183,7 +198,7 @@ export function GoldenGateScene() {
       reducedMotion = event.matches;
       cancelAnimationFrame(animationFrame);
       startTime = performance.now() - 1800;
-      animationFrame = requestAnimationFrame(render);
+      animationFrame = requestAnimationFrame(animate);
     };
 
     const handleVisibility = () => {
@@ -193,13 +208,12 @@ export function GoldenGateScene() {
       }
 
       startTime = performance.now() - 1800;
-      animationFrame = requestAnimationFrame(render);
+      animationFrame = requestAnimationFrame(animate);
     };
 
     const observer = new ResizeObserver(() => {
-      resize();
-      if (reducedMotion) {
-        render(performance.now());
+      if (resize()) {
+        draw(performance.now());
       }
     });
 
@@ -207,7 +221,7 @@ export function GoldenGateScene() {
     observer.observe(canvas);
     mediaQuery.addEventListener("change", handleMotionPreference);
     document.addEventListener("visibilitychange", handleVisibility);
-    animationFrame = requestAnimationFrame(render);
+    animationFrame = requestAnimationFrame(animate);
 
     return () => {
       cancelAnimationFrame(animationFrame);
