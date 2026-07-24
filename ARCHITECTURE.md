@@ -184,6 +184,10 @@ Likely first sources:
 - temporary street closures
 - weather
 
+Working dataset IDs, schemas, volume measurements, and ingestion caveats live
+in [`docs/sources/`](./docs/sources/). Read the relevant dossier before turning
+one of these candidates into an adapter contract.
+
 Likely first detectors:
 
 - spatiotemporal bursts

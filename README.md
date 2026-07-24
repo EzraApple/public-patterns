@@ -16,7 +16,9 @@ flowchart LR
     F -->|"new context"| E
 ```
 
-The project is SF-first and intentionally exploratory. The current architecture and open questions live in [ARCHITECTURE.md](./ARCHITECTURE.md).
+The project is SF-first and intentionally exploratory. The current architecture
+and open questions live in [ARCHITECTURE.md](./ARCHITECTURE.md); dataset
+research lives in [`docs/sources/`](./docs/sources/).
 
 ## Status
 
