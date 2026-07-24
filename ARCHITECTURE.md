@@ -55,6 +55,33 @@ Analysis should become more expensive only as a signal becomes more interesting:
 
 The initial application should stay entirely on Cloudflare so it can scale to zero and remain cheap when development pauses.
 
+## Worker boundaries
+
+The repository is a pnpm workspace with independently deployable applications:
+
+```mermaid
+flowchart LR
+    Web["Web Worker<br/>site + public API"]
+    Pipeline["Pipeline Worker<br/>ingestion + detectors"]
+    Investigator["Investigator Worker<br/>agent + tools"]
+    Storage[("D1 + R2")]
+
+    Pipeline --> Storage
+    Pipeline -->|"promoted case"| Investigator
+    Investigator --> Storage
+    Web --> Storage
+```
+
+Only the web application is deployed initially. The pipeline and investigator
+directories document ownership boundaries until the first real source creates a
+concrete interface. Later Workers can communicate through Queues, Workflows, or
+service bindings without putting ingestion or long-running investigation work
+on the public request path.
+
+Within each application, organize code by product feature and keep runtime
+entrypoints thin. Shared packages should appear only after two applications
+need the same proven logic.
+
 ## Source ingestion
 
 Sources should share a pipeline without pretending they share a schema. Each adapter will eventually define some version of:

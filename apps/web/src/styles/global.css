@@ -1,0 +1,232 @@
+:root {
+  color: #f2eee3;
+  background: #0a1519;
+  font-family:
+    "Helvetica Neue", "Neue Haas Grotesk Text Pro", Helvetica, Arial, sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  overflow: hidden;
+}
+
+a {
+  color: inherit;
+}
+
+.landing {
+  isolation: isolate;
+  min-height: 100svh;
+  overflow: hidden;
+  position: relative;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(66, 103, 107, 0.3), transparent 39%),
+    linear-gradient(180deg, #10252b 0%, #0a181d 58%, #071116 100%);
+}
+
+.atmosphere {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.72;
+  background-image:
+    linear-gradient(rgba(212, 229, 222, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(212, 229, 222, 0.02) 1px, transparent 1px);
+  background-size: 36px 36px;
+  mask-image: linear-gradient(to bottom, black, transparent 72%);
+}
+
+.bridge-scene {
+  position: absolute;
+  inset: 0 0 27%;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.bridge-scene canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.fog {
+  position: absolute;
+  width: 62vw;
+  height: 17vh;
+  border-radius: 50%;
+  filter: blur(46px);
+  opacity: 0.16;
+  background: #c8d8d2;
+  will-change: transform;
+}
+
+.fog-one {
+  top: 15%;
+  left: -26%;
+  animation: drift-right 24s ease-in-out infinite alternate;
+}
+
+.fog-two {
+  top: 46%;
+  right: -33%;
+  animation: drift-left 30s ease-in-out infinite alternate;
+}
+
+.intro {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(2rem, 7vh, 5.5rem);
+  z-index: 1;
+  width: min(90vw, 47rem);
+  transform: translateX(-50%);
+  text-align: center;
+}
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  margin: 0 0 0.85rem;
+  color: #9eb1ad;
+  font-size: 0.69rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.eyebrow-dot {
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 1px;
+  background: #e85a3b;
+  box-shadow: 0 0 18px rgba(232, 90, 59, 0.72);
+}
+
+h1 {
+  margin: 0;
+  color: #f6f1e7;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(3.15rem, 8vw, 7.25rem);
+  font-weight: 400;
+  letter-spacing: -0.065em;
+  line-height: 0.9;
+  text-wrap: balance;
+}
+
+.lede {
+  width: min(100%, 36rem);
+  margin: 1.25rem auto 0;
+  color: #bdc8c4;
+  font-size: clamp(0.95rem, 1.6vw, 1.12rem);
+  font-weight: 400;
+  letter-spacing: -0.015em;
+  line-height: 1.5;
+  text-wrap: balance;
+}
+
+.footer-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-top: 1.75rem;
+  color: #8ea39f;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.11em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.status {
+  margin: 0;
+}
+
+.footer-row nav {
+  display: flex;
+  gap: 1.2rem;
+}
+
+.footer-row nav::before {
+  width: 1px;
+  height: 0.85rem;
+  content: "";
+  background: rgba(194, 210, 205, 0.28);
+}
+
+.footer-row a {
+  padding-block: 0.35rem;
+  text-decoration-color: transparent;
+  text-underline-offset: 0.35rem;
+  transition:
+    color 160ms ease-out,
+    text-decoration-color 160ms ease-out;
+}
+
+.footer-row a:hover,
+.footer-row a:focus-visible {
+  color: #f6f1e7;
+  text-decoration-color: #e85a3b;
+}
+
+.footer-row a:focus-visible {
+  outline: 1px solid #e85a3b;
+  outline-offset: 0.35rem;
+}
+
+@keyframes drift-right {
+  to {
+    transform: translate3d(72vw, 2vh, 0);
+  }
+}
+
+@keyframes drift-left {
+  to {
+    transform: translate3d(-68vw, -1vh, 0);
+  }
+}
+
+@media (max-width: 600px) {
+  .bridge-scene {
+    bottom: 35%;
+  }
+
+  .intro {
+    bottom: max(2rem, env(safe-area-inset-bottom));
+  }
+
+  .footer-row {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .footer-row nav::before {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fog {
+    animation: none;
+  }
+
+  .footer-row a {
+    transition: none;
+  }
+}

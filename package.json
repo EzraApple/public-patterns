@@ -1,0 +1,15 @@
+{
+  "name": "public-patterns",
+  "private": true,
+  "packageManager": "pnpm@10.19.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "pnpm --filter @public-patterns/web build",
+    "check": "pnpm --filter @public-patterns/web check",
+    "deploy:web": "pnpm --filter @public-patterns/web deploy",
+    "dev": "pnpm --filter @public-patterns/web dev"
+  }
+}
+
