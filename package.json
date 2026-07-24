@@ -8,7 +8,7 @@
   "scripts": {
     "build": "pnpm --filter @public-patterns/web build",
     "check": "pnpm --filter @public-patterns/web check",
-    "deploy:web": "pnpm --filter @public-patterns/web deploy",
+    "deploy:web": "pnpm --filter @public-patterns/web run deploy",
     "dev": "pnpm --filter @public-patterns/web dev"
   }
 }
