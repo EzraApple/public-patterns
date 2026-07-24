@@ -1,6 +1,7 @@
 # Temporary street closures
 
-**Status:** candidate context source  
+**Status:** candidate context source
+
 **Last verified:** 2026-07-24 01:00 PDT
 
 ## Identity

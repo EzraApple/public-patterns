@@ -1,6 +1,7 @@
 # Source name
 
-**Status:** candidate | experimental | active | paused  
+**Status:** candidate | experimental | active | paused
+
 **Last verified:** YYYY-MM-DD HH:MM TZ
 
 ## Identity

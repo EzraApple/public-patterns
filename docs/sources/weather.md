@@ -1,6 +1,7 @@
 # Weather
 
-**Status:** source not selected  
+**Status:** source not selected
+
 **Last verified:** 2026-07-24 01:00 PDT
 
 ## Current finding
