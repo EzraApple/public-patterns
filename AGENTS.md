@@ -1,6 +1,8 @@
 # Project context
 
 Before substantive work, read `README.md` and `ARCHITECTURE.md`.
+For project engineering work involving architecture, TypeScript, testing, data
+contracts, or Cloudflare services, use the `project-engineering` skill.
 
 ## Project documentation
 
