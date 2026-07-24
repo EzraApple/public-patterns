@@ -8,12 +8,14 @@ working recommendations, and unresolved questions.
 
 - [`sources/`](./sources/) — source contracts, schemas, volume snapshots,
   ingestion notes, and retention risks
+- [`operations/deployment.md`](./operations/deployment.md) — CI deployment and
+  credential boundaries
 
 Likely future sections should be added only when they have real content:
 
 - `decisions/` for durable architecture decisions and their tradeoffs
 - `product/` for article, evidence, search, and editorial contracts
-- `operations/` for deployment, backfill, replay, and incident procedures
+- additional `operations/` guides for backfill, replay, and incident procedures
 
 Source counts and API behavior are time-sensitive. Every measured claim should
 include a verification date and a reproducible query.
