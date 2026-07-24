@@ -18,9 +18,9 @@ type Particle = BridgePixel & {
 const CYCLE_SECONDS = 13;
 const BRIDGE_PIXELS = createBridgePixels();
 const COLORS = {
-  dark: "#a93424",
-  lit: "#ff7653",
-  mid: "#dc4f35",
+  dark: "#c43d2d",
+  lit: "#f86f54",
+  mid: "#e6533b",
 } as const;
 
 function random(seed: number) {
@@ -72,15 +72,31 @@ function drawScene(
 
   context.clearRect(0, 0, width, height);
 
-  const waterY = originY + (BRIDGE_HEIGHT - 4) * scale;
+  const waterY = originY + 67 * scale;
+  const skyGradient = context.createLinearGradient(0, 0, 0, waterY);
+  skyGradient.addColorStop(0, "rgba(111, 184, 213, 0)");
+  skyGradient.addColorStop(0.58, "rgba(111, 184, 213, 0.08)");
+  skyGradient.addColorStop(1, "rgba(94, 169, 199, 0.34)");
+  context.fillStyle = skyGradient;
+  context.fillRect(0, 0, width, waterY);
+
   const waterGradient = context.createLinearGradient(0, waterY, 0, height);
-  waterGradient.addColorStop(0, "rgba(122, 178, 183, 0.08)");
-  waterGradient.addColorStop(1, "rgba(122, 178, 183, 0)");
+  waterGradient.addColorStop(0, "rgba(82, 158, 190, 0.3)");
+  waterGradient.addColorStop(0.34, "rgba(114, 181, 207, 0.14)");
+  waterGradient.addColorStop(1, "rgba(154, 205, 224, 0)");
   context.fillStyle = waterGradient;
   context.fillRect(0, waterY, width, height - waterY);
 
-  context.fillStyle = "rgba(183, 214, 212, 0.12)";
-  context.fillRect(0, waterY, width, Math.max(1, scale * 0.22));
+  const edgeFade = context.createLinearGradient(0, 0, width, 0);
+  edgeFade.addColorStop(0, "rgba(255, 255, 255, 0.88)");
+  edgeFade.addColorStop(0.2, "rgba(255, 255, 255, 0)");
+  edgeFade.addColorStop(0.8, "rgba(255, 255, 255, 0)");
+  edgeFade.addColorStop(1, "rgba(255, 255, 255, 0.88)");
+  context.fillStyle = edgeFade;
+  context.fillRect(0, 0, width, height);
+
+  context.fillStyle = "rgba(52, 119, 148, 0.24)";
+  context.fillRect(0, Math.round(waterY), width, 1);
 
   for (const particle of particles) {
     const arrival = clamp((cycle - particle.delay) / 0.16);

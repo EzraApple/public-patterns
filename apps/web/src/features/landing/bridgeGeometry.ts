@@ -75,19 +75,20 @@ function cableY(x: number) {
   const leftTower = 56;
   const rightTower = 152;
   const towerY = 18;
+  const anchorY = 47;
 
   if (x < leftTower) {
-    const progress = (leftTower - x) / (leftTower - 8);
-    return towerY + progress * progress * 29;
+    const progress = (x - 8) / (leftTower - 8);
+    return anchorY - (anchorY - towerY) * progress * progress;
   }
 
   if (x > rightTower) {
-    const progress = (x - rightTower) / (200 - rightTower);
-    return towerY + progress * progress * 29;
+    const progress = (200 - x) / (200 - rightTower);
+    return anchorY - (anchorY - towerY) * progress * progress;
   }
 
-  const centered = (x - leftTower) / (rightTower - leftTower);
-  return towerY + Math.sin(centered * Math.PI) * 27;
+  const progress = (x - leftTower) / (rightTower - leftTower);
+  return towerY + 108 * progress * (1 - progress);
 }
 
 export function createBridgePixels(): BridgePixel[] {
@@ -114,9 +115,6 @@ export function createBridgePixels(): BridgePixel[] {
 
   addTower(pixels, 56, 18, deckY);
   addTower(pixels, 152, 18, deckY);
-
-  addLine(pixels, 7, deckY + 4, 32, deckY + 13, "dark");
-  addLine(pixels, 201, deckY + 4, 176, deckY + 13, "dark");
 
   return Array.from(pixels.values(), ({ key: _key, ...pixel }) => pixel);
 }
