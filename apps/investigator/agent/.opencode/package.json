@@ -1,0 +1,9 @@
+{
+  "name": "public-patterns-agent",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@opencode-ai/plugin": "0.0.0-next-16303",
+    "zod": "4.4.3"
+  }
+}

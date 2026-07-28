@@ -1,0 +1,38 @@
+{
+  "id": "on-ellis-third-thursdays-2025",
+  "note": "Four scheduled 5–10 PM events compared with each immediately preceding Thursday in the same area and hours.",
+  "role": "recurrence-context-positive",
+  "targetEvidence": [
+    "https://www.onellis.com/events",
+    "https://www.davidperry.com/newsroom/6980.html"
+  ],
+  "targetWindows": ["2025-09-18", "2025-10-16", "2025-11-20", "2025-12-18"],
+  "controlWindows": ["2025-09-11", "2025-10-09", "2025-11-13", "2025-12-11"],
+  "limitations": [
+    "The aggregate counts are a frozen 2026-07-26 snapshot; live datasets and event pages may later change.",
+    "The four preceding Thursdays are convenience controls, and the aggregates do not expose call-category or officer-initiated breakdowns."
+  ],
+  "series": [
+    {
+      "source": "311",
+      "dataset": "vw6y-z8j6",
+      "capturedOn": "2026-07-26",
+      "query": "SELECT date_trunc_ymd(requested_datetime) AS day, service_name, source, count(*) AS n WHERE requested_datetime >= '2025-09-01T00:00:00' AND requested_datetime < '2025-12-26T00:00:00' AND date_extract_dow(requested_datetime) = 4 AND date_extract_hh(requested_datetime) BETWEEN 17 AND 21 AND lat BETWEEN 37.7809 AND 37.7900 AND long BETWEEN -122.4137 AND -122.4023 GROUP BY day, service_name, source ORDER BY day, n DESC LIMIT 5000",
+      "countMethod": "Sum n across every grouped row for each date.",
+      "targets": [14, 17, 9, 13],
+      "controls": [9, 6, 15, 9]
+    },
+    {
+      "source": "dispatch-closed",
+      "dataset": "2zdj-bwza",
+      "capturedOn": "2026-07-26",
+      "query": "SELECT date_trunc_ymd(received_datetime) AS day, call_type_final_desc, agency, onview_flag, count(*) AS n WHERE received_datetime >= '2025-09-01T00:00:00' AND received_datetime < '2025-12-26T00:00:00' AND date_extract_dow(received_datetime) = 4 AND date_extract_hh(received_datetime) BETWEEN 17 AND 21 AND within_circle(intersection_point, 37.78545, -122.4080, 500) GROUP BY day, call_type_final_desc, agency, onview_flag ORDER BY day, n DESC LIMIT 5000",
+      "countMethod": "Sum n across every grouped row for each date.",
+      "targets": [34, 37, 47, 39],
+      "controls": [28, 29, 31, 34]
+    }
+  ],
+  "expect": {
+    "classification": "all-sources-positive"
+  }
+}

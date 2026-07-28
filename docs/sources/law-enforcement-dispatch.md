@@ -1,6 +1,6 @@
 # Law-enforcement dispatched calls for service
 
-**Status:** likely first source
+**Status:** experimental
 
 **Last verified:** 2026-07-24 01:00 PDT
 
@@ -104,12 +104,67 @@ Complete live schemas:
 This needs a replay test before it becomes a contract. In particular, verify
 that `call_last_updated_at` is populated and monotonic for every mutation.
 
+## Current local slice
+
+Both feeds are ordinary configured DataSF sources with independent ingestion
+endpoints and cursors. They use fixed-upper keyset reads by their update time
+and `cad_number`, with a two-hour overlap that covers the unresolved offset-free
+timestamp semantics and daylight-saving clock changes. One run commits at most
+four 500-observation batches with its opaque cursor. The shared gateway applies
+each feed's schema and select list, retaining public intersection geography and
+closed-call linkage fields in `data`.
+
+Realtime and closed observations are stored as separate physical sources and
+remain append-only. Dispatch read logic joins them by `cad_number`, preferring
+the closed observation when both feeds contain a call; the complete history
+remains queryable. `dispatch` is only the combined read alias, not an ingestion
+coordinator. Malformed source rows retain their physical source, dataset, and
+validation issues; exact error replays are ignored.
+
+A live local replay stored 4,441 distinct calls from 2,996 real-time rows and
+3,624 closed rows. Replaying the same cursors preserved the same row count.
+These are dated direct observations.
+
+The first detector reads current observations and groups `kind` (the original
+call description or code) by `area` (analysis neighborhood). It waits for a
+complete four-week local baseline and derives results only when requested.
+
+## Historical detector checks
+
+Direct closed-archive queries on 2026-07-24 found:
+
+- `HOMELESS COMPLAINT` in `Mission Bay` on 2023-04-22: 35 calls versus
+  matching-weekday counts of 1, 0, 0, and 0.
+- `FIGHT NO WEAPON` in `Tenderloin` on 2023-06-25: 30 calls versus a baseline
+  mean of 11.75.
+
+These are detector fixtures, not claims about underlying crime or causation.
+
+A point-level query on 2026-07-26 found seven calls at the masked
+Godeus/Mission intersection during 17:00–18:00 on 2024-07-29, spanning
+`SUSPICIOUS PERSON`, `PETTY THEFT`, and `COMPLAINT UNKN`. The same
+weekday/hour/location was empty on the prior four Mondays. Six calls were
+officer-initiated, so the saved clustering replay proves unusual dispatch
+activity, not seven independent public events.
+
+A separate eight-month sample (243 target days across 2023–2026) compared two
+provisional rules:
+
+| Rule | Candidates | Candidates per day |
+| --- | ---: | ---: |
+| At least 20 observed, 15 excess, and 2.5x | 162 | 0.67 |
+| At least 10 observed, 7 excess, and 3x | 464 | 1.91 |
+
+The lower-volume rule added 351 candidates, but 248 of those additions (71%)
+were passing calls, traffic stops, citations, or tow activity. This dated
+observation argues against treating either cutoff as statistical truth. Recent
+point clustering plus operational-category penalties is the current working
+direction; weekday deviation can remain a secondary signal.
+
 ## Retention recommendation
 
-- Retain normalized call events and aggregates because the real-time source
-  disappears.
-- Keep raw real-time batches briefly, likely 7–14 days, for adapter debugging.
-- Snapshot exact source rows used as published evidence.
+- Retain compact observation history because the realtime source disappears.
+- Snapshot exact source rows used as published evidence when publishing begins.
 - Leave the 7.8M-row closed archive upstream initially. Backfill time-bucketed
   baselines through SoQL rather than copying every row.
 
@@ -124,7 +179,8 @@ that `call_last_updated_at` is populated and monotonic for every mutation.
 
 ## Open questions
 
-- Which timestamp zone is implied by each offset-free Socrata date?
+- Current samples behave as SF wall time; does the publisher guarantee that
+  timezone and its DST behavior for each offset-free Socrata date?
 - Does every changed row advance `call_last_updated_at` before portal load?
 - How long can recently modified old calls remain in the real-time feed?
 - Which disposition and call-type codebooks are stable enough for grouping?

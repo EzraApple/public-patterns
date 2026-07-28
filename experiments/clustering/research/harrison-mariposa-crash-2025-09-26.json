@@ -1,0 +1,124 @@
+{
+  "id": "harrison-mariposa-crash-2025-09-26",
+  "evalRole": "research-linkage",
+  "note": "One fatal crash represented by five of 12 Fire/EMS unit-response rows, one dispatch call, and two police report rows sharing one incident number. The injury-crash archive returned no matching row. Unit and report rows are not independent events.",
+  "capturedAt": "2026-07-27",
+  "expectedBaselineOutcome": "pass: all three sources publish nearly identical time and geography",
+  "evidenceUrls": [
+    "https://www.kqed.org/news/12057733/1-killed-when-van-slams-into-sf-mission-district-apartment-building"
+  ],
+  "sourceQueries": [
+    "https://data.sfgov.org/resource/nuek-vuh3.json?$where=call_number%3D%27252690172%27",
+    "https://data.sfgov.org/resource/2zdj-bwza.json?$where=cad_number%3D%27252690173%27",
+    "https://data.sfgov.org/resource/wg3w-h783.json?$where=row_id%20in%28%27151445668050%27%2C%27151515568050%27%29",
+    "https://data.sfgov.org/resource/ubvf-ztfx.json?$select=count%28%2A%29%20as%20rows&$where=collision_datetime%20between%20%272025-09-26T00%3A00%3A00%27%20and%20%272025-09-27T00%3A00%3A00%27%20and%20%28%28upper%28primary_rd%29%20like%20%27%25HARRISON%25%27%20and%20upper%28secondary_rd%29%20like%20%27%25MARIPOSA%25%27%29%20or%20%28upper%28primary_rd%29%20like%20%27%25MARIPOSA%25%27%20and%20upper%28secondary_rd%29%20like%20%27%25HARRISON%25%27%29%29"
+  ],
+  "absentEvidence": [
+    {
+      "source": "traffic-crashes",
+      "dataset": "ubvf-ztfx",
+      "rows": 0
+    }
+  ],
+  "expect": {
+    "clusters": [
+      {
+        "anchor": "fire-ems:252690172-B02",
+        "minimumSize": 6,
+        "sources": ["dispatch-closed", "fire-ems", "police-incidents"]
+      }
+    ]
+  },
+  "datasets": [
+    {
+      "source": "fire-ems",
+      "sampleOfRows": 12,
+      "rows": [
+        {
+          "rowid": "252690172-B02",
+          "received_dttm": "2025-09-26T01:56:23.000",
+          "call_type": "Traffic Collision",
+          "case_location": {
+            "type": "Point",
+            "coordinates": [-122.412898764, 37.762873226]
+          }
+        },
+        {
+          "rowid": "252690172-B03",
+          "received_dttm": "2025-09-26T01:56:23.000",
+          "call_type": "Traffic Collision",
+          "case_location": {
+            "type": "Point",
+            "coordinates": [-122.412898764, 37.762873226]
+          }
+        },
+        {
+          "rowid": "252690172-E04",
+          "received_dttm": "2025-09-26T01:56:23.000",
+          "call_type": "Traffic Collision",
+          "case_location": {
+            "type": "Point",
+            "coordinates": [-122.412898764, 37.762873226]
+          }
+        },
+        {
+          "rowid": "252690172-E07",
+          "received_dttm": "2025-09-26T01:56:23.000",
+          "call_type": "Traffic Collision",
+          "case_location": {
+            "type": "Point",
+            "coordinates": [-122.412898764, 37.762873226]
+          }
+        },
+        {
+          "rowid": "252690172-E29",
+          "received_dttm": "2025-09-26T01:56:23.000",
+          "call_type": "Traffic Collision",
+          "case_location": {
+            "type": "Point",
+            "coordinates": [-122.412898764, 37.762873226]
+          }
+        }
+      ]
+    },
+    {
+      "source": "dispatch-closed",
+      "rows": [
+        {
+          "cad_number": "252690173",
+          "received_datetime": "2025-09-26T01:58:51.000",
+          "call_type_original_desc": "VEH VS BLDG",
+          "intersection_point": {
+            "type": "Point",
+            "coordinates": [-122.412898764, 37.762873226]
+          }
+        }
+      ]
+    },
+    {
+      "source": "police-incidents",
+      "rows": [
+        {
+          "row_id": "151445668050",
+          "incident_datetime": "2025-09-26T01:58:00.000",
+          "incident_category": "Traffic Collision",
+          "incident_description": "Traffic Collision",
+          "point": {
+            "type": "Point",
+            "coordinates": [-122.412895203, 37.762874603]
+          }
+        },
+        {
+          "row_id": "151515568050",
+          "incident_datetime": "2025-09-26T01:58:00.000",
+          "incident_category": "Traffic Collision",
+          "incident_description": "Traffic Collision",
+          "point": {
+            "type": "Point",
+            "coordinates": [-122.412895203, 37.762874603]
+          }
+        }
+      ]
+    }
+  ]
+}

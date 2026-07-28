@@ -1,0 +1,148 @@
+{
+  "id": "sweeny-sidewalk-2019-07-12",
+  "evalRole": "detection-positive",
+  "note": "A deterministic sample from a 111-row field survey moving along a corridor.",
+  "selection": "Every fifth target row ordered by requested_datetime and service_request_id, reduced to 12 rows spanning both observed time groups, plus the first 4 distant geocoded rows in the same window.",
+  "sourceQueries": [
+    "https://data.sfgov.org/resource/vw6y-z8j6.json?$select=service_request_id,requested_datetime,service_name,lat,long&$where=requested_datetime%20%3E=%20%272019-07-12T00:00:00%27%20AND%20requested_datetime%20%3C%20%272019-07-13T00:00:00%27%20AND%20service_name=%27Sidewalk%20or%20Curb%27%20AND%20lat%20%3E=%2037.7315%20AND%20lat%20%3C%2037.7345%20AND%20long%20%3E=%20-122.4105%20AND%20long%20%3C%20-122.4065&$order=requested_datetime,service_request_id&$limit=5000",
+    "https://data.sfgov.org/resource/vw6y-z8j6.json?$select=service_request_id,requested_datetime,service_name,lat,long&$where=requested_datetime%20%3E=%20%272019-07-12T09:46:56%27%20AND%20requested_datetime%20%3C=%20%272019-07-12T13:41:30%27%20AND%20lat%20is%20not%20null%20AND%20(lat%20%3C%2037.72%20OR%20lat%20%3E%2037.75)&$order=requested_datetime,service_request_id&$limit=4"
+  ],
+  "config": {
+    "algorithm": "hdbscan",
+    "spaceScaleMeters": 200,
+    "timeScaleHours": 2,
+    "minimumClusterSize": 5
+  },
+  "expect": {
+    "clusters": [
+      {
+        "anchor": "311:11118357",
+        "minimumSize": 5,
+        "sources": ["311"]
+      }
+    ],
+    "apart": [
+      ["311:11118357", "311:11118359"],
+      ["311:11118357", "311:11118390"]
+    ]
+  },
+  "datasets": [
+    {
+      "source": "311",
+      "rows": [
+        {
+          "service_request_id": "11118357",
+          "requested_datetime": "2019-07-12T09:46:56.000",
+          "service_name": "Sidewalk or Curb",
+          "lat": "37.732935",
+          "long": "-122.407371"
+        },
+        {
+          "service_request_id": "11118418",
+          "requested_datetime": "2019-07-12T09:54:44.000",
+          "service_name": "Sidewalk or Curb",
+          "lat": "37.7326846",
+          "long": "-122.407548"
+        },
+        {
+          "service_request_id": "11118455",
+          "requested_datetime": "2019-07-12T10:00:10.000",
+          "service_name": "Sidewalk or Curb",
+          "lat": "37.7323967",
+          "long": "-122.4083335"
+        },
+        {
+          "service_request_id": "11118502",
+          "requested_datetime": "2019-07-12T10:04:48.000",
+          "service_name": "Sidewalk or Curb",
+          "lat": "37.7318906",
+          "long": "-122.4089198"
+        },
+        {
+          "service_request_id": "11118529",
+          "requested_datetime": "2019-07-12T10:07:58.000",
+          "service_name": "Sidewalk or Curb",
+          "lat": "37.7321897",
+          "long": "-122.4079463"
+        },
+        {
+          "service_request_id": "11118579",
+          "requested_datetime": "2019-07-12T10:13:28.000",
+          "service_name": "Sidewalk or Curb",
+          "lat": "37.732846",
+          "long": "-122.4077803"
+        },
+        {
+          "service_request_id": "11118615",
+          "requested_datetime": "2019-07-12T10:16:33.000",
+          "service_name": "Sidewalk or Curb",
+          "lat": "37.7325037",
+          "long": "-122.4087428"
+        },
+        {
+          "service_request_id": "11119659",
+          "requested_datetime": "2019-07-12T13:06:33.000",
+          "service_name": "Sidewalk or Curb",
+          "lat": "37.7332362",
+          "long": "-122.4078135"
+        },
+        {
+          "service_request_id": "11119697",
+          "requested_datetime": "2019-07-12T13:12:53.000",
+          "service_name": "Sidewalk or Curb",
+          "lat": "37.7329543",
+          "long": "-122.40861"
+        },
+        {
+          "service_request_id": "11119741",
+          "requested_datetime": "2019-07-12T13:18:32.000",
+          "service_name": "Sidewalk or Curb",
+          "lat": "37.7328074",
+          "long": "-122.4089972"
+        },
+        {
+          "service_request_id": "11119820",
+          "requested_datetime": "2019-07-12T13:27:53.000",
+          "service_name": "Sidewalk or Curb",
+          "lat": "37.7334641",
+          "long": "-122.4076476"
+        },
+        {
+          "service_request_id": "11119846",
+          "requested_datetime": "2019-07-12T13:30:44.000",
+          "service_name": "Sidewalk or Curb",
+          "lat": "37.7333909",
+          "long": "-122.408068"
+        },
+        {
+          "service_request_id": "11118359",
+          "requested_datetime": "2019-07-12T09:47:00.000",
+          "service_name": "Tree Maintenance",
+          "lat": "37.800025939941",
+          "long": "-122.404541015625"
+        },
+        {
+          "service_request_id": "11118373",
+          "requested_datetime": "2019-07-12T09:48:44.000",
+          "service_name": "Street and Sidewalk Cleaning",
+          "lat": "37.773129413871",
+          "long": "-122.438736995796"
+        },
+        {
+          "service_request_id": "11118381",
+          "requested_datetime": "2019-07-12T09:49:36.000",
+          "service_name": "Street and Sidewalk Cleaning",
+          "lat": "37.773025184905",
+          "long": "-122.438972443456"
+        },
+        {
+          "service_request_id": "11118390",
+          "requested_datetime": "2019-07-12T09:50:00.000",
+          "service_name": "General Request - PUBLIC WORKS",
+          "lat": "37.779350280762",
+          "long": "-122.500801086426"
+        }
+      ]
+    }
+  ]
+}

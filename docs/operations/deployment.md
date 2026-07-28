@@ -4,10 +4,11 @@ GitHub Actions is the production deployment boundary.
 
 ## Pull requests
 
-Every pull request into `main` installs the locked dependencies, typechecks the
-web application, builds its Worker bundle, and runs the application plus Worker
-against local Workerd. These checks are informational: branch protection
-requires a pull request but does not require a passing check.
+Every pull request into `main` installs locked dependencies, typechecks and
+builds both executable Workers, runs pipeline unit tests, runs an isolated
+pipeline Worker+D1 smoke test, and verifies the web application in local
+Workerd. These checks are informational: branch protection requires a pull
+request but does not require a passing check.
 
 ## Local development
 
@@ -23,6 +24,20 @@ local equivalents in that state directory.
 `pnpm dev:smoke` starts an isolated local server on port 4173 and verifies both
 the site shell and `/api/health`.
 
+The pipeline is a separate local Worker. Apply its D1 migrations once, then
+start it:
+
+```sh
+pnpm --filter @public-patterns/pipeline db:migrate:local
+doppler run -- pnpm dev:pipeline
+```
+
+It uses local D1 state and has no remote database, scheduled trigger, or
+deployment workflow. Doppler provides the declared `TRANSIT_511_API_KEY`
+binding without writing it to a local file. DataSF runs anonymously for this
+MVP. `pnpm test` also starts an isolated pipeline Worker+D1 instance and
+enables its synthetic fixture endpoint only for that process.
+
 ## Remote development
 
 The Wrangler `dev` environment names its deployed Worker
@@ -33,8 +48,10 @@ not provide a general-purpose dev deploy command.
 
 ## Production
 
-Every push to `main` reruns the checks, then deploys `apps/web` to Cloudflare.
-Production deploys are serialized so an older run cannot overtake a newer one.
+Every push to `main` reruns the checks, then deploys only `apps/web` to
+Cloudflare. Production deploys are serialized so an older run cannot overtake
+a newer one. Pipeline deployment remains intentionally absent while the first
+source slices stabilize locally.
 
 The deploy job authenticates to Doppler with the repository's
 `DOPPLER_TOKEN` GitHub Actions secret. That read-only service token is scoped to

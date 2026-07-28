@@ -11,6 +11,8 @@ working recommendations, and unresolved questions.
   and review guidance for agents
 - [`sources/`](./sources/) — source contracts, schemas, volume snapshots,
   ingestion notes, and retention risks
+- [`experiments/`](../experiments/) — frozen clustering and recurrence cases,
+  evaluation scripts, and recorded stress-test results
 - [`operations/deployment.md`](./operations/deployment.md) — CI deployment and
   credential boundaries
 

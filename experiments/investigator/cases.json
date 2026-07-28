@@ -1,0 +1,125 @@
+[
+  {
+    "id": "third-mendell-palou-2023-09-01",
+    "fixture": "experiments/clustering/fixtures/third-mendell-palou-2023-09-01.json",
+    "allowedOutcomes": ["investigate", "watch"],
+    "requires": ["shooting", "one underlying event"]
+  },
+  {
+    "id": "jones-market-2024-06-09",
+    "fixture": "experiments/clustering/fixtures/jones-market-2024-06-09.json",
+    "allowedOutcomes": ["watch", "discard"],
+    "forbids": [
+      "one real-world incident response",
+      "routine dispatch lifecycle",
+      "the officer arrived"
+    ]
+  },
+  {
+    "id": "van-ness-protest-2026-07-18",
+    "fixture": "experiments/clustering/fixtures/van-ness-protest-2026-07-18.json",
+    "allowedOutcomes": ["watch", "discard"],
+    "requires": ["no historical baseline"],
+    "forbids": ["strongly indicate a single submission source"]
+  },
+  {
+    "id": "harrison-mariposa-crash-2025-09-26",
+    "fixture": "experiments/clustering/research/harrison-mariposa-crash-2025-09-26.json",
+    "allowedOutcomes": ["investigate"]
+  },
+  {
+    "id": "marina-fire-2025-10-15",
+    "fixture": "experiments/clustering/research/marina-fire-2025-10-15.json",
+    "allowedOutcomes": ["investigate"],
+    "requiresAny": [
+      ["252880356"],
+      ["252880366"],
+      ["cancelled", "canceled"]
+    ]
+  },
+  {
+    "id": "valley-quake-shack-2025",
+    "fixture": "experiments/clustering/research/valley-quake-shack-2025.json",
+    "allowedOutcomes": ["investigate"],
+    "requires": ["2017", "2025"],
+    "forbids": ["single building-code enforcement event"]
+  },
+  {
+    "id": "july-fourth-evenings-2024-2026",
+    "fixture": "experiments/recurrence/cases/july-fourth-evenings-2024-2026.json",
+    "allowedOutcomes": ["investigate"],
+    "requires": ["outside fire", "police", "311"]
+  },
+  {
+    "id": "sf-pride-weekends-2024-2026",
+    "fixture": "experiments/recurrence/cases/sf-pride-weekends-2024-2026.json",
+    "allowedOutcomes": ["investigate"],
+    "requires": ["fire", "police", "311"]
+  },
+  {
+    "id": "giants-monday-home-games-2025",
+    "fixture": "experiments/recurrence/cases/giants-monday-home-games-2025.json",
+    "allowedOutcomes": ["investigate", "watch"],
+    "requires": ["home game", "control"]
+  },
+  {
+    "id": "coffee-bar-closure-2025-05",
+    "fixture": "experiments/investigator/fixtures/coffee-bar-closure-2025-05.json",
+    "allowedOutcomes": ["investigate"],
+    "requiresAny": [
+      ["closure", "closed"],
+      ["reinspection", "re-inspection", "reinspected"],
+      ["pass", "passed", "passing"]
+    ]
+  },
+  {
+    "id": "eviction-notices-h1-2025",
+    "fixture": "experiments/recurrence/cases/eviction-notices-h1-2025.json",
+    "allowedOutcomes": ["investigate"],
+    "requires": ["812", "385", "notice"]
+  },
+  {
+    "id": "on-ellis-third-thursdays-2025",
+    "fixture": "experiments/recurrence/cases/on-ellis-third-thursdays-2025.json",
+    "allowedOutcomes": ["investigate", "watch"],
+    "requires": ["311", "dispatch", "control"],
+    "requiresAny": [
+      ["third thursday", "third-thursday", "monthly event"]
+    ]
+  },
+  {
+    "id": "treasure-island-world-cup-2026",
+    "fixture": "experiments/recurrence/cases/treasure-island-world-cup-2026.json",
+    "allowedOutcomes": ["investigate", "watch"],
+    "requires": ["311", "dispatch"],
+    "requiresNear": [
+      {
+        "anchor": "311",
+        "alternatives": [
+          "fell",
+          "falls",
+          "declined",
+          "decreased",
+          "dropped",
+          "went down",
+          "fewer",
+          "lower",
+          "flat",
+          "null result",
+          "no signal",
+          "no increase"
+        ]
+      },
+      {
+        "anchor": "dispatch",
+        "alternatives": [
+          "rose",
+          "increased",
+          "higher",
+          "elevated",
+          "went up"
+        ]
+      }
+    ]
+  }
+]

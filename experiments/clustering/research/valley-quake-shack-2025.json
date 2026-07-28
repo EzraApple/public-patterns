@@ -1,0 +1,91 @@
+{
+  "id": "valley-quake-shack-2025",
+  "evalRole": "research-linkage",
+  "note": "One property lifecycle represented by four complaints, permit 201710262309 filed in 2017 and suspended on 2025-11-19, and corrective permit 202512232499 citing NOV 202546638. Shared geography and explicit references link the records across time.",
+  "capturedAt": "2026-07-27",
+  "expectedBaselineOutcome": "fail: filed dates span more than eight years and the current vector has no lifecycle-link features",
+  "evidenceUrls": [
+    "https://dbiweb02.sfgov.org/dbipts/default.aspx?COMP_ID=1781533-1&page=WebNOVDetails",
+    "https://www.sfchronicle.com/bayarea/article/sf-quake-shacks-developer-faces-fines-21197120.php"
+  ],
+  "sourceQueries": [
+    "https://data.sfgov.org/resource/gm2e-bten.json?$where=complaint_number%20in%28%27202546610%27%2C%27202546638%27%2C%27202546775%27%2C%27202546776%27%29",
+    "https://data.sfgov.org/resource/i98e-djp9.json?$where=record_id%20in%28%271484850209437%27%2C%271739586209437%27%29"
+  ],
+  "expect": {
+    "clusters": [
+      {
+        "anchor": "building-complaints:202546638",
+        "minimumSize": 6,
+        "sources": ["building-complaints", "building-permits"]
+      }
+    ]
+  },
+  "datasets": [
+    {
+      "source": "building-complaints",
+      "rows": [
+        {
+          "complaint_number": "202546610",
+          "date_filed": "2025-11-17T00:00:00.000",
+          "receiving_division": "Building Inspection Division",
+          "point": {
+            "type": "Point",
+            "coordinates": [-122.430430867, 37.744029078]
+          }
+        },
+        {
+          "complaint_number": "202546638",
+          "date_filed": "2025-11-17T00:00:00.000",
+          "nov_type": "Complaint",
+          "receiving_division": "Building Inspection Division",
+          "point": {
+            "type": "Point",
+            "coordinates": [-122.430430867, 37.744029078]
+          }
+        },
+        {
+          "complaint_number": "202546775",
+          "date_filed": "2025-11-19T00:00:00.000",
+          "receiving_division": "Building Inspection Division",
+          "point": {
+            "type": "Point",
+            "coordinates": [-122.430430867, 37.744029078]
+          }
+        },
+        {
+          "complaint_number": "202546776",
+          "date_filed": "2025-11-19T00:00:00.000",
+          "receiving_division": "Building Inspection Division",
+          "point": {
+            "type": "Point",
+            "coordinates": [-122.430430867, 37.744029078]
+          }
+        }
+      ]
+    },
+    {
+      "source": "building-permits",
+      "rows": [
+        {
+          "record_id": "1484850209437",
+          "filed_date": "2017-10-26T09:31:13.000",
+          "permit_type_definition": "additions alterations or repairs",
+          "location": {
+            "type": "Point",
+            "coordinates": [-122.430430866, 37.74402908]
+          }
+        },
+        {
+          "record_id": "1739586209437",
+          "filed_date": "2025-12-23T10:47:44.000",
+          "permit_type_definition": "otc alterations permit",
+          "location": {
+            "type": "Point",
+            "coordinates": [-122.430430866, 37.74402908]
+          }
+        }
+      ]
+    }
+  ]
+}

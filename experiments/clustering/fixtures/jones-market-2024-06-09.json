@@ -1,0 +1,145 @@
+{
+  "id": "jones-market-2024-06-09",
+  "evalRole": "archived-negative",
+  "note": "An officer-initiated batch that should be detected, then penalized by a future ranking stage.",
+  "selection": "All 6 target calls plus the first 4 geocoded calls elsewhere in the same hour.",
+  "sourceQueries": [
+    "https://data.sfgov.org/resource/2zdj-bwza.json?$select=cad_number,received_datetime,call_type_original_desc,onview_flag,disposition,intersection_point&$where=cad_number%20in(%27241612776%27,%27241612769%27,%27241612780%27,%27241612782%27,%27241612793%27,%27241612840%27)&$order=received_datetime,cad_number",
+    "https://data.sfgov.org/resource/2zdj-bwza.json?$select=cad_number,received_datetime,call_type_original_desc,onview_flag,disposition,intersection_point&$where=received_datetime%20%3E=%20%272024-06-09T22:00:00%27%20AND%20received_datetime%20%3C%20%272024-06-09T23:00:00%27%20AND%20intersection_point%20is%20not%20null%20AND%20intersection_name%20!=%20%27JONES%20ST%20%5C%20MARKET%20ST%27&$order=received_datetime,cad_number&$limit=4"
+  ],
+  "config": {
+    "algorithm": "hdbscan",
+    "spaceScaleMeters": 200,
+    "timeScaleHours": 2,
+    "minimumClusterSize": 5
+  },
+  "expect": {
+    "clusters": [
+      {
+        "anchor": "dispatch:241612780",
+        "minimumSize": 5,
+        "sources": ["dispatch-closed"]
+      }
+    ],
+    "apart": [
+      ["dispatch:241612780", "dispatch:241612772"],
+      ["dispatch:241612780", "dispatch:241612775"]
+    ]
+  },
+  "datasets": [
+    {
+      "source": "dispatch-closed",
+      "rows": [
+        {
+          "cad_number": "241612776",
+          "received_datetime": "2024-06-09T22:03:14.000",
+          "call_type_original_desc": "INDECENT EXPOSURE",
+          "onview_flag": "N",
+          "disposition": "NOM",
+          "intersection_point": {
+            "type": "Point",
+            "coordinates": [-122.411985369, 37.780951763]
+          }
+        },
+        {
+          "cad_number": "241612769",
+          "received_datetime": "2024-06-09T22:04:48.000",
+          "call_type_original_desc": "MISC",
+          "onview_flag": "Y",
+          "disposition": "HAN",
+          "intersection_point": {
+            "type": "Point",
+            "coordinates": [-122.411985369, 37.780951763]
+          }
+        },
+        {
+          "cad_number": "241612780",
+          "received_datetime": "2024-06-09T22:09:55.000",
+          "call_type_original_desc": "MEET W/CITIZEN",
+          "onview_flag": "Y",
+          "disposition": "HAN",
+          "intersection_point": {
+            "type": "Point",
+            "coordinates": [-122.411985369, 37.780951763]
+          }
+        },
+        {
+          "cad_number": "241612782",
+          "received_datetime": "2024-06-09T22:10:09.000",
+          "call_type_original_desc": "PASSING CALL",
+          "onview_flag": "Y",
+          "intersection_point": {
+            "type": "Point",
+            "coordinates": [-122.411985369, 37.780951763]
+          }
+        },
+        {
+          "cad_number": "241612793",
+          "received_datetime": "2024-06-09T22:14:52.000",
+          "call_type_original_desc": "PASSING CALL",
+          "onview_flag": "Y",
+          "disposition": "HAN",
+          "intersection_point": {
+            "type": "Point",
+            "coordinates": [-122.411985369, 37.780951763]
+          }
+        },
+        {
+          "cad_number": "241612840",
+          "received_datetime": "2024-06-09T22:41:58.000",
+          "call_type_original_desc": "SUSPICIOUS VEHICLE",
+          "onview_flag": "Y",
+          "disposition": "ADV",
+          "intersection_point": {
+            "type": "Point",
+            "coordinates": [-122.411985369, 37.780951763]
+          }
+        },
+        {
+          "cad_number": "241612772",
+          "received_datetime": "2024-06-09T22:02:37.000",
+          "call_type_original_desc": "SUSPICIOUS VEHICLE",
+          "onview_flag": "N",
+          "disposition": "HAN",
+          "intersection_point": {
+            "type": "Point",
+            "coordinates": [-122.502215396, 37.738144797]
+          }
+        },
+        {
+          "cad_number": "241612766",
+          "received_datetime": "2024-06-09T22:03:14.000",
+          "call_type_original_desc": "TRAF VIOLATION CITE",
+          "onview_flag": "N",
+          "disposition": "GOA",
+          "intersection_point": {
+            "type": "Point",
+            "coordinates": [-122.41532057, 37.776717704]
+          }
+        },
+        {
+          "cad_number": "241612767",
+          "received_datetime": "2024-06-09T22:04:14.000",
+          "call_type_original_desc": "SUSPICIOUS VEHICLE",
+          "onview_flag": "Y",
+          "disposition": "ND",
+          "intersection_point": {
+            "type": "Point",
+            "coordinates": [-122.415613781, 37.768537387]
+          }
+        },
+        {
+          "cad_number": "241612775",
+          "received_datetime": "2024-06-09T22:04:18.000",
+          "call_type_original_desc": "TRESPASSER",
+          "onview_flag": "N",
+          "disposition": "GOA",
+          "intersection_point": {
+            "type": "Point",
+            "coordinates": [-122.432857063, 37.725870915]
+          }
+        }
+      ]
+    }
+  ]
+}

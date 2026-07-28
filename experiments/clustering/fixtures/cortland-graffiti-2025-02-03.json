@@ -1,0 +1,133 @@
+{
+  "id": "cortland-graffiti-2025-02-03",
+  "note": "A curated sample from a 145-row 311 survey burst, not evidence that separate conditions appeared at once.",
+  "selection": "The first 10 positive rows by requested_datetime and service_request_id, plus the first 4 geocoded rows outside the latitude band in the same window.",
+  "sourceQueries": [
+    "https://data.sfgov.org/resource/vw6y-z8j6.json?$select=service_request_id,requested_datetime,service_name,lat,long&$where=requested_datetime%20%3E=%20%272025-02-03T12:27:00%27%20AND%20requested_datetime%20%3C%20%272025-02-03T12:52:00%27%20AND%20service_name=%27Graffiti%20Public%27%20AND%20lat%20%3E=%2037.7395%20AND%20lat%20%3C%2037.7405%20AND%20long%20%3E=%20-122.4085%20AND%20long%20%3C%20-122.4075&$order=requested_datetime,service_request_id",
+    "https://data.sfgov.org/resource/vw6y-z8j6.json?$select=service_request_id,requested_datetime,service_name,lat,long&$where=requested_datetime%20%3E=%20%272025-02-03T12:27:00%27%20AND%20requested_datetime%20%3C%20%272025-02-03T12:52:00%27%20AND%20lat%20is%20not%20null%20AND%20(lat%20%3C%2037.735%20OR%20lat%20%3E%2037.745)&$order=requested_datetime&$limit=4"
+  ],
+  "config": {
+    "algorithm": "hdbscan",
+    "spaceScaleMeters": 200,
+    "timeScaleHours": 2,
+    "minimumClusterSize": 5
+  },
+  "expect": {
+    "clusters": [
+      {
+        "anchor": "311:101001411456",
+        "minimumSize": 5,
+        "sources": ["311"]
+      }
+    ],
+    "apart": [
+      ["311:101001411456", "311:101001411458"],
+      ["311:101001411456", "311:101001411472"]
+    ]
+  },
+  "datasets": [
+    {
+      "source": "311",
+      "rows": [
+        {
+          "service_request_id": "101001411456",
+          "requested_datetime": "2025-02-03T12:27:06.000",
+          "service_name": "Graffiti Public",
+          "lat": "37.739696776071895",
+          "long": "-122.40755311555148"
+        },
+        {
+          "service_request_id": "101001411466",
+          "requested_datetime": "2025-02-03T12:27:40.000",
+          "service_name": "Graffiti Public",
+          "lat": "37.739702722924086",
+          "long": "-122.40752624945544"
+        },
+        {
+          "service_request_id": "101001411464",
+          "requested_datetime": "2025-02-03T12:27:44.000",
+          "service_name": "Graffiti Public",
+          "lat": "37.739721397438075",
+          "long": "-122.40751651213074"
+        },
+        {
+          "service_request_id": "101001411485",
+          "requested_datetime": "2025-02-03T12:28:39.000",
+          "service_name": "Graffiti Public",
+          "lat": "37.739677608434576",
+          "long": "-122.40756629418712"
+        },
+        {
+          "service_request_id": "101001411486",
+          "requested_datetime": "2025-02-03T12:28:42.000",
+          "service_name": "Graffiti Public",
+          "lat": "37.73968457308157",
+          "long": "-122.40758599751759"
+        },
+        {
+          "service_request_id": "101001411490",
+          "requested_datetime": "2025-02-03T12:29:01.000",
+          "service_name": "Graffiti Public",
+          "lat": "37.73969521563317",
+          "long": "-122.40763571904282"
+        },
+        {
+          "service_request_id": "101001411492",
+          "requested_datetime": "2025-02-03T12:29:03.000",
+          "service_name": "Graffiti Public",
+          "lat": "37.7396693430483",
+          "long": "-122.40756809756152"
+        },
+        {
+          "service_request_id": "101001411496",
+          "requested_datetime": "2025-02-03T12:29:16.000",
+          "service_name": "Graffiti Public",
+          "lat": "37.739694071938224",
+          "long": "-122.40766281541492"
+        },
+        {
+          "service_request_id": "101001411498",
+          "requested_datetime": "2025-02-03T12:29:26.000",
+          "service_name": "Graffiti Public",
+          "lat": "37.7396990247743",
+          "long": "-122.40766853649333"
+        },
+        {
+          "service_request_id": "101001411500",
+          "requested_datetime": "2025-02-03T12:29:39.000",
+          "service_name": "Graffiti Public",
+          "lat": "37.739693582979896",
+          "long": "-122.40769516328433"
+        },
+        {
+          "service_request_id": "101001411458",
+          "requested_datetime": "2025-02-03T12:27:12.000",
+          "service_name": "Illegal Postings",
+          "lat": "37.76143029730985",
+          "long": "-122.42610910324454"
+        },
+        {
+          "service_request_id": "101001411470",
+          "requested_datetime": "2025-02-03T12:27:52.000",
+          "service_name": "Street and Sidewalk Cleaning",
+          "lat": "37.75160785862398",
+          "long": "-122.42752989929801"
+        },
+        {
+          "service_request_id": "101001411469",
+          "requested_datetime": "2025-02-03T12:27:58.000",
+          "service_name": "Street and Sidewalk Cleaning",
+          "lat": "37.7660630091",
+          "long": "-122.4299261595"
+        },
+        {
+          "service_request_id": "101001411472",
+          "requested_datetime": "2025-02-03T12:28:06.000",
+          "service_name": "Parking Enforcement",
+          "lat": "37.79232815965691",
+          "long": "-122.42803430497334"
+        }
+      ]
+    }
+  ]
+}

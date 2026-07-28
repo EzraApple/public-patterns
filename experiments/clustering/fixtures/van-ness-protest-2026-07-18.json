@@ -1,0 +1,261 @@
+{
+  "id": "van-ness-protest-2026-07-18",
+  "note": "Compact 311 noise burst near a dispatch protest call, independently corroborated as a weekly protest.",
+  "sourceQueries": [
+    "https://data.sfgov.org/resource/vw6y-z8j6.json?$select=service_request_id,requested_datetime,service_name,lat,long&$where=service_request_id%20in(%27101004457003%27,%27101004457888%27,%27101004457898%27,%27101004457906%27,%27101004457909%27,%27101004457919%27,%27101004457920%27,%27101004457926%27,%27101004457931%27,%27101004457932%27,%27101004457933%27,%27101004457937%27,%27101004457942%27,%27101004457944%27,%27101004457945%27,%27101004457948%27,%27101004457951%27,%27101004457953%27,%27101004457956%27,%27101004457958%27,%27101004457959%27,%27101004457962%27,%27101004457969%27,%27101004457976%27,%27101004457983%27)",
+    "https://data.sfgov.org/resource/2zdj-bwza.json?$select=cad_number,received_datetime,call_type_original_desc,intersection_point,onview_flag&$where=cad_number%20in(%27261991292%27,%27261991298%27,%27261991554%27,%27261991923%27)"
+  ],
+  "independentEvidence": [
+    "https://www.sfchronicle.com/sf/article/protest-noise-complaints-22325742.php",
+    "https://sfist.com/2026/07/15/weekly-anti-trump-protest-outside-sfs-tesla-showroom-still-going-strong-over-a-year-later/"
+  ],
+  "config": {
+    "algorithm": "dbscan",
+    "spaceScaleMeters": 100,
+    "timeScaleHours": 1,
+    "minimumClusterSize": 5
+  },
+  "expect": {
+    "clusters": [
+      {
+        "anchor": "311:101004457898",
+        "minimumSize": 20,
+        "sources": ["311"]
+      }
+    ],
+    "apart": [
+      ["311:101004457898", "311:101004457003"],
+      ["311:101004457898", "dispatch:261991292"],
+      ["311:101004457898", "dispatch:261991554"],
+      ["311:101004457898", "dispatch:261991298"],
+      ["311:101004457898", "dispatch:261991923"]
+    ]
+  },
+  "datasets": [
+    {
+      "source": "311",
+      "rows": [
+        {
+          "service_request_id": "101004457003",
+          "requested_datetime": "2026-07-18T11:12:41.000",
+          "service_name": "Street and Sidewalk Cleaning",
+          "lat": "37.7842308803812",
+          "long": "-122.418468182484"
+        },
+        {
+          "service_request_id": "101004457888",
+          "requested_datetime": "2026-07-18T13:29:31.000",
+          "service_name": "Noise",
+          "lat": "37.78458335116863",
+          "long": "-122.42120655946756"
+        },
+        {
+          "service_request_id": "101004457898",
+          "requested_datetime": "2026-07-18T13:30:34.000",
+          "service_name": "Noise",
+          "lat": "37.78466056153",
+          "long": "-122.42119802608434"
+        },
+        {
+          "service_request_id": "101004457906",
+          "requested_datetime": "2026-07-18T13:31:22.000",
+          "service_name": "Noise",
+          "lat": "37.78467199242439",
+          "long": "-122.42118588133994"
+        },
+        {
+          "service_request_id": "101004457909",
+          "requested_datetime": "2026-07-18T13:31:50.000",
+          "service_name": "Noise",
+          "lat": "37.78462382219061",
+          "long": "-122.42123456727016"
+        },
+        {
+          "service_request_id": "101004457919",
+          "requested_datetime": "2026-07-18T13:33:14.000",
+          "service_name": "Noise",
+          "lat": "37.784657708089924",
+          "long": "-122.42121356668187"
+        },
+        {
+          "service_request_id": "101004457920",
+          "requested_datetime": "2026-07-18T13:33:41.000",
+          "service_name": "Noise",
+          "lat": "37.784658102266725",
+          "long": "-122.42119995469157"
+        },
+        {
+          "service_request_id": "101004457926",
+          "requested_datetime": "2026-07-18T13:34:34.000",
+          "service_name": "Noise",
+          "lat": "37.7846412330717",
+          "long": "-122.4212114645535"
+        },
+        {
+          "service_request_id": "101004457931",
+          "requested_datetime": "2026-07-18T13:34:59.000",
+          "service_name": "Noise",
+          "lat": "37.784558929088725",
+          "long": "-122.42118801469542"
+        },
+        {
+          "service_request_id": "101004457932",
+          "requested_datetime": "2026-07-18T13:35:33.000",
+          "service_name": "Noise",
+          "lat": "37.784616067764716",
+          "long": "-122.42115977976545"
+        },
+        {
+          "service_request_id": "101004457933",
+          "requested_datetime": "2026-07-18T13:36:04.000",
+          "service_name": "Noise",
+          "lat": "37.78465474665482",
+          "long": "-122.42119348816514"
+        },
+        {
+          "service_request_id": "101004457937",
+          "requested_datetime": "2026-07-18T13:36:21.000",
+          "service_name": "Noise",
+          "lat": "37.78464167244971",
+          "long": "-122.42118353954679"
+        },
+        {
+          "service_request_id": "101004457942",
+          "requested_datetime": "2026-07-18T13:36:56.000",
+          "service_name": "Noise",
+          "lat": "37.78464210134318",
+          "long": "-122.42120709933013"
+        },
+        {
+          "service_request_id": "101004457944",
+          "requested_datetime": "2026-07-18T13:37:18.000",
+          "service_name": "Noise",
+          "lat": "37.784616868537704",
+          "long": "-122.42122399907313"
+        },
+        {
+          "service_request_id": "101004457945",
+          "requested_datetime": "2026-07-18T13:37:36.000",
+          "service_name": "Noise",
+          "lat": "37.78465589918003",
+          "long": "-122.42123667523082"
+        },
+        {
+          "service_request_id": "101004457948",
+          "requested_datetime": "2026-07-18T13:37:53.000",
+          "service_name": "Noise",
+          "lat": "37.78453606366927",
+          "long": "-122.42117591033217"
+        },
+        {
+          "service_request_id": "101004457951",
+          "requested_datetime": "2026-07-18T13:38:15.000",
+          "service_name": "Noise",
+          "lat": "37.784539290937424",
+          "long": "-122.4211764631264"
+        },
+        {
+          "service_request_id": "101004457953",
+          "requested_datetime": "2026-07-18T13:38:32.000",
+          "service_name": "Noise",
+          "lat": "37.78461196374245",
+          "long": "-122.42119824720754"
+        },
+        {
+          "service_request_id": "101004457956",
+          "requested_datetime": "2026-07-18T13:39:09.000",
+          "service_name": "Noise",
+          "lat": "37.78458456849476",
+          "long": "-122.42120088840493"
+        },
+        {
+          "service_request_id": "101004457958",
+          "requested_datetime": "2026-07-18T13:39:29.000",
+          "service_name": "Noise",
+          "lat": "37.784628492212896",
+          "long": "-122.42121033555603"
+        },
+        {
+          "service_request_id": "101004457959",
+          "requested_datetime": "2026-07-18T13:39:49.000",
+          "service_name": "Noise",
+          "lat": "37.78463817256047",
+          "long": "-122.42120982698177"
+        },
+        {
+          "service_request_id": "101004457962",
+          "requested_datetime": "2026-07-18T13:40:04.000",
+          "service_name": "Noise",
+          "lat": "37.784617098846404",
+          "long": "-122.42118609670716"
+        },
+        {
+          "service_request_id": "101004457969",
+          "requested_datetime": "2026-07-18T13:40:41.000",
+          "service_name": "Noise",
+          "lat": "37.7846070901465",
+          "long": "-122.42118606745919"
+        },
+        {
+          "service_request_id": "101004457976",
+          "requested_datetime": "2026-07-18T13:41:15.000",
+          "service_name": "Noise",
+          "lat": "37.78463530179039",
+          "long": "-122.42121513970926"
+        },
+        {
+          "service_request_id": "101004457983",
+          "requested_datetime": "2026-07-18T13:41:54.000",
+          "service_name": "Noise",
+          "lat": "37.784575998394345",
+          "long": "-122.42120245452537"
+        }
+      ]
+    },
+    {
+      "source": "dispatch-closed",
+      "rows": [
+        {
+          "cad_number": "261991298",
+          "received_datetime": "2026-07-18T12:26:30.000",
+          "call_type_original_desc": "TRESPASSER",
+          "intersection_point": {
+            "type": "Point",
+            "coordinates": [-122.375337768, 37.824110747]
+          },
+          "onview_flag": "N"
+        },
+        {
+          "cad_number": "261991292",
+          "received_datetime": "2026-07-18T12:28:55.000",
+          "call_type_original_desc": "DEMO / PROTEST",
+          "intersection_point": {
+            "type": "Point",
+            "coordinates": [-122.42100836, 37.783824118]
+          },
+          "onview_flag": "Y"
+        },
+        {
+          "cad_number": "261991554",
+          "received_datetime": "2026-07-18T13:48:34.000",
+          "call_type_original_desc": "HOMELESS COMPLAINT",
+          "intersection_point": {
+            "type": "Point",
+            "coordinates": [-122.42274548, 37.784083676]
+          },
+          "onview_flag": "Y"
+        },
+        {
+          "cad_number": "261991923",
+          "received_datetime": "2026-07-18T15:49:07.000",
+          "call_type_original_desc": "TRAF VIOLATION CITE",
+          "intersection_point": {
+            "type": "Point",
+            "coordinates": [-122.433255473, 37.765861628]
+          },
+          "onview_flag": "N"
+        }
+      ]
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-import { GoldenGateScene } from "../features/landing/GoldenGateScene";
+import { GoldenGateScene } from "@/features/landing/GoldenGateScene";
 
 const links = [
   {

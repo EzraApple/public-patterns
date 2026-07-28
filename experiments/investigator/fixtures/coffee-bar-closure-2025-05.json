@@ -1,0 +1,52 @@
+{
+  "id": "coffee-bar-closure-2025-05",
+  "evalRole": "health-inspection-lifecycle-positive",
+  "note": "A downtown cafe closed after a routine inspection and passed reinspection three days later. The public rows establish the regulatory lifecycle; reporting adds the observed rodent evidence.",
+  "capturedAt": "2026-07-27",
+  "evidenceUrls": [
+    "https://www.sfchronicle.com/bayarea/article/coffee-bar-closed-health-violations-20311170.php"
+  ],
+  "sourceQueries": [
+    "https://data.sfgov.org/resource/tvy3-wexg.json?%24select=%3Aid%2Cinspection_date%2Cpermit_number%2Cdba%2Cstreet_address%2Cinspection_type%2Cfacility_rating_status%2Cviolation_count%2Cviolation_codes%2Cdata_as_of&%24where=permit_number%3D%2798227%27&%24order=inspection_date"
+  ],
+  "limitations": [
+    "The rows are a frozen 2026-07-27 snapshot; the live DataSF query may later change.",
+    "socrata_id is the source :id field. violation_codes_excerpts contains five selected excerpts from the source violation_codes text; legal boilerplate and one additional item were omitted."
+  ],
+  "datasets": [
+    {
+      "source": "health-inspections",
+      "dataset": "tvy3-wexg",
+      "rows": [
+        {
+          "socrata_id": "row-3nwj-f7zj-5rp3",
+          "inspection_date": "2025-05-02T00:00:00.000",
+          "permit_number": "98227",
+          "dba": "COFFEE BAR",
+          "street_address": "101 MONTGOMERY STREET ST STE 100C",
+          "inspection_type": "Routine",
+          "facility_rating_status": "Closure",
+          "violation_count": "6",
+          "violation_codes_excerpts": [
+            "Maintain nonfood contact surfaces clean",
+            "Obtain a state-approved food safety certification",
+            "Immediate health permit suspension and closure",
+            "Keep the facility vermin proof",
+            "Eliminate vermin infestation or activity"
+          ],
+          "data_as_of": "2025-07-01T10:09:15.000"
+        },
+        {
+          "socrata_id": "row-izu5.zum4_qkw4",
+          "inspection_date": "2025-05-05T00:00:00.000",
+          "permit_number": "98227",
+          "dba": "COFFEE BAR",
+          "street_address": "101 MONTGOMERY STREET ST STE 100C",
+          "inspection_type": "Reinspection",
+          "facility_rating_status": "Pass",
+          "data_as_of": "2025-07-01T10:09:15.000"
+        }
+      ]
+    }
+  ]
+}

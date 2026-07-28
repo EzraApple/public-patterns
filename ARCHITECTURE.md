@@ -20,9 +20,8 @@ The initial product surface should remain simple:
 ```mermaid
 flowchart TD
     A["DataSF and other public sources"] --> B["Source-specific ingestion"]
-    B --> C["Short-lived raw storage"]
-    B --> D["Normalized events and aggregates"]
-    D --> E["Cheap continuous detectors"]
+    B --> D["Append-only observations"]
+    D --> E["Derived views and cheap detectors"]
     E -->|"interesting signal"| F["Deeper cross-source analysis"]
     F -->|"worth investigating"| G["Agent investigation"]
     G --> H{"Result"}
@@ -42,41 +41,45 @@ Analysis should become more expensive only as a signal becomes more interesting:
 4. Ask an agent to investigate candidates that survive cheap validation.
 5. Publish, monitor, or discard the result.
 
-## Initial Cloudflare stack
+## Infrastructure
 
-- **Workers and Cron Triggers** poll sources and expose the application API.
-- **Queues** fan ingestion and analysis work out safely.
-- **D1** stores cursors, aggregates, cases, articles, evidence, and links.
-- **R2** retains raw batches from rolling feeds and reproducible evidence snapshots.
-- **Vectorize** supports semantic article discovery if ordinary search becomes insufficient.
-- **Workflows** coordinates durable, multi-step investigations.
-- **Pages or Workers Assets** serves the React application.
-- **PostHog** measures how people search, navigate, and understand the publication.
+The current stack is deliberately small:
 
-The initial application should stay entirely on Cloudflare so it can scale to zero and remain cheap when development pauses.
+- **Workers Assets** serves the React application.
+- **A pipeline Worker** ingests sources and runs cheap detectors locally.
+- **D1** stores observations, source errors, and ingestion cursors.
+
+Add infrastructure only when a concrete need appears:
+
+- a Cron Trigger when ingestion is deployed
+- a Queue when one request can no longer finish bounded work safely
+- R2 when published evidence or disappearing source payloads need immutable files
+- Workflows when an investigation becomes a durable multi-step operation
+- PostHog when there is a real product surface to measure
+- Vectorize only if ordinary metadata and full-text search prove insufficient
+
+Cloudflare remains the default host, not a requirement that every Cloudflare
+service appear in the design.
 
 ## Worker boundaries
 
-The repository is a pnpm workspace with independently deployable applications:
+The repository is a pnpm workspace with three applications:
 
 ```mermaid
 flowchart LR
     Web["Web Worker<br/>site + public API"]
     Pipeline["Pipeline Worker<br/>ingestion + detectors"]
-    Investigator["Investigator Worker<br/>agent + tools"]
-    Storage[("D1 + R2")]
+    Investigator["Investigator Worker<br/>sandboxed agent"]
+    Storage[("D1")]
 
     Pipeline --> Storage
-    Pipeline -->|"promoted case"| Investigator
-    Investigator --> Storage
+    Pipeline -.->|"candidate (later)"| Investigator
     Web --> Storage
 ```
 
 Only the web application is deployed initially. The pipeline and investigator
-directories document ownership boundaries until the first real source creates a
-concrete interface. Later Workers can communicate through Queues, Workflows, or
-service bindings without putting ingestion or long-running investigation work
-on the public request path.
+Workers run locally while ingestion, evaluation, and agent behavior stabilize;
+neither has a deployment workflow yet.
 
 Within each application, organize code by product feature and keep runtime
 entrypoints thin. Shared packages should appear only after two applications
@@ -84,26 +87,36 @@ need the same proven logic.
 
 ## Source ingestion
 
-Sources should share a pipeline without pretending they share a schema. Each adapter will eventually define some version of:
+Sources share an observation shape without pretending their APIs share cursor
+behavior. Configured DataSF sources share one bounded keyset reader while 511
+owns its snapshot state. Each physical source emits append-only observations
+with a common identity, event time, update time, category, area, and flexible
+`data` JSON.
 
-```ts
-type SourceAdapter = {
-  schedule: string
-  fetchChanges: (cursor?: string) => Promise<unknown[]>
-  primaryKey: (record: unknown) => string
-  normalize: (record: unknown) => NormalizedEvent
-  nextCursor: (records: unknown[]) => string | undefined
-  retention: "aggregate" | "lightweight" | "raw"
-}
-```
+Most historical raw data can remain in DataSF and be queried during an
+investigation. Rolling feeds require deeper retention: the real-time police
+dispatch dataset, for example, exposes only a rolling 48-hour window.
 
-Most historical data can remain in DataSF and be queried during an investigation. Rolling feeds require deeper retention: the real-time police dispatch dataset, for example, exposes only a rolling 48-hour window.
+Every distinct publisher version we observe remains available. Exact replay is
+collapsed by physical source, ID, update time, and a storage-only content hash,
+while consumers decide whether to read history or select the current version.
+Realtime and closed dispatch feeds are separate ingestion targets and cursor
+names. Dispatch read logic combines them and prefers a closed call when both
+contain the same ID; that source-specific rule is not part of ingestion or the
+generic observation shape. This keeps correction history available without
+encoding invalidation, reactivation, projection versions, or detector lifecycle
+into storage.
 
-High-level aggregates should live indefinitely. Raw source data should expire unless it is needed to reconstruct a rolling feed or support published evidence.
+The generic columns support indexing and cheap detection. Source-specific JSON
+stays in `data` for later investigation. Partitioning, retention tiers, and
+immutable evidence snapshots should be added only when measured volume or a
+published claim requires them.
 
 ## Geography and correlation
 
-The MVP can represent geography with H3 cells stored in D1. This supports cheap comparisons across the same or neighboring areas without requiring PostGIS.
+The first detectors use publisher-provided area labels. Add derived H3 cells
+only when a real detector needs stable neighboring-area queries; the source
+coordinates remain available in `data`.
 
 Cross-source correlation should not run exhaustively across every record. A detector first produces a candidate; deeper analysis then searches:
 
@@ -168,27 +181,57 @@ The investigator should use a reusable, read-oriented tool surface:
 
 The same capabilities should be exposed through MCP for internal investigators and external agents.
 
-The agent harness remains undecided. Initial experiments should compare:
+The first agent experiment uses OpenCode 2 with DeepSeek V4 Pro Thinking inside
+one ephemeral Cloudflare Sandbox per investigation. The candidate arrives as
+flexible JSON on disk; the agent can use Python, web research, and baked-in
+analysis skills, then signals completion through a typed `submit_brief` tool.
+The Worker accepts the submitted brief and destroys the sandbox.
 
-1. a Cloudflare-native agent using Agents, Code Mode, and Workflows
-2. Pi running inside an ephemeral Cloudflare Sandbox
+An investigation does not need to uncover a mystery. It may advance when
+meaningfully distinct sources add enough context, consequences, comparison, or
+corroboration for a mildly interesting evidence-backed account, even if the
+event is already understood. A second dataset that only repeats an originating
+call does not qualify. The eventual article may be one paragraph with linked
+sources or a useful visualization; richer presentation is optional.
 
-A sandbox is an escalation tier, not a requirement for every investigation. It becomes useful when an agent needs Python, custom statistical analysis, or a filesystem-backed research session.
+The investigator is a separate Worker because Containers, model spend, and
+failure isolation differ materially from ingestion. It remains local-only until
+the model credential can stay outside the sandbox behind a short-lived proxy.
+Workflows, persistent sessions, MCP, and R2 remain deferred until an
+investigation demonstrates the need.
 
 ## Initial sources and detectors
 
-Likely first sources:
+Active MVP slices:
 
 - law-enforcement dispatch
 - 311 cases
-- temporary street closures
-- weather
+- Fire/EMS dispatched responses
+- police incident reports
+- building complaints and permits
+- injury crashes
+- health inspections
+- eviction notices
+- 511 SFMTA transit alerts
+
+Context-source candidates remain temporary street closures and weather.
 
 Working dataset IDs, schemas, volume measurements, and ingestion caveats live
 in [`docs/sources/`](./docs/sources/). Read the relevant dossier before turning
 one of these candidates into an adapter contract.
 
-Likely first detectors:
+The experimental detector reads the derived current observation view and
+compares `kind` plus `area` against the previous four matching weekdays. It
+runs only after the pipeline has collected the baseline window. Results are
+derived on request rather than persisted as workflow state, and its thresholds
+remain provisional rather than statistical claims.
+
+A recent-observation cluster detector is a useful next experiment because it
+could activate without historical coverage. Its result would need only
+observation IDs and cluster metrics; later analysis can load the observations.
+That experiment does not require a stored cluster model or candidate lifecycle.
+
+Possible later detectors:
 
 - spatiotemporal bursts
 - persistent recurrence
@@ -198,10 +241,8 @@ Likely first detectors:
 ## Open decisions
 
 - the exact frontend framework and visual language
-- the first source adapter and canonical event shape
-- D1 schema and retention periods
+- whether measured observation volume ever requires D1-to-R2 partitioning
 - H3 resolution and baseline windows
 - article component grammar
-- agent harness and model
 - editorial thresholds for publishing
 - when investigations may publish without human review

@@ -1,0 +1,62 @@
+{
+  "id": "july-fourth-evenings-2024-2026",
+  "note": "Three July 4 evenings, 6 PM through 2 AM, compared with four same-weekday controls around each holiday. Fire/EMS and police rise consistently; 311 Noise misses badly in 2025 but rises strongly overall.",
+  "role": "cross-source-recurrence-positive",
+  "targetEvidence": [
+    "https://www.sfport.com/july4",
+    "https://www.sf.gov/sites/default/files/2024-06/Fireworks%20Report.pdf"
+  ],
+  "targetWindows": [
+    "2024-07-04",
+    "2025-07-04",
+    "2026-07-04"
+  ],
+  "controlWindows": [
+    "2024-06-13",
+    "2024-06-20",
+    "2024-07-18",
+    "2024-07-25",
+    "2025-06-13",
+    "2025-06-20",
+    "2025-07-18",
+    "2025-07-25",
+    "2026-06-13",
+    "2026-06-20",
+    "2026-07-18",
+    "2026-07-25"
+  ],
+  "limitations": [
+    "The counts are a frozen 2026-07-27 snapshot; live datasets and event pages may later change.",
+    "The 2025 July 4 311 Noise count of 1 is an isolated coverage anomaly.",
+    "The July 25, 2026 police control was captured two days later and may still reflect reporting lag."
+  ],
+  "series": [
+    {
+      "source": "fire-ems",
+      "dataset": "nuek-vuh3",
+      "capturedOn": "2026-07-27",
+      "query": "For each listed date {D}: SELECT count(DISTINCT call_number) AS calls WHERE received_dttm >= '{D}T18:00:00' AND received_dttm < '{D+1}T02:00:00' AND call_type = 'Outside Fire'",
+      "targets": [40, 35, 38],
+      "controls": [7, 7, 9, 5, 5, 6, 8, 3, 2, 4, 5, 5]
+    },
+    {
+      "source": "police-incidents",
+      "dataset": "wg3w-h783",
+      "capturedOn": "2026-07-27",
+      "query": "For each listed date {D}: SELECT count(DISTINCT incident_id) AS incidents WHERE incident_datetime >= '{D}T18:00:00' AND incident_datetime < '{D+1}T02:00:00'",
+      "targets": [136, 103, 93],
+      "controls": [78, 76, 98, 83, 72, 64, 89, 92, 62, 66, 79, 32]
+    },
+    {
+      "source": "311",
+      "dataset": "vw6y-z8j6",
+      "capturedOn": "2026-07-27",
+      "query": "For each listed date {D}: SELECT count(DISTINCT service_request_id) AS requests WHERE requested_datetime >= '{D}T18:00:00' AND requested_datetime < '{D+1}T02:00:00' AND service_name = 'Noise'",
+      "targets": [155, 1, 160],
+      "controls": [8, 6, 12, 11, 20, 13, 0, 45, 43, 68, 41, 19]
+    }
+  ],
+  "expect": {
+    "classification": "all-sources-positive"
+  }
+}
