@@ -60,9 +60,8 @@ Write `output/brief.md` with:
 - important unknowns and the single best next check
 - record IDs, queries, and URLs supporting material claims
 
-Keep working notes and disposable scripts in `work/`. Put only useful,
-reviewable artifacts in `output/`. Keep the brief concise; it is internal triage,
-not an article.
+Keep working notes and disposable scripts in `work/`. Keep the brief concise;
+it is internal triage, not an article.
 
 Before submitting, remove every asserted record-to-record link or ranked
 explanation that lacks an explicit linking field or independent evidence.

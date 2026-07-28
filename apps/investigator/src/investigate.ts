@@ -1,7 +1,7 @@
 import {
+  type InvestigationResult,
   investigationSubmissionSchema,
   type InvestigationInput,
-  type InvestigationSubmission,
 } from "@public-patterns/contracts/investigation";
 import type { Env } from "./environment.ts";
 type InvestigationSandbox = {
@@ -29,11 +29,7 @@ const AGENT_COMMAND =
 export async function investigateCase(
   env: Env,
   input: InvestigationInput,
-): Promise<{
-  id: string;
-  submission: InvestigationSubmission;
-  brief: string;
-}> {
+): Promise<InvestigationResult> {
   if (!env.DEEPSEEK_API_KEY) {
     throw new Error("DEEPSEEK_API_KEY is required");
   }
@@ -109,7 +105,11 @@ export async function investigateInSandbox({
 
     return {
       id: input.id,
-      submission,
+      submission: {
+        outcome: submission.outcome,
+        confidence: submission.confidence,
+        evidence: submission.evidence,
+      },
       brief: briefFile.content,
     };
   } catch (submissionError) {

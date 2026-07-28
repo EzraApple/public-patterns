@@ -1,6 +1,6 @@
 # Investigator
 
-This local-only Worker runs one investigation per ephemeral Cloudflare Sandbox.
+This Worker runs one investigation per ephemeral Cloudflare Sandbox.
 The container includes OpenCode 2, DeepSeek V4 Pro Thinking, Python, one analysis
 skill, and a `submit_brief` tool.
 
@@ -26,16 +26,16 @@ curl -X POST http://127.0.0.1:8788/investigations \
   --data '{"id":"example","case":{"observations":[]}}'
 ```
 
-The agent reads `case/input.json`, works under `work/`, and writes its brief and
-useful artifacts under `output/`. The submission tool validates those paths and
-ends the OpenCode session. The Worker returns the brief and destroys the
-sandbox.
+The agent reads `case/input.json`, works under `work/`, and writes its brief
+under `output/`. The submission tool validates the path and ends the OpenCode
+session. The Worker returns the brief and destroys the sandbox.
 
 Eval callers must pass only the evidence under test and source links. Expected
 results, fixture notes, and detector settings stay outside the agent payload.
 
-The Worker has no public route or deployment workflow. Before deployment, keep
-the long-lived DeepSeek key outside the sandbox by adding the short-lived model
-proxy described in the Cloudflare Sandbox security guidance.
+The production Worker has no public route and is reachable through the
+pipeline's service binding. The prototype passes a limited DeepSeek key into
+each sandbox; replace that with a short-lived model proxy before untrusted or
+unattended use.
 
 The local container limit is one, so run one investigation at a time.

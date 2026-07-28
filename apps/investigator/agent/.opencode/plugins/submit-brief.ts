@@ -39,9 +39,6 @@ export default Plugin.define({
           evidence: z
             .array(z.string())
             .describe("Source record IDs or URLs supporting the brief."),
-          artifacts: z
-            .array(z.string())
-            .describe("Workspace-relative paths under output/."),
         }),
         output: z.object({ accepted: z.boolean() }),
         options: {
@@ -50,12 +47,9 @@ export default Plugin.define({
         },
         execute: async (submission) => {
           const briefPath = await requireOutputFile(submission.briefPath);
-          const artifacts = await Promise.all(
-            submission.artifacts.map(requireOutputFile),
-          );
           await writeFile(
             SUBMISSION_PATH,
-            JSON.stringify({ ...submission, briefPath, artifacts }, null, 2),
+            JSON.stringify({ ...submission, briefPath }, null, 2),
           );
           return {
             output: { accepted: true },

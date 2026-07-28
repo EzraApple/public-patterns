@@ -46,7 +46,6 @@ describe("investigateInSandbox", () => {
       confidence: 0.8,
       briefPath: "output/brief.md",
       evidence: ["observation:123"],
-      artifacts: [],
     };
     const { files, sandbox } = createSandbox(submission);
 
@@ -58,7 +57,11 @@ describe("investigateInSandbox", () => {
 
     expect(result).toEqual({
       id: "case-1",
-      submission,
+      submission: {
+        outcome: "investigate",
+        confidence: 0.8,
+        evidence: ["observation:123"],
+      },
       brief: "# Finding",
     });
     expect(sandbox.exec).toHaveBeenCalledWith(
@@ -88,27 +91,21 @@ describe("investigateInSandbox", () => {
       "outputx/brief.md",
     ];
 
-    for (const path of invalidPaths) {
-      for (const [briefPath, artifacts] of [
-        [path, []],
-        ["output/brief.md", [path]],
-      ] as const) {
-        const { sandbox } = createSandbox({
-          outcome: "watch",
-          confidence: 0.5,
-          briefPath,
-          evidence: [],
-          artifacts,
-        });
+    for (const briefPath of invalidPaths) {
+      const { sandbox } = createSandbox({
+        outcome: "watch",
+        confidence: 0.5,
+        briefPath,
+        evidence: [],
+      });
 
-        await expect(
-          investigateInSandbox({
-            sandbox,
-            input: { id: "case-2", case: {} },
-            deepseekApiKey: "test-key",
-          }),
-        ).rejects.toThrow("must be");
-      }
+      await expect(
+        investigateInSandbox({
+          sandbox,
+          input: { id: "case-2", case: {} },
+          deepseekApiKey: "test-key",
+        }),
+      ).rejects.toThrow("must be");
     }
   });
 
