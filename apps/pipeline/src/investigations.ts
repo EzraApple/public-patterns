@@ -6,14 +6,13 @@ import {
   type BurstSource,
   burstSources,
   getBursts,
+  getDetectorObservations,
 } from "./bursts.ts";
 import { getCurrentDispatch } from "./features/dispatch/read.ts";
+import { dedupeInspections } from "./features/healthInspections/read.ts";
 import { calendarDaySchema, shiftDay } from "./ingestion.ts";
 import type { Observation } from "./observation.ts";
-import {
-  getCurrent,
-  getCurrentByArea,
-} from "./observationStore.ts";
+import { getCurrentByArea } from "./observationStore.ts";
 
 export const investigationRequestSchema = z.object({
   source: z.enum(burstSources),
@@ -76,11 +75,19 @@ export async function investigateBurst({
       }),
       getCurrentDispatch({ db, start: contextStart, end: contextEnd }),
     ]);
+    const healthInspections = dedupeInspections(
+      areaObservations.filter(
+        ({ source }) => source === "health-inspections",
+      ),
+    );
     context = [
       ...areaObservations.filter(
         ({ source }) =>
-          source !== "dispatch-realtime" && source !== "dispatch-closed",
+          source !== "dispatch-realtime" &&
+          source !== "dispatch-closed" &&
+          source !== "health-inspections",
       ),
+      ...healthInspections,
       ...dispatch.filter(({ area }) => area === input.area),
     ];
   }
@@ -142,10 +149,12 @@ async function getBurstObservations(
 ): Promise<Observation[]> {
   const start = `${burst.day}T00:00:00`;
   const end = `${shiftDay(burst.day, 1)}T00:00:00`;
-  const observations =
-    source === "dispatch"
-      ? await getCurrentDispatch({ db, start, end })
-      : await getCurrent({ db, source, start, end });
+  const observations = await getDetectorObservations({
+    db,
+    source,
+    start,
+    end,
+  });
   const ids = new Set(burst.observationIds);
   return observations.filter((observation) => ids.has(observation.id));
 }

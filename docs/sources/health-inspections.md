@@ -2,7 +2,7 @@
 
 **Status:** experimental
 
-**Last verified:** 2026-07-27 00:25 PDT
+**Last verified:** 2026-07-28 15:00 PDT
 
 ## Identity
 
@@ -50,6 +50,18 @@ SELECT count(*) AS rows, min(inspection_date) AS earliest,
 - Inspection results and notes may be corrected.
 - Facility permit number is a join key, not necessarily an inspection key.
 
+On 2026-07-28, a direct query for Pass results in Financial District/South
+Beach on 2026-07-02 returned 43 rows but only 23 distinct combinations of
+permit number, inspection date, and inspector. Twenty combinations appeared
+twice. No pair disagreed on status, DBA, or address; four pairs differed in
+`total_time` or publication timestamps.
+
+The working read model treats that composite, plus inspection type when
+present, as one inspection and keeps one deterministic representative. Rows
+missing permit number or inspector remain separate. Raw Socrata rows are still
+retained, because this composite has only been checked against one
+duplicate-heavy slice.
+
 ## Current local ingestion
 
 The adapter initially reads 90 event-time days, then scans `inspection_date`
@@ -79,5 +91,6 @@ evidence should snapshot rows rather than rely on `:id` remaining addressable.
 ## Open questions
 
 - Is Socrata `:id` stable across refreshes and corrections?
-- What composite publisher fields uniquely identify an inspection?
+- Does permit number + inspection date + inspector + optional inspection type
+  remain unique across other dates?
 - Is the actual publication cadence daily or monthly?
