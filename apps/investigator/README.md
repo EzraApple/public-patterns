@@ -2,7 +2,7 @@
 
 This local-only Worker runs one investigation per ephemeral Cloudflare Sandbox.
 The container includes OpenCode 2, DeepSeek V4 Pro Thinking, Python, one analysis
-skill, and a terminal `submit_brief` tool.
+skill, and a `submit_brief` tool.
 
 ```sh
 doppler run -- pnpm dev:investigator

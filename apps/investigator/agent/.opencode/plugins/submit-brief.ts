@@ -25,8 +25,7 @@ export default Plugin.define({
     await plugin.tool.transform((tools) => {
       tools.add({
         name: "submit_brief",
-        description:
-          "Submit the completed investigation brief. This is terminal: call it once, then stop.",
+        description: "Submit the completed investigation brief.",
         input: z.object({
           outcome: z.enum(["investigate", "watch", "discard"]),
           confidence: z
@@ -49,7 +48,7 @@ export default Plugin.define({
           codemode: false,
           permission: "submit_brief",
         },
-        execute: async (submission, { sessionID }) => {
+        execute: async (submission) => {
           const briefPath = await requireOutputFile(submission.briefPath);
           const artifacts = await Promise.all(
             submission.artifacts.map(requireOutputFile),
@@ -58,12 +57,9 @@ export default Plugin.define({
             SUBMISSION_PATH,
             JSON.stringify({ ...submission, briefPath, artifacts }, null, 2),
           );
-          setTimeout(() => {
-            void plugin.session.interrupt({ sessionID }).catch(() => undefined);
-          }, 0);
           return {
             output: { accepted: true },
-            content: "Brief accepted. The investigation is complete.",
+            content: "Brief accepted.",
           };
         },
       });

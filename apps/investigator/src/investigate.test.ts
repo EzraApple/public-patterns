@@ -7,7 +7,7 @@ import {
 
 function createSandbox(
   submission: unknown,
-  execError = "session transport closed after submission",
+  execError?: string,
 ) {
   const files = new Map<string, string>([
     [
@@ -24,7 +24,15 @@ function createSandbox(
         files.set(path, content);
       }),
       exec: vi.fn(async () => {
-        throw new Error(execError);
+        if (execError) {
+          throw new Error(execError);
+        }
+        return {
+          success: true,
+          exitCode: 0,
+          stdout: "",
+          stderr: "",
+        };
       }),
       readFile: vi.fn(async (path: string) => ({
         content: files.get(path) ?? "",
@@ -34,7 +42,7 @@ function createSandbox(
 }
 
 describe("investigateInSandbox", () => {
-  it("returns a submitted brief even when terminal submission ends the transport", async () => {
+  it("returns a submitted brief after the agent exits", async () => {
     const submission = {
       outcome: "investigate",
       confidence: 0.8,

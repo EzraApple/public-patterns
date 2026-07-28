@@ -17,5 +17,5 @@ distinct real-world event. Shared time and location can support triage but
 cannot establish causality. Never narrate unlinked records as a response chain.
 
 The case is at `case/input.json`. Work freely under `work/`. Put the final brief
-and any useful artifacts under `output/`, then call `submit_brief`. A successful
-submission ends the investigation; do not continue afterward.
+and any useful artifacts under `output/`, then call `submit_brief`. After it is
+accepted, end the run.
