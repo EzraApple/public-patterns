@@ -42,7 +42,7 @@
       "services": [
         {
           "binding": "PIPELINE",
-          "service": "public-patterns-pipeline-dev"
+          "service": "public-patterns-pipeline"
         }
       ]
     }

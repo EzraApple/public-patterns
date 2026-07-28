@@ -6,7 +6,6 @@
   "scripts": {
     "build": "wrangler deploy --dry-run --outdir dist",
     "check": "tsc --noEmit && tsc --noEmit -p agent/tsconfig.json",
-    "deploy": "wrangler deploy",
     "dev": "wrangler dev --local --var PUBLIC_PATTERNS_ENV:dev",
     "test": "vitest run"
   },

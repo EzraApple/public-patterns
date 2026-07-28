@@ -8,7 +8,6 @@
     "check": "tsc --noEmit",
     "db:migrate:local": "wrangler d1 migrations apply public-patterns-pipeline --local",
     "db:migrate:production": "wrangler d1 migrations apply public-patterns-pipeline --remote",
-    "deploy": "wrangler deploy",
     "dev": "wrangler dev --local --var PUBLIC_PATTERNS_ENV:dev",
     "test": "vitest run",
     "test:integration": "node ../../scripts/smoke-pipeline.mjs"
