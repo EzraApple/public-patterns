@@ -7,8 +7,6 @@
     "build": "vite build",
     "build:dev": "CLOUDFLARE_ENV=dev vite build",
     "check": "tsc --noEmit",
-    "deploy": "pnpm run build && wrangler deploy",
-    "deploy:dev:ci": "pnpm run build:dev && wrangler deploy",
     "dev": "CLOUDFLARE_ENV=dev vite --host 127.0.0.1",
     "test": "vitest run"
   },
