@@ -1,9 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
-import {
-  investigateInSandbox,
-  investigationInputSchema,
-} from "./investigate.ts";
+import { investigationInputSchema } from "./contract.ts";
+import { investigateInSandbox } from "./investigate.ts";
 
 function createSandbox(
   submission: unknown,

@@ -1,35 +1,9 @@
-import { z } from "zod";
-
+import {
+  investigationSubmissionSchema,
+  type InvestigationInput,
+  type InvestigationSubmission,
+} from "./contract.ts";
 import type { Env } from "./environment.ts";
-
-const submissionSchema = z.object({
-  outcome: z.enum(["investigate", "watch", "discard"]),
-  confidence: z.number().min(0).max(1),
-  briefPath: z
-    .string()
-    .refine(isOutputPath, "briefPath must be a file under output/"),
-  evidence: z.array(z.string()),
-  artifacts: z
-    .array(z.string().refine(isOutputPath, "artifacts must be under output/")),
-});
-
-function isOutputPath(value: string): boolean {
-  const segments = value.split("/");
-  return (
-    segments[0] === "output" &&
-    segments.length > 1 &&
-    segments.every(
-      (segment) => segment !== "" && segment !== "." && segment !== "..",
-    )
-  );
-}
-
-export const investigationInputSchema = z.object({
-  id: z.string().min(1),
-  case: z.record(z.string(), z.unknown()),
-});
-
-type InvestigationInput = z.infer<typeof investigationInputSchema>;
 type InvestigationSandbox = {
   mkdir(path: string, options: { recursive: boolean }): Promise<unknown>;
   writeFile(path: string, content: string): Promise<unknown>;
@@ -57,7 +31,7 @@ export async function investigateCase(
   input: InvestigationInput,
 ): Promise<{
   id: string;
-  submission: z.infer<typeof submissionSchema>;
+  submission: InvestigationSubmission;
   brief: string;
 }> {
   if (!env.DEEPSEEK_API_KEY) {
@@ -126,7 +100,7 @@ export async function investigateInSandbox({
     const submissionFile = await sandbox.readFile(
       "/workspace/output/submission.json",
     );
-    const submission = submissionSchema.parse(
+    const submission = investigationSubmissionSchema.parse(
       JSON.parse(submissionFile.content),
     );
     const briefFile = await sandbox.readFile(

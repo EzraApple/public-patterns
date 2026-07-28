@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { findBursts } from "./bursts.ts";
 import { shiftDay } from "./ingestion.ts";
-import type { Observation } from "./observations.ts";
+import type { Observation } from "./observation.ts";
 
 describe("findBursts", () => {
   it("finds a large same-weekday change", () => {

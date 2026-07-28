@@ -1,13 +1,13 @@
 import { z } from "zod";
 
-import type { Batch, Observation } from "../../observations.ts";
+import type { Batch, Observation } from "@/observation.ts";
 import {
   fetchDataSf,
   invalidSourceRow,
   parseDataSfUpperWatermark,
   socrataTimestampSchema,
   type DataSfSleep,
-} from "../../sources/dataSf.ts";
+} from "@/sources/dataSf.ts";
 import {
   getDataSfSourceConfig,
   type DataSfSourceConfig,
@@ -17,28 +17,28 @@ import {
 
 const DATA_SF_ORIGIN = "https://data.sfgov.org";
 
-export type DataSfSourceCursor = {
+export type DataSfCursor = {
   cursorAt: string;
   id: string;
 };
 
-export type DataSfSourcesGateway = {
+export type DataSfGateway = {
   getUpperWatermark(
     source: DataSfSourceName,
     since: string,
     notAfter: string,
   ): Promise<string | null>;
-  getPage(input: {
+  getBatch(input: {
     source: DataSfSourceName;
     since: string;
     until: string;
-    after?: DataSfSourceCursor;
+    after?: DataSfCursor;
     limit: number;
     observedAt: string;
-  }): Promise<Batch<DataSfSourceCursor>>;
+  }): Promise<Batch<DataSfCursor>>;
 };
 
-export function createDataSfSourcesGateway({
+export function createDataSfGateway({
   fetch,
   appToken,
   origin = DATA_SF_ORIGIN,
@@ -50,7 +50,7 @@ export function createDataSfSourcesGateway({
   origin?: string;
   sleep?: DataSfSleep;
   maxRequestAttempts?: number;
-}): DataSfSourcesGateway {
+}): DataSfGateway {
   const headers = appToken ? { "X-App-Token": appToken } : undefined;
 
   return {
@@ -84,11 +84,11 @@ export function createDataSfSourcesGateway({
       return parseDataSfUpperWatermark(await response.json());
     },
 
-    async getPage({ source, since, until, after, limit, observedAt }) {
+    async getBatch({ source, since, until, after, limit, observedAt }) {
       const config = getDataSfSourceConfig(source);
       const response = await fetchDataSf({
         fetch,
-        url: buildDataSfSourceUrl({
+        url: buildDataSfUrl({
           origin,
           source,
           since,
@@ -107,11 +107,11 @@ export function createDataSfSourcesGateway({
       }
 
       const sourceRows = z.array(z.unknown()).parse(await response.json());
-      const acceptedRows = sourceRows.slice(0, limit);
+      const batchRows = sourceRows.slice(0, limit);
       const observations: Observation[] = [];
-      const errors: Batch<DataSfSourceCursor>["errors"] = [];
+      const errors: Batch<DataSfCursor>["errors"] = [];
 
-      for (const sourceRow of acceptedRows) {
+      for (const sourceRow of batchRows) {
         const parsed = config.schema.safeParse(sourceRow);
         if (!parsed.success) {
           errors.push(
@@ -132,7 +132,7 @@ export function createDataSfSourcesGateway({
       const done = sourceRows.length <= limit;
       const next = done
         ? undefined
-        : parsePageCursor(config, acceptedRows.at(-1));
+        : parseCursor(config, batchRows.at(-1));
       if (!done && next === undefined) {
         throw new Error(`DataSF ${source} batch ended without a cursor`);
       }
@@ -141,7 +141,7 @@ export function createDataSfSourcesGateway({
   };
 }
 
-export function buildDataSfSourceUrl({
+export function buildDataSfUrl({
   origin = DATA_SF_ORIGIN,
   source,
   since,
@@ -153,7 +153,7 @@ export function buildDataSfSourceUrl({
   source: DataSfSourceName;
   since: string;
   until: string;
-  after?: DataSfSourceCursor;
+  after?: DataSfCursor;
   limit: number;
 }): URL {
   const config = getDataSfSourceConfig(source);
@@ -206,10 +206,10 @@ function toObservation(
   };
 }
 
-function parsePageCursor(
+function parseCursor(
   config: DataSfSourceConfig,
   row: unknown,
-): DataSfSourceCursor | undefined {
+): DataSfCursor | undefined {
   const cursorField = config.cursorField;
   const parsed = z
     .object({

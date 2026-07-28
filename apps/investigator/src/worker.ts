@@ -1,8 +1,6 @@
 import type { Env } from "./environment.ts";
-import {
-  investigateCase,
-  investigationInputSchema,
-} from "./investigate.ts";
+import { investigationInputSchema } from "./contract.ts";
+import { investigateCase } from "./investigate.ts";
 
 export { Sandbox } from "@cloudflare/sandbox";
 

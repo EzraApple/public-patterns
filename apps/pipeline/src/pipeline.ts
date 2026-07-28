@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { findBursts } from "./bursts.ts";
-import { seed } from "./devFixtures.ts";
+import { seedDevFixtures } from "./devFixtures.ts";
 import type { Env } from "./environment.ts";
 import { ingestDataSfSource } from "./features/dataSfSources/ingest.ts";
 import {
@@ -10,12 +10,12 @@ import {
 } from "./features/dispatch/read.ts";
 import { ingestTransitAlerts } from "./features/transitAlerts/ingest.ts";
 import { calendarDaySchema, shiftDay } from "./ingestion.ts";
+import { sources } from "./observation.ts";
 import {
   getCurrent,
   getIngestionCursor,
   getHistory,
-  sources,
-} from "./observations.ts";
+} from "./observationStore.ts";
 
 export type { Env } from "./environment.ts";
 
@@ -88,7 +88,9 @@ export async function routeRequest(
     if (!day.success) {
       return json({ error: "valid day is required" }, 400);
     }
-    return json(await seed({ db: env.DB, day: day.data, observedAt }));
+    return json(
+      await seedDevFixtures({ db: env.DB, day: day.data, observedAt }),
+    );
   }
 
   return json({ error: "not found" }, 404);

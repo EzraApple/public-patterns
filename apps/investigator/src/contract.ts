@@ -1,0 +1,34 @@
+import { z } from "zod";
+
+export const investigationInputSchema = z.object({
+  id: z.string().min(1),
+  case: z.record(z.string(), z.unknown()),
+});
+
+export type InvestigationInput = z.infer<typeof investigationInputSchema>;
+
+export const investigationSubmissionSchema = z.object({
+  outcome: z.enum(["investigate", "watch", "discard"]),
+  confidence: z.number().min(0).max(1),
+  briefPath: z
+    .string()
+    .refine(isOutputPath, "briefPath must be a file under output/"),
+  evidence: z.array(z.string()),
+  artifacts: z
+    .array(z.string().refine(isOutputPath, "artifacts must be under output/")),
+});
+
+export type InvestigationSubmission = z.infer<
+  typeof investigationSubmissionSchema
+>;
+
+function isOutputPath(value: string): boolean {
+  const segments = value.split("/");
+  return (
+    segments[0] === "output" &&
+    segments.length > 1 &&
+    segments.every(
+      (segment) => segment !== "" && segment !== "." && segment !== "..",
+    )
+  );
+}

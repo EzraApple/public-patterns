@@ -1,39 +1,13 @@
 import { z } from "zod";
 
-import { socrataTimestampSchema } from "../../sources/dataSf.ts";
-
-const optionalSourceString = z.string().nullable().optional();
-const optionalSourceTimestamp = socrataTimestampSchema.nullable().optional();
-
-const dispatchFields = {
-  cad_number: z.string().min(1),
-  received_datetime: socrataTimestampSchema,
-  entry_datetime: optionalSourceTimestamp,
-  dispatch_datetime: optionalSourceTimestamp,
-  enroute_datetime: optionalSourceTimestamp,
-  onscene_datetime: optionalSourceTimestamp,
-  close_datetime: optionalSourceTimestamp,
-  call_type_original: optionalSourceString,
-  call_type_original_desc: optionalSourceString,
-  call_type_final: optionalSourceString,
-  call_type_final_desc: optionalSourceString,
-  priority_original: optionalSourceString,
-  priority_final: optionalSourceString,
-  agency: optionalSourceString,
-  disposition: optionalSourceString,
-  onview_flag: optionalSourceString,
-  sensitive_call: z.boolean().nullable().optional(),
-  intersection_name: optionalSourceString,
-  intersection_id: optionalSourceString,
-  intersection_point: z.unknown().optional(),
-  supervisor_district: optionalSourceString,
-  analysis_neighborhood: optionalSourceString,
-  police_district: optionalSourceString,
-  data_as_of: socrataTimestampSchema,
-  data_loaded_at: socrataTimestampSchema,
-} satisfies z.ZodRawShape;
-
-const dispatchSelect = Object.keys(dispatchFields);
+import { socrataTimestampSchema } from "@/sources/dataSf.ts";
+import {
+  case311Schema,
+  dispatchClosedSchema,
+  dispatchRealtimeSchema,
+  dispatchSelect,
+  optionalSourceStringSchema,
+} from "./schema.ts";
 
 const definitions = {
   "311": defineSource({
@@ -73,26 +47,7 @@ const definitions = {
     ].join(","),
     initialWindowMinutes: 2 * 24 * 60,
     overlapMinutes: 2 * 24 * 60,
-    schema: z
-      .object({
-        service_request_id: z.string().min(1),
-        requested_datetime: socrataTimestampSchema,
-        updated_datetime: socrataTimestampSchema.optional(),
-        service_name: z.string().min(1),
-        service_subtype: z.string().optional(),
-        service_details: z.string().optional(),
-        status_description: z.string().optional(),
-        agency_responsible: z.string().optional(),
-        analysis_neighborhood: z.string().optional(),
-        supervisor_district: z.string().optional(),
-        police_district: z.string().optional(),
-        source: z.string().optional(),
-        lat: z.string().optional(),
-        long: z.string().optional(),
-        data_as_of: socrataTimestampSchema.optional(),
-        data_loaded_at: socrataTimestampSchema,
-      })
-      .passthrough(),
+    schema: case311Schema,
   }),
   "dispatch-realtime": defineSource({
     datasetId: "gnap-fj3t",
@@ -106,13 +61,7 @@ const definitions = {
     select: [...dispatchSelect, "id", "call_last_updated_at"].join(","),
     initialWindowMinutes: 2 * 24 * 60,
     overlapMinutes: 2 * 60,
-    schema: z
-      .object({
-        ...dispatchFields,
-        id: z.string().min(1),
-        call_last_updated_at: socrataTimestampSchema,
-      })
-      .passthrough(),
+    schema: dispatchRealtimeSchema,
   }),
   "dispatch-closed": defineSource({
     datasetId: "2zdj-bwza",
@@ -132,15 +81,7 @@ const definitions = {
     ].join(","),
     initialWindowMinutes: 2 * 24 * 60,
     overlapMinutes: 2 * 60,
-    schema: z
-      .object({
-        ...dispatchFields,
-        data_updated_at: socrataTimestampSchema,
-        source_filename: z.string().min(1),
-        dup_cad_number: optionalSourceString,
-        pd_incident_report: optionalSourceString,
-      })
-      .passthrough(),
+    schema: dispatchClosedSchema,
   }),
   "fire-ems": defineSource({
     datasetId: "nuek-vuh3",
@@ -268,10 +209,10 @@ function defineSource({
     [definition.updatedField]: socrataTimestampSchema,
   };
   for (const field of kindFields) {
-    shape[field] = optionalSourceString;
+    shape[field] = optionalSourceStringSchema;
   }
   if (areaField) {
-    shape[areaField] = optionalSourceString;
+    shape[areaField] = optionalSourceStringSchema;
   }
 
   return {

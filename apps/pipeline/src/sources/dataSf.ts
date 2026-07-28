@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import type { SourceError } from "../observations.ts";
+import type { SourceError } from "@/observation.ts";
 import {
   fetchWithRetry,
   type RequestSleep,
@@ -78,6 +78,39 @@ export function invalidSourceRow({
       message: issue.message,
     })),
   };
+}
+
+export function dataSfTimestampBefore(
+  instant: string,
+  minutes: number,
+): string {
+  const date = new Date(Date.parse(instant) - minutes * 60_000);
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Los_Angeles",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  })
+    .formatToParts(date)
+    .reduce<Record<string, string>>((result, part) => {
+      result[part.type] = part.value;
+      return result;
+    }, {});
+
+  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}.000`;
+}
+
+export function subtractDataSfMinutes(
+  timestamp: string,
+  minutes: number,
+): string {
+  return new Date(Date.parse(`${timestamp}Z`) - minutes * 60_000)
+    .toISOString()
+    .slice(0, -1);
 }
 
 function isValidSocrataTimestamp(value: string): boolean {

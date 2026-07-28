@@ -1,8 +1,5 @@
-import {
-  getHistory,
-  type Observation,
-  type Source,
-} from "../../observations.ts";
+import type { Observation, Source } from "@/observation.ts";
+import { getHistory } from "@/observationStore.ts";
 
 export async function getCurrentDispatch({
   db,

@@ -1,7 +1,8 @@
 import { shiftDay } from "./ingestion.ts";
-import { save, type Observation } from "./observations.ts";
+import type { Observation } from "./observation.ts";
+import { saveBatch } from "./observationStore.ts";
 
-export async function seed({
+export async function seedDevFixtures({
   db,
   day,
   observedAt,
@@ -19,7 +20,7 @@ export async function seed({
   ];
   const closedDispatch = dispatchObservation("closed", day, observedAt);
   const dispatchCluster = createDispatchCluster(day, observedAt);
-  await save({
+  await saveBatch({
     db,
     ingestion: "311",
     observations,
@@ -29,7 +30,7 @@ export async function seed({
     },
     observedAt,
   });
-  await save({
+  await saveBatch({
     db,
     ingestion: "dispatch-realtime",
     observations: [
@@ -44,7 +45,7 @@ export async function seed({
     },
     observedAt,
   });
-  await save({
+  await saveBatch({
     db,
     ingestion: "dispatch-closed",
     observations: [

@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
-  buildDataSfSourceUrl,
-  createDataSfSourcesGateway,
+  buildDataSfUrl,
+  createDataSfGateway,
 } from "./gateway.ts";
 
 describe("configured DataSF sources gateway", () => {
@@ -27,7 +27,7 @@ describe("configured DataSF sources gateway", () => {
   ])(
     "keeps the $source dispatch feed's load-time keyset and selected payload",
     ({ source, dataset, cursor, extraFields }) => {
-      const url = buildDataSfSourceUrl({
+      const url = buildDataSfUrl({
         source,
         since: "2026-07-24T09:00:00",
         until: "2026-07-24T13:00:00",
@@ -65,7 +65,7 @@ describe("configured DataSF sources gateway", () => {
       const fetch = vi
         .fn<typeof globalThis.fetch>()
         .mockResolvedValue(Response.json([{}]));
-      const gateway = createDataSfSourcesGateway({ fetch });
+      const gateway = createDataSfGateway({ fetch });
 
       await gateway.getUpperWatermark(
         source,
@@ -83,8 +83,8 @@ describe("configured DataSF sources gateway", () => {
     },
   );
 
-  it("pages Fire/EMS loads while keeping unit responses distinct", () => {
-    const url = buildDataSfSourceUrl({
+  it("batches Fire/EMS loads while keeping unit responses distinct", () => {
+    const url = buildDataSfUrl({
       source: "fire-ems",
       since: "2026-07-26T00:00:00.000",
       until: "2026-07-27T00:00:00.000",
@@ -108,8 +108,8 @@ describe("configured DataSF sources gateway", () => {
     expect(url.searchParams.get("$where")).not.toContain("call_number >");
   });
 
-  it("pages 311 by portal update time and requests its explicit fields", () => {
-    const url = buildDataSfSourceUrl({
+  it("batches 311 by portal update time and requests its explicit fields", () => {
+    const url = buildDataSfUrl({
       source: "311",
       since: "2026-07-20T00:00:00",
       until: "2026-07-24T00:00:00",
@@ -290,8 +290,8 @@ describe("configured DataSF sources gateway", () => {
         .mockResolvedValue(
           Response.json([{ ...testCase.row, future_field: "preserved" }]),
         );
-      const gateway = createDataSfSourcesGateway({ fetch });
-      const batch = await gateway.getPage({
+      const gateway = createDataSfGateway({ fetch });
+      const batch = await gateway.getBatch({
         source: testCase.source,
         since: "2026-01-01T00:00:00.000",
         until: "2026-07-27T00:00:00.000",
@@ -328,8 +328,8 @@ describe("configured DataSF sources gateway", () => {
         },
       ]),
     );
-    const gateway = createDataSfSourcesGateway({ fetch });
-    const batch = await gateway.getPage({
+    const gateway = createDataSfGateway({ fetch });
+    const batch = await gateway.getBatch({
       source: "building-complaints",
       since: "2026-07-01T00:00:00.000",
       until: "2026-07-27T00:00:00.000",
@@ -356,7 +356,7 @@ describe("configured DataSF sources gateway", () => {
     const fetch = vi
       .fn<typeof globalThis.fetch>()
       .mockResolvedValue(Response.json([{}]));
-    const gateway = createDataSfSourcesGateway({ fetch });
+    const gateway = createDataSfGateway({ fetch });
 
     await gateway.getUpperWatermark(
       "health-inspections",

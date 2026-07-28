@@ -1,21 +1,25 @@
 import { z } from "zod";
 
-import type { Env } from "../../environment.ts";
+import type { Env } from "@/environment.ts";
+import { MAX_BATCHES_PER_RUN } from "@/ingestion.ts";
 import {
-  MAX_BATCHES_PER_RUN,
-  sourceTimeBefore,
-  subtractMinutes,
-} from "../../ingestion.ts";
-import { BATCH_SIZE, getIngestionCursor, save } from "../../observations.ts";
-import { socrataTimestampSchema } from "../../sources/dataSf.ts";
+  BATCH_SIZE,
+  getIngestionCursor,
+  saveBatch,
+} from "@/observationStore.ts";
+import {
+  dataSfTimestampBefore,
+  socrataTimestampSchema,
+  subtractDataSfMinutes,
+} from "@/sources/dataSf.ts";
 import {
   getDataSfSourceConfig,
   type DataSfSourceName,
 } from "./config.ts";
 import {
-  createDataSfSourcesGateway,
-  type DataSfSourceCursor,
-  type DataSfSourcesGateway,
+  createDataSfGateway,
+  type DataSfCursor,
+  type DataSfGateway,
 } from "./gateway.ts";
 
 const keySchema = z
@@ -46,7 +50,7 @@ export async function ingestDataSfSource(
   env: Env,
   observedAt: string,
   source: DataSfSourceName,
-  gateway: DataSfSourcesGateway = createDataSfSourcesGateway({
+  gateway: DataSfGateway = createDataSfGateway({
     fetch,
     appToken: env.SOCRATA_APP_TOKEN,
   }),
@@ -59,21 +63,24 @@ export async function ingestDataSfSource(
   );
 
   if (!cursor.scan) {
-    const since = subtractMinutes(cursor.through, config.overlapMinutes);
+    const since = subtractDataSfMinutes(
+      cursor.through,
+      config.overlapMinutes,
+    );
     const until = await gateway.getUpperWatermark(
       source,
       since,
-      sourceTimeBefore(observedAt, 0),
+      dataSfTimestampBefore(observedAt, 0),
     );
     if (until === null) {
-      await save({
+      await saveBatch({
         db: env.DB,
         ingestion: source,
         observations: [],
         cursor,
         observedAt,
       });
-      return result(source, "complete", 0, 0, 0, cursor);
+      return ingestionResult(source, "complete", 0, 0, 0, cursor);
     }
     cursor = { ...cursor, scan: { since, until } };
   }
@@ -83,7 +90,7 @@ export async function ingestDataSfSource(
   let errors = 0;
 
   while (cursor.scan && batches < MAX_BATCHES_PER_RUN) {
-    const batch = await gateway.getPage({
+    const batch = await gateway.getBatch({
       source,
       ...cursor.scan,
       limit: BATCH_SIZE,
@@ -96,9 +103,9 @@ export async function ingestDataSfSource(
         }
       : {
           ...cursor,
-          scan: { ...cursor.scan, after: requireNext(source, batch.next) },
+          scan: { ...cursor.scan, after: requireCursor(source, batch.next) },
         };
-    await save({
+    await saveBatch({
       db: env.DB,
       ingestion: source,
       observations: batch.observations,
@@ -111,7 +118,7 @@ export async function ingestDataSfSource(
     errors += batch.errors.length;
   }
 
-  return result(
+  return ingestionResult(
     source,
     cursor.scan ? "in_progress" : "complete",
     batches,
@@ -131,28 +138,28 @@ function readCursor(
   }
   const config = getDataSfSourceConfig(source);
   return {
-    collectingSince: sourceTimeBefore(
+    collectingSince: dataSfTimestampBefore(
       observedAt,
       config.initialWindowMinutes,
     ),
-    through: sourceTimeBefore(
+    through: dataSfTimestampBefore(
       observedAt,
       config.initialWindowMinutes - config.overlapMinutes,
     ),
   };
 }
 
-function requireNext(
+function requireCursor(
   source: DataSfSourceName,
-  next: DataSfSourceCursor | undefined,
-): DataSfSourceCursor {
+  next: DataSfCursor | undefined,
+): DataSfCursor {
   if (!next) {
     throw new Error(`an unfinished ${source} batch needs a cursor`);
   }
   return next;
 }
 
-function result(
+function ingestionResult(
   ingestion: DataSfSourceName,
   status: "complete" | "in_progress",
   batches: number,

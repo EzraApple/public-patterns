@@ -1,13 +1,12 @@
 import { z } from "zod";
 
-import type { Env } from "../../environment.ts";
+import { hashJson } from "@/canonicalJson.ts";
+import type { Env } from "@/environment.ts";
+import type { Observation, SourceError } from "@/observation.ts";
 import {
   getIngestionCursor,
-  hashJson,
-  save,
-  type Observation,
-  type SourceError,
-} from "../../observations.ts";
+  saveBatch,
+} from "@/observationStore.ts";
 import {
   createTransitAlertGateway,
   type TransitAlertGateway,
@@ -45,7 +44,7 @@ export async function ingestTransitAlerts(
     observedAt,
     storedCursor: await getIngestionCursor(env.DB, "transit-alerts"),
   });
-  await save({
+  await saveBatch({
     db: env.DB,
     ingestion: "transit-alerts",
     observations: changes.observations,
@@ -94,7 +93,7 @@ export async function getTransitAlertChanges({
   const observations: Observation[] = [];
 
   for (const entity of snapshot.entities) {
-    const hash = await hashEntity(entity);
+    const hash = await hashJson(entity);
     entityHashes[entity.Id] = hash;
     if (cursor.entities[entity.Id] !== hash) {
       observations.push(toObservation(entity, observedAt, updatedAt));
@@ -149,10 +148,6 @@ function translatedText(
       (translation) => translation.Language?.toLowerCase() === "en",
     )?.Text ?? text.Translations[0]?.Text
   );
-}
-
-async function hashEntity(entity: TransitAlertEntity): Promise<string> {
-  return hashJson(entity);
 }
 
 function unixSecondsToIso(seconds: number): string {

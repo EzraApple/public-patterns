@@ -1,8 +1,8 @@
-import type { SourceError } from "../../observations.ts";
+import type { SourceError } from "@/observation.ts";
 import {
   fetchWithRetry,
   type RequestSleep,
-} from "../../sources/request.ts";
+} from "@/sources/request.ts";
 import {
   transitAlertEntitySchema,
   transitAlertFeedSchema,

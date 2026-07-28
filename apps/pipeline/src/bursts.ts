@@ -1,4 +1,4 @@
-import type { Observation } from "./observations.ts";
+import type { Observation } from "./observation.ts";
 import { shiftDay } from "./ingestion.ts";
 
 const minimumObserved = 20;

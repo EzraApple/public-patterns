@@ -1,47 +1,10 @@
-export const sources = [
-  "311",
-  "dispatch-realtime",
-  "dispatch-closed",
-  "fire-ems",
-  "police-incidents",
-  "building-complaints",
-  "traffic-crashes",
-  "health-inspections",
-  "building-permits",
-  "eviction-notices",
-  "transit-alerts",
-] as const;
-export type Source = (typeof sources)[number];
-
-export type Observation = {
-  source: Source;
-  id: string;
-  occurredAt: string;
-  updatedAt: string;
-  observedAt: string;
-  kind: string;
-  area: string | null;
-  data: Record<string, unknown>;
-};
-
-export type SourceError = {
-  source: Source;
-  dataset: string;
-  data: unknown;
-  issues: { path: string; message: string }[];
-};
-
-export type Batch<Cursor> = {
-  observations: Observation[];
-  errors: SourceError[];
-  next?: Cursor;
-  done: boolean;
-};
+import { hashText, serializeJson } from "./canonicalJson.ts";
+import type { Observation, Source, SourceError } from "./observation.ts";
 
 const ROWS_PER_STATEMENT = 100;
 export const BATCH_SIZE = 500;
 
-export async function save({
+export async function saveBatch({
   db,
   ingestion,
   observations,
@@ -59,10 +22,10 @@ export async function save({
   const rows = await Promise.all(observations.map(toObservationWrite));
   await db.batch([
     ...chunks(rows, ROWS_PER_STATEMENT).map((batch) =>
-      observationStatement(db, batch),
+      insertObservations(db, batch),
     ),
     ...chunks(errors, ROWS_PER_STATEMENT).map((batch) =>
-      errorStatement(db, batch, observedAt),
+      insertErrors(db, batch, observedAt),
     ),
     db
       .prepare(
@@ -161,7 +124,7 @@ type ObservationWrite = Omit<Observation, "data"> & {
   dataHash: string;
 };
 
-function observationStatement(
+function insertObservations(
   db: D1Database,
   observations: ObservationWrite[],
 ): D1PreparedStatement {
@@ -186,7 +149,7 @@ function observationStatement(
     .bind(JSON.stringify(observations));
 }
 
-function errorStatement(
+function insertErrors(
   db: D1Database,
   errors: SourceError[],
   observedAt: string,
@@ -238,41 +201,6 @@ async function toObservationWrite(
     dataJson,
     dataHash: await hashText(dataJson),
   };
-}
-
-export async function hashJson(value: unknown): Promise<string> {
-  return hashText(serializeJson(value));
-}
-
-async function hashText(value: string): Promise<string> {
-  const digest = await crypto.subtle.digest(
-    "SHA-256",
-    new TextEncoder().encode(value),
-  );
-  return Array.from(new Uint8Array(digest), (byte) =>
-    byte.toString(16).padStart(2, "0"),
-  ).join("");
-}
-
-function serializeJson(value: unknown): string {
-  return JSON.stringify(sortJson(value));
-}
-
-function sortJson(value: unknown): unknown {
-  if (Array.isArray(value)) {
-    return value.map(sortJson);
-  }
-  if (value !== null && typeof value === "object") {
-    return Object.fromEntries(
-      Object.keys(value)
-        .sort()
-        .map((key) => [
-          key,
-          sortJson((value as Record<string, unknown>)[key]),
-        ]),
-    );
-  }
-  return value;
 }
 
 function chunks<T>(values: T[], size: number): T[][] {
