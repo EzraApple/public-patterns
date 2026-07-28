@@ -2,6 +2,9 @@ import type { Observation } from "./observation.ts";
 import { shiftDay } from "./ingestion.ts";
 import { getCurrentDispatch } from "./features/dispatch/read.ts";
 import {
+  getCurrentHealthInspections,
+} from "./features/healthInspections/read.ts";
+import {
   getCurrent,
   getIngestionCursor,
 } from "./observationStore.ts";
@@ -73,16 +76,38 @@ export async function getBursts(
 
   const start = shiftDay(day, -28);
   const end = shiftDay(day, 1);
-  const observations =
-    source === "dispatch"
-      ? await getCurrentDispatch({ db, start, end })
-      : await getCurrent({ db, source, start, end });
+  const observations = await getDetectorObservations({
+    db,
+    source,
+    start,
+    end,
+  });
   return {
     source,
     day,
     ready: true,
     bursts: findBursts(observations, day),
   };
+}
+
+export async function getDetectorObservations({
+  db,
+  source,
+  start,
+  end,
+}: {
+  db: D1Database;
+  source: BurstSource;
+  start: string;
+  end: string;
+}): Promise<Observation[]> {
+  if (source === "dispatch") {
+    return getCurrentDispatch({ db, start, end });
+  }
+  if (source === "health-inspections") {
+    return getCurrentHealthInspections({ db, start, end });
+  }
+  return getCurrent({ db, source, start, end });
 }
 
 export function findBursts(
