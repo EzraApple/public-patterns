@@ -48,15 +48,17 @@ jobs:
       - name: Run local smoke test
         run: pnpm dev:smoke
 
-  deploy-web:
-    name: Deploy web
+  deploy:
+    name: Deploy
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: checks
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 30
     concurrency:
-      group: public-patterns-web-production
+      group: public-patterns-production
       cancel-in-progress: false
+    env:
+      DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
 
     steps:
       - name: Checkout
@@ -79,10 +81,15 @@ jobs:
 
       - name: Verify Doppler access
         run: doppler secrets --only-names
-        env:
-          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
+
+      - name: Deploy investigator Worker
+        run: doppler run -- pnpm deploy:investigator
+
+      - name: Deploy pipeline Worker
+        run: doppler run -- pnpm deploy:pipeline
+
+      - name: Apply D1 migrations
+        run: doppler run -- pnpm db:migrate:production
 
       - name: Deploy web Worker
         run: doppler run -- pnpm deploy:web
-        env:
-          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}

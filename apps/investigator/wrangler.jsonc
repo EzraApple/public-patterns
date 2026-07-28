@@ -6,7 +6,7 @@
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": false,
   "vars": {
-    "PUBLIC_PATTERNS_ENV": "dev",
+    "PUBLIC_PATTERNS_ENV": "production",
     "SANDBOX_TRANSPORT": "rpc"
   },
   "secrets": {

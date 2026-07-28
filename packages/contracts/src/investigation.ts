@@ -22,6 +22,14 @@ export type InvestigationSubmission = z.infer<
   typeof investigationSubmissionSchema
 >;
 
+export const investigationResultSchema = z.object({
+  id: z.string().min(1),
+  submission: investigationSubmissionSchema,
+  brief: z.string().min(1),
+});
+
+export type InvestigationResult = z.infer<typeof investigationResultSchema>;
+
 function isOutputPath(value: string): boolean {
   const segments = value.split("/");
   return (

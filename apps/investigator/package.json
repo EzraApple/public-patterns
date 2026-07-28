@@ -6,12 +6,14 @@
   "scripts": {
     "build": "wrangler deploy --dry-run --outdir dist",
     "check": "tsc --noEmit && tsc --noEmit -p agent/tsconfig.json",
-    "dev": "wrangler dev --local",
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev --local --var PUBLIC_PATTERNS_ENV:dev",
     "test": "vitest run"
   },
   "dependencies": {
     "@cloudflare/sandbox": "0.12.4",
     "@opencode-ai/plugin": "0.0.0-next-16303",
+    "@public-patterns/contracts": "workspace:*",
     "zod": "^4.4.3"
   },
   "devDependencies": {

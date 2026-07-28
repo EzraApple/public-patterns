@@ -46,8 +46,9 @@ Analysis should become more expensive only as a signal becomes more interesting:
 The current stack is deliberately small:
 
 - **Workers Assets** serves the React application.
-- **A pipeline Worker** ingests sources and runs cheap detectors locally.
+- **A pipeline Worker** ingests sources and runs cheap detectors.
 - **D1** stores observations, source errors, and ingestion cursors.
+- **An investigator Worker** runs one sandboxed agent per selected candidate.
 
 Add infrastructure only when a concrete need appears:
 
@@ -77,9 +78,9 @@ flowchart LR
     Web --> Storage
 ```
 
-Only the web application is deployed initially. The pipeline and investigator
-Workers run locally while ingestion, evaluation, and agent behavior stabilize;
-neither has a deployment workflow yet.
+Production CI deploys the investigator first, then the pipeline and its D1
+migrations, then the web Worker. Private service bindings connect web to
+pipeline and pipeline to investigator. Only the web Worker has a public route.
 
 Within each application, organize code by product feature and keep runtime
 entrypoints thin. Shared packages should appear only after two applications
@@ -195,10 +196,12 @@ call does not qualify. The eventual article may be one paragraph with linked
 sources or a useful visualization; richer presentation is optional.
 
 The investigator is a separate Worker because Containers, model spend, and
-failure isolation differ materially from ingestion. It remains local-only until
-the model credential can stay outside the sandbox behind a short-lived proxy.
-Workflows, persistent sessions, MCP, and R2 remain deferred until an
-investigation demonstrates the need.
+failure isolation differ materially from ingestion. The private workbench is
+the only production trigger, so model spend remains manual. The current
+prototype passes a limited DeepSeek key into each ephemeral sandbox; move that
+credential behind a short-lived proxy before investigations accept untrusted
+inputs or run automatically. Workflows, persistent sessions, MCP, and R2 remain
+deferred until an investigation demonstrates the need.
 
 ## Initial sources and detectors
 

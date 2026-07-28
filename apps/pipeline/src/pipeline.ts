@@ -1,38 +1,26 @@
 import { z } from "zod";
 
-import { findBursts } from "./bursts.ts";
+import { burstSources, getBursts } from "./bursts.ts";
 import { seedDevFixtures } from "./devFixtures.ts";
 import type { Env } from "./environment.ts";
 import { ingestDataSfSource } from "./features/dataSfSources/ingest.ts";
-import {
-  getCurrentDispatch,
-  getDispatchHistory,
-} from "./features/dispatch/read.ts";
+import { getDispatchHistory } from "./features/dispatch/read.ts";
 import { ingestTransitAlerts } from "./features/transitAlerts/ingest.ts";
-import { calendarDaySchema, shiftDay } from "./ingestion.ts";
-import { sources } from "./observation.ts";
+import { calendarDaySchema } from "./ingestion.ts";
 import {
-  getCurrent,
-  getIngestionCursor,
-  getHistory,
-} from "./observationStore.ts";
+  InvestigationUnavailableError,
+  getInvestigation,
+  investigationRequestSchema,
+  investigateBurst,
+} from "./investigations.ts";
+import { sources } from "./observation.ts";
+import { getHistory } from "./observationStore.ts";
 
 export type { Env } from "./environment.ts";
 
 const ingestionSchema = z.enum(sources);
 const observationSourceSchema = z.enum([...sources, "dispatch"]);
-const burstSourceSchema = z.enum([
-  "311",
-  "dispatch",
-  "fire-ems",
-  "police-incidents",
-  "building-complaints",
-  "traffic-crashes",
-  "health-inspections",
-  "building-permits",
-  "eviction-notices",
-]);
-type BurstSource = z.infer<typeof burstSourceSchema>;
+const burstSourceSchema = z.enum(burstSources);
 
 export async function routeRequest(
   request: Request,
@@ -50,6 +38,12 @@ export async function routeRequest(
     );
     if (!ingestion.success) {
       return json({ error: "unknown ingestion source" }, 404);
+    }
+    if (
+      ingestion.data === "transit-alerts" &&
+      !env.TRANSIT_511_API_KEY
+    ) {
+      return json({ error: "transit source is not configured" }, 503);
     }
     const result =
       ingestion.data === "transit-alerts"
@@ -79,6 +73,41 @@ export async function routeRequest(
     }
     return json(await getBursts(env.DB, source.data, day.data));
   }
+  if (request.method === "POST" && url.pathname === "/investigations") {
+    const input = investigationRequestSchema.safeParse(
+      await request.json().catch(() => undefined),
+    );
+    if (!input.success) {
+      return json({ error: "invalid investigation" }, 400);
+    }
+    try {
+      return json(
+        await investigateBurst({
+          db: env.DB,
+          investigator: env.INVESTIGATOR,
+          input: input.data,
+          createdAt: observedAt,
+        }),
+        201,
+      );
+    } catch (error) {
+      if (error instanceof InvestigationUnavailableError) {
+        return json({ error: error.message }, error.status);
+      }
+      console.error("Investigation failed", error);
+      return json({ error: "investigation failed" }, 502);
+    }
+  }
+  if (request.method === "GET" && url.pathname.startsWith("/investigations/")) {
+    const id = url.pathname.slice("/investigations/".length);
+    if (!id) {
+      return json({ error: "investigation id is required" }, 400);
+    }
+    const investigation = await getInvestigation(env.DB, id);
+    return investigation
+      ? json(investigation)
+      : json({ error: "investigation not found" }, 404);
+  }
   if (
     request.method === "POST" &&
     url.pathname === "/dev/seed" &&
@@ -94,51 +123,6 @@ export async function routeRequest(
   }
 
   return json({ error: "not found" }, 404);
-}
-
-async function getBursts(
-  db: D1Database,
-  source: BurstSource,
-  day: string,
-) {
-  const physicalSources =
-    source === "dispatch"
-      ? (["dispatch-realtime", "dispatch-closed"] as const)
-      : ([source] as const);
-  const cursors = await Promise.all(
-    physicalSources.map(
-      async (physicalSource) =>
-        (await getIngestionCursor(db, physicalSource)) as
-          | { collectingSince?: string }
-          | undefined,
-    ),
-  );
-  const baselineStart = `${shiftDay(day, -28)}T00:00:00`;
-  if (
-    cursors.some(
-      (cursor) =>
-        !cursor?.collectingSince || cursor.collectingSince > baselineStart,
-    )
-  ) {
-    return { source, day, ready: false, bursts: [] };
-  }
-  const start = shiftDay(day, -28);
-  const end = shiftDay(day, 1);
-  const observations =
-    source === "dispatch"
-      ? await getCurrentDispatch({ db, start, end })
-      : await getCurrent({
-          db,
-          source,
-          start,
-          end,
-        });
-  return {
-    source,
-    day,
-    ready: true,
-    bursts: findBursts(observations, day),
-  };
 }
 
 function json(value: unknown, status = 200): Response {

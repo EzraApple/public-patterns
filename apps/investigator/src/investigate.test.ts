@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { investigationInputSchema } from "./contract.ts";
+import { investigationInputSchema } from "@public-patterns/contracts/investigation";
 import { investigateInSandbox } from "./investigate.ts";
 
 function createSandbox(
