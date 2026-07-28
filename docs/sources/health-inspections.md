@@ -57,10 +57,14 @@ twice. No pair disagreed on status, DBA, or address; four pairs differed in
 `total_time` or publication timestamps.
 
 The working read model treats that composite, plus inspection type when
-present, as one inspection and keeps one deterministic representative. Rows
-missing permit number or inspector remain separate. Raw Socrata rows are still
-retained, because this composite has only been checked against one
-duplicate-heavy slice.
+present, as one inspection for detector counts. Rows missing permit number or
+inspector remain separate.
+
+A full-dataset check later that day found 332 repeated composites. Within those
+groups, 166 had different violation codes and 46 had different facility
+statuses. These are evidence-bearing component rows, not safe replacements.
+Investigations therefore receive every row behind a selected inspection even
+though the detector counts the group once. Raw Socrata rows remain retained.
 
 ## Current local ingestion
 
@@ -92,5 +96,5 @@ evidence should snapshot rows rather than rely on `:id` remaining addressable.
 
 - Is Socrata `:id` stable across refreshes and corrections?
 - Does permit number + inspection date + inspector + optional inspection type
-  remain unique across other dates?
+  always represent exactly one inspection?
 - Is the actual publication cadence daily or monthly?

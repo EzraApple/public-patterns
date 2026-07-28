@@ -25,11 +25,9 @@ await writeFile(
         submission: {
           outcome: "investigate",
           confidence: 0.8,
-          briefPath: "output/brief.md",
           evidence: [
             "nearby:" + input.case.nearbyObservations.length
-          ],
-          artifacts: []
+          ]
         },
         brief: "# Fixture investigation"
       });

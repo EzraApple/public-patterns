@@ -1,7 +1,12 @@
 import type { Observation } from "@/observation.ts";
 import { getCurrent } from "@/observationStore.ts";
 
-export async function getCurrentHealthInspections({
+type InspectionGroup = {
+  representative: Observation;
+  observations: Observation[];
+};
+
+export async function getInspectionRepresentatives({
   db,
   start,
   end,
@@ -10,7 +15,7 @@ export async function getCurrentHealthInspections({
   start: string;
   end: string;
 }): Promise<Observation[]> {
-  return dedupeInspections(
+  return selectInspectionRepresentatives(
     await getCurrent({
       db,
       source: "health-inspections",
@@ -20,23 +25,55 @@ export async function getCurrentHealthInspections({
   );
 }
 
-export function dedupeInspections(
+export function selectInspectionRepresentatives(
   observations: Observation[],
 ): Observation[] {
-  const inspections = new Map<string, Observation>();
+  return groupInspections(observations)
+    .map(({ representative }) => representative)
+    .sort(compareObservations);
+}
+
+export function getInspectionEvidence(
+  observations: Observation[],
+  selectedIds: Set<string>,
+): Observation[] {
+  return groupInspections(observations)
+    .filter(({ representative }) => selectedIds.has(representative.id))
+    .flatMap(({ observations }) => observations)
+    .sort(compareObservations);
+}
+
+function groupInspections(
+  observations: Observation[],
+): InspectionGroup[] {
+  const groups = new Map<string, InspectionGroup>();
 
   for (const observation of observations) {
     const key = inspectionKey(observation);
-    const current = inspections.get(key);
-    if (!current || compareVersions(current, observation) < 0) {
-      inspections.set(key, observation);
+    const group = groups.get(key);
+    if (!group) {
+      groups.set(key, {
+        representative: observation,
+        observations: [observation],
+      });
+      continue;
+    }
+    group.observations.push(observation);
+    if (compareRepresentatives(group.representative, observation) < 0) {
+      group.representative = observation;
     }
   }
 
-  return [...inspections.values()].sort(
-    (left, right) =>
-      left.occurredAt.localeCompare(right.occurredAt) ||
-      left.id.localeCompare(right.id),
+  return [...groups.values()];
+}
+
+function compareObservations(
+  left: Observation,
+  right: Observation,
+): number {
+  return (
+    left.occurredAt.localeCompare(right.occurredAt) ||
+    left.id.localeCompare(right.id)
   );
 }
 
@@ -54,15 +91,29 @@ function inspectionKey(observation: Observation): string {
   ]);
 }
 
-function compareVersions(
+function compareRepresentatives(
   left: Observation,
   right: Observation,
 ): number {
   return (
+    statusRank(left) - statusRank(right) ||
     left.updatedAt.localeCompare(right.updatedAt) ||
     left.observedAt.localeCompare(right.observedAt) ||
     left.id.localeCompare(right.id)
   );
+}
+
+function statusRank(observation: Observation): number {
+  switch (sourceString(observation.data.facility_rating_status)) {
+    case "Closure":
+      return 3;
+    case "Conditional Pass":
+      return 2;
+    case "Pass":
+      return 1;
+    default:
+      return 0;
+  }
 }
 
 function sourceString(value: unknown): string | undefined {

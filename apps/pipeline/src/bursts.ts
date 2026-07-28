@@ -2,7 +2,7 @@ import type { Observation } from "./observation.ts";
 import { shiftDay } from "./ingestion.ts";
 import { getCurrentDispatch } from "./features/dispatch/read.ts";
 import {
-  getCurrentHealthInspections,
+  getInspectionRepresentatives,
 } from "./features/healthInspections/read.ts";
 import {
   getCurrent,
@@ -105,7 +105,7 @@ export async function getDetectorObservations({
     return getCurrentDispatch({ db, start, end });
   }
   if (source === "health-inspections") {
-    return getCurrentHealthInspections({ db, start, end });
+    return getInspectionRepresentatives({ db, start, end });
   }
   return getCurrent({ db, source, start, end });
 }

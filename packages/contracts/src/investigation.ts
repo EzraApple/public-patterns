@@ -14,8 +14,6 @@ export const investigationSubmissionSchema = z.object({
     .string()
     .refine(isOutputPath, "briefPath must be a file under output/"),
   evidence: z.array(z.string()),
-  artifacts: z
-    .array(z.string().refine(isOutputPath, "artifacts must be under output/")),
 });
 
 export type InvestigationSubmission = z.infer<
@@ -24,7 +22,7 @@ export type InvestigationSubmission = z.infer<
 
 export const investigationResultSchema = z.object({
   id: z.string().min(1),
-  submission: investigationSubmissionSchema,
+  submission: investigationSubmissionSchema.omit({ briefPath: true }),
   brief: z.string().min(1),
 });
 
