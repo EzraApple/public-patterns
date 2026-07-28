@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -8,8 +8,41 @@ import { stripVTControlCharacters } from "node:util";
 const pipelineDirectory = fileURLToPath(
   new URL("../apps/pipeline", import.meta.url),
 );
+const repository = fileURLToPath(new URL("..", import.meta.url));
 const stateDirectory = await mkdtemp(
   path.join(tmpdir(), "public-patterns-pipeline-"),
+);
+const mockWorkerPath = path.join(stateDirectory, "investigator.mjs");
+const mockConfigPath = path.join(stateDirectory, "wrangler.json");
+
+await writeFile(
+  mockWorkerPath,
+  `export default {
+    async fetch(request) {
+      const input = await request.json();
+      return Response.json({
+        id: input.id,
+        submission: {
+          outcome: "investigate",
+          confidence: 0.8,
+          briefPath: "output/brief.md",
+          evidence: [
+            "nearby:" + input.case.nearbyObservations.length
+          ],
+          artifacts: []
+        },
+        brief: "# Fixture investigation"
+      });
+    }
+  };`,
+);
+await writeFile(
+  mockConfigPath,
+  JSON.stringify({
+    name: "public-patterns-investigator",
+    main: mockWorkerPath,
+    compatibility_date: "2026-07-28",
+  }),
 );
 
 const run = (arguments_) =>
@@ -53,6 +86,10 @@ const server = spawn(
     "exec",
     "wrangler",
     "dev",
+    "--config",
+    path.join(pipelineDirectory, "wrangler.jsonc"),
+    "--config",
+    mockConfigPath,
     "--local",
     "--port",
     "0",
@@ -64,7 +101,7 @@ const server = spawn(
     "ENABLE_DEV_FIXTURES:true",
   ],
   {
-    cwd: pipelineDirectory,
+    cwd: repository,
     env: { ...process.env, CI: "1" },
     stdio: ["ignore", "pipe", "pipe"],
   },
@@ -181,7 +218,41 @@ try {
     );
   }
 
-  console.log("Pipeline Worker+D1 observation smoke test passed");
+  const investigationResponse = await fetch(`${origin}/investigations`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      source: "311",
+      day: "2026-07-23",
+      kind: "Noise Report",
+      area: "Mission",
+    }),
+  });
+  const investigation = await investigationResponse.json();
+  if (
+    investigationResponse.status !== 201 ||
+    investigation.submission?.outcome !== "investigate" ||
+    investigation.submission?.evidence?.[0] !== "nearby:22" ||
+    investigation.brief !== "# Fixture investigation"
+  ) {
+    throw new Error(
+      `Investigation handoff failed: ${JSON.stringify(investigation)}`,
+    );
+  }
+
+  const savedResponse = await fetch(
+    `${origin}/investigations/${investigation.id}`,
+  );
+  const saved = await savedResponse.json();
+  if (
+    !savedResponse.ok ||
+    saved.id !== investigation.id ||
+    saved.brief !== investigation.brief
+  ) {
+    throw new Error(`Investigation was not saved: ${JSON.stringify(saved)}`);
+  }
+
+  console.log("Pipeline Worker+D1 investigation smoke test passed");
 } catch (error) {
   throw new Error(`${error.message}\n${serverOutput}`);
 } finally {

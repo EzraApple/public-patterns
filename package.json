@@ -8,8 +8,11 @@
   "scripts": {
     "build": "pnpm --filter @public-patterns/web build && pnpm --filter @public-patterns/pipeline build && pnpm --filter @public-patterns/investigator build",
     "build:dev": "pnpm --filter @public-patterns/web build:dev",
-    "check": "pnpm --filter @public-patterns/web check && pnpm --filter @public-patterns/pipeline check && pnpm --filter @public-patterns/investigator check",
+    "check": "pnpm --filter @public-patterns/contracts check && pnpm --filter @public-patterns/web check && pnpm --filter @public-patterns/pipeline check && pnpm --filter @public-patterns/investigator check",
     "deploy:web": "pnpm --filter @public-patterns/web run deploy",
+    "deploy:pipeline": "pnpm --filter @public-patterns/pipeline run deploy",
+    "deploy:investigator": "pnpm --filter @public-patterns/investigator run deploy",
+    "db:migrate:production": "pnpm --filter @public-patterns/pipeline run db:migrate:production",
     "deploy:web:dev:ci": "pnpm --filter @public-patterns/web run deploy:dev:ci",
     "dev": "pnpm --filter @public-patterns/web dev",
     "dev:pipeline": "pnpm --filter @public-patterns/pipeline dev",
@@ -21,6 +24,6 @@
     "eval:investigator": "node experiments/investigator/evaluate.mjs",
     "eval:research": "uv run experiments/clustering/evaluate.py --baseline experiments/clustering/research/*.json",
     "eval:recurrence": "uv run experiments/recurrence/evaluate.py experiments/recurrence/cases/*.json",
-    "test": "node --test experiments/investigator/evaluate.test.mjs && pnpm --filter @public-patterns/pipeline test && pnpm --filter @public-patterns/pipeline test:integration && pnpm --filter @public-patterns/investigator test"
+    "test": "node --test experiments/investigator/evaluate.test.mjs && pnpm --filter @public-patterns/web test && pnpm --filter @public-patterns/pipeline test && pnpm --filter @public-patterns/pipeline test:integration && pnpm --filter @public-patterns/investigator test"
   }
 }

@@ -108,6 +108,40 @@ export async function getHistory({
   return result.results.map(toObservation);
 }
 
+export async function getCurrentByArea({
+  db,
+  area,
+  start,
+  end,
+}: {
+  db: D1Database;
+  area: string;
+  start: string;
+  end: string;
+}): Promise<Observation[]> {
+  const result = await db
+    .prepare(
+      `WITH ranked AS (
+         SELECT *,
+                row_number() OVER (
+                  PARTITION BY source, id
+                  ORDER BY updated_at DESC, observed_at DESC, data_hash DESC
+                ) AS position
+         FROM observations
+         WHERE area = ?
+       )
+       SELECT source, id, occurred_at, updated_at, observed_at,
+              kind, area, data_json
+       FROM ranked
+       WHERE position = 1 AND occurred_at >= ? AND occurred_at < ?
+       ORDER BY occurred_at, source, id`,
+    )
+    .bind(area, start, end)
+    .all<ObservationRow>();
+
+  return result.results.map(toObservation);
+}
+
 type ObservationRow = {
   source: Source;
   id: string;

@@ -2,7 +2,7 @@ import {
   investigationSubmissionSchema,
   type InvestigationInput,
   type InvestigationSubmission,
-} from "./contract.ts";
+} from "@public-patterns/contracts/investigation";
 import type { Env } from "./environment.ts";
 type InvestigationSandbox = {
   mkdir(path: string, options: { recursive: boolean }): Promise<unknown>;

@@ -1,4 +1,5 @@
 import { GoldenGateScene } from "@/features/landing/GoldenGateScene";
+import { Lab } from "@/features/lab/Lab";
 
 const links = [
   {
@@ -36,6 +37,10 @@ function SocialIcon({ icon }: { icon: (typeof links)[number]["icon"] }) {
 }
 
 export function App() {
+  if (window.location.pathname === "/_lab") {
+    return <Lab />;
+  }
+
   return (
     <main className="landing">
       <div className="atmosphere" aria-hidden="true" />

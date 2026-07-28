@@ -212,3 +212,120 @@ h1 {
     transform: none;
   }
 }
+
+.lab {
+  width: min(100% - 2rem, 64rem);
+  height: 100svh;
+  margin: auto;
+  padding: 3rem 0 6rem;
+  overflow-y: auto;
+}
+
+.lab header {
+  margin-bottom: 2rem;
+}
+
+.lab header p {
+  margin: 0 0 0.4rem;
+  color: #e6533b;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.lab h1 {
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+}
+
+.lab h2 {
+  margin: 0 0 0.5rem;
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 400;
+}
+
+.lab section,
+.lab > label {
+  display: block;
+  margin-top: 1.5rem;
+  padding: 1.25rem;
+  border: 1px solid rgba(39, 99, 126, 0.18);
+  border-radius: 0.75rem;
+  background: white;
+}
+
+.lab label {
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.lab label input {
+  display: block;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.lab input,
+.lab select,
+.lab button {
+  min-height: 2.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid rgba(39, 99, 126, 0.3);
+  border-radius: 0.35rem;
+  color: inherit;
+  background: white;
+  font: inherit;
+}
+
+.lab button {
+  border-color: #173d55;
+  color: white;
+  background: #173d55;
+  cursor: pointer;
+}
+
+.lab button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.lab-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.lab-burst {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.75rem;
+  padding: 0.85rem;
+  border-radius: 0.5rem;
+  background: #f3f8fa;
+}
+
+.lab-burst div,
+.lab-burst span {
+  display: block;
+}
+
+.lab-burst span {
+  margin-top: 0.2rem;
+  color: #53758a;
+  font-size: 0.8rem;
+}
+
+.lab pre {
+  max-height: 32rem;
+  margin: 1rem 0 0;
+  padding: 1rem;
+  overflow: auto;
+  border-radius: 0.5rem;
+  color: #dceef5;
+  background: #102d3f;
+  font-size: 0.75rem;
+  white-space: pre-wrap;
+}

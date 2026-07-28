@@ -7,11 +7,14 @@
     "build": "wrangler deploy --dry-run --outdir dist",
     "check": "tsc --noEmit",
     "db:migrate:local": "wrangler d1 migrations apply public-patterns-pipeline --local",
-    "dev": "wrangler dev --local",
+    "db:migrate:production": "wrangler d1 migrations apply public-patterns-pipeline --remote",
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev --local --var PUBLIC_PATTERNS_ENV:dev",
     "test": "vitest run",
     "test:integration": "node ../../scripts/smoke-pipeline.mjs"
   },
   "dependencies": {
+    "@public-patterns/contracts": "workspace:*",
     "zod": "^4.4.3"
   },
   "devDependencies": {

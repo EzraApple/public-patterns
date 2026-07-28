@@ -1,9 +1,28 @@
 import type { Observation } from "./observation.ts";
 import { shiftDay } from "./ingestion.ts";
+import { getCurrentDispatch } from "./features/dispatch/read.ts";
+import {
+  getCurrent,
+  getIngestionCursor,
+} from "./observationStore.ts";
 
 const minimumObserved = 20;
 const minimumExcess = 15;
 const minimumRatio = 2.5;
+
+export const burstSources = [
+  "311",
+  "dispatch",
+  "fire-ems",
+  "police-incidents",
+  "building-complaints",
+  "traffic-crashes",
+  "health-inspections",
+  "building-permits",
+  "eviction-notices",
+] as const;
+
+export type BurstSource = (typeof burstSources)[number];
 
 export type Burst = {
   day: string;
@@ -14,6 +33,57 @@ export type Burst = {
   ratio: number;
   observationIds: string[];
 };
+
+export type BurstResult = {
+  source: BurstSource;
+  day: string;
+  ready: boolean;
+  bursts: Burst[];
+};
+
+export async function getBursts(
+  db: D1Database,
+  source: BurstSource,
+  day: string,
+): Promise<BurstResult> {
+  const physicalSources =
+    source === "dispatch"
+      ? (["dispatch-realtime", "dispatch-closed"] as const)
+      : ([source] as const);
+  const cursors = await Promise.all(
+    physicalSources.map((physicalSource) =>
+      getIngestionCursor(db, physicalSource),
+    ),
+  );
+  const baselineStart = `${shiftDay(day, -28)}T00:00:00`;
+  if (
+    cursors.some((value) => {
+      const cursor = value as
+        | { collectingSince?: string; scan?: unknown }
+        | undefined;
+      return (
+        !cursor?.collectingSince ||
+        cursor.collectingSince > baselineStart ||
+        cursor.scan !== undefined
+      );
+    })
+  ) {
+    return { source, day, ready: false, bursts: [] };
+  }
+
+  const start = shiftDay(day, -28);
+  const end = shiftDay(day, 1);
+  const observations =
+    source === "dispatch"
+      ? await getCurrentDispatch({ db, start, end })
+      : await getCurrent({ db, source, start, end });
+  return {
+    source,
+    day,
+    ready: true,
+    bursts: findBursts(observations, day),
+  };
+}
 
 export function findBursts(
   observations: Observation[],

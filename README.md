@@ -22,12 +22,13 @@ research lives in [`docs/sources/`](./docs/sources/).
 
 ## Status
 
-The repository has a small coming-soon site plus local ingestion for 311,
+The repository has a small coming-soon site plus ingestion for 311,
 law-enforcement dispatch, Fire/EMS responses, police incidents, building
 complaints and permits, injury crashes, health inspections, eviction notices,
-and 511 transit alerts. The pipeline stores append-only observations in local
-D1 and derives experimental signals on demand. A local investigator can analyze
-one candidate inside an ephemeral sandbox. Neither Worker is deployed.
+and 511 transit alerts. The pipeline stores append-only observations in D1 and
+derives experimental signals on demand. An investigator can analyze one
+candidate inside an ephemeral sandbox. Production CI deploys all three Workers,
+applies D1 migrations, and rotates ingestion across sources every five minutes.
 
 ## Development
 
@@ -64,8 +65,18 @@ DeepSeek request.
 
 `pnpm dev:smoke` verifies the web application locally. A separately named
 `public-patterns-web-dev` Worker can be deployed only through the manual
-**Deploy dev** GitHub Actions workflow. CI deploys only the web Worker; the
-pipeline and investigator have no remote deployment workflow.
+**Deploy dev** GitHub Actions workflow.
+
+The production site exposes no internal API without authorization. `/_lab`
+provides a private manual workbench for ingestion, burst detection, and
+investigation. Retrieve its bearer token from the production Doppler config:
+
+```sh
+doppler secrets get LAB_TOKEN --plain --config prd
+```
+
+The 511 adapter deploys but remains disabled until
+`TRANSIT_511_API_KEY` is added to the production Worker.
 
 Node 22 or newer is required.
 

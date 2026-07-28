@@ -6,6 +6,15 @@
   "vars": {
     "PUBLIC_PATTERNS_ENV": "production"
   },
+  "secrets": {
+    "required": ["LAB_TOKEN"]
+  },
+  "services": [
+    {
+      "binding": "PIPELINE",
+      "service": "public-patterns-pipeline"
+    }
+  ],
   "assets": {
     "not_found_handling": "single-page-application",
     "run_worker_first": ["/api/*"]
@@ -29,7 +38,13 @@
       "routes": [],
       "vars": {
         "PUBLIC_PATTERNS_ENV": "dev"
-      }
+      },
+      "services": [
+        {
+          "binding": "PIPELINE",
+          "service": "public-patterns-pipeline-dev"
+        }
+      ]
     }
   }
 }
