@@ -1,0 +1,61 @@
+{
+  "id": "sf-pride-weekends-2024-2026",
+  "note": "Three Pride weekends compared with four nearby weekend controls per year across five event-adjacent neighborhoods. Police and Fire/EMS rise consistently; broad 311 volume does not corroborate.",
+  "role": "cross-source-recurrence-mixed",
+  "targetEvidence": [
+    "https://cdn.sfpride.org/docs/meetings/20240605-sfpride-board-packet.pdf",
+    "https://cdn.sfpride.org/insidepride/2025-sfpride-insidepride.pdf",
+    "https://www.sfmta.com/travel-updates/san-francisco-pride-festival-weekend-saturday-sunday-june-27-28-2026"
+  ],
+  "targetWindows": [
+    "2024-06-29",
+    "2025-06-28",
+    "2026-06-27"
+  ],
+  "controlWindows": [
+    "2024-06-08",
+    "2024-06-15",
+    "2024-07-13",
+    "2024-07-20",
+    "2025-06-07",
+    "2025-06-14",
+    "2025-07-12",
+    "2025-07-19",
+    "2026-06-06",
+    "2026-06-13",
+    "2026-07-11",
+    "2026-07-18"
+  ],
+  "limitations": [
+    "The counts are a frozen 2026-07-27 snapshot; live datasets and event pages may later change."
+  ],
+  "series": [
+    {
+      "source": "fire-ems",
+      "dataset": "nuek-vuh3",
+      "capturedOn": "2026-07-27",
+      "query": "For each listed Saturday {D}: SELECT count(DISTINCT call_number) AS calls WHERE received_dttm >= '{D}T00:00:00' AND received_dttm < '{D+2}T00:00:00' AND neighborhoods_analysis_boundaries IN ('Financial District/South Beach','South of Market','Tenderloin','Hayes Valley','Castro/Upper Market')",
+      "targets": [408, 380, 394],
+      "controls": [327, 324, 359, 336, 339, 317, 374, 295, 335, 342, 350, 327]
+    },
+    {
+      "source": "police-incidents",
+      "dataset": "wg3w-h783",
+      "capturedOn": "2026-07-27",
+      "query": "For each listed Saturday {D}: SELECT count(DISTINCT incident_id) AS incidents WHERE incident_datetime >= '{D}T00:00:00' AND incident_datetime < '{D+2}T00:00:00' AND analysis_neighborhood IN ('Financial District/South Beach','South of Market','Tenderloin','Hayes Valley','Castro/Upper Market')",
+      "targets": [323, 183, 190],
+      "controls": [125, 131, 151, 137, 130, 101, 120, 107, 119, 124, 122, 104]
+    },
+    {
+      "source": "311",
+      "dataset": "vw6y-z8j6",
+      "capturedOn": "2026-07-27",
+      "query": "For each listed Saturday {D}: SELECT count(DISTINCT service_request_id) AS requests WHERE requested_datetime >= '{D}T00:00:00' AND requested_datetime < '{D+2}T00:00:00' AND analysis_neighborhood IN ('Financial District/South Beach','South of Market','Tenderloin','Hayes Valley','Castro/Upper Market')",
+      "targets": [656, 912, 890],
+      "controls": [564, 498, 698, 620, 923, 988, 908, 1211, 1098, 1165, 1004, 1002]
+    }
+  ],
+  "expect": {
+    "classification": "mixed"
+  }
+}

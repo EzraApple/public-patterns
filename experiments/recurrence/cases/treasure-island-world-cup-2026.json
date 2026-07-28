@@ -1,0 +1,52 @@
+{
+  "id": "treasure-island-world-cup-2026",
+  "note": "Five advertised watch-party dates compared with nine pre-festival controls; 311 falls while dispatch rises.",
+  "role": "mixed-signal-negative",
+  "targetEvidence": [
+    "https://goldbarwhiskey.com/pages/celebration-of-nations"
+  ],
+  "targetWindows": [
+    "2026-06-19",
+    "2026-06-20",
+    "2026-06-25",
+    "2026-06-26",
+    "2026-06-27"
+  ],
+  "controlWindows": [
+    "2026-05-15",
+    "2026-05-16",
+    "2026-05-22",
+    "2026-05-23",
+    "2026-05-29",
+    "2026-05-30",
+    "2026-06-04",
+    "2026-06-11",
+    "2026-06-18"
+  ],
+  "limitations": [
+    "The aggregate counts are a frozen 2026-07-26 snapshot; live datasets and the event page may later change.",
+    "June 11 and June 18 fall within the wider World Cup period, and the June 19 target is Juneteenth, so the comparison cannot isolate watch-party effects.",
+    "The grouped queries omit dates with zero rows; stored zeroes explicitly fill those absent dates."
+  ],
+  "series": [
+    {
+      "source": "311",
+      "dataset": "vw6y-z8j6",
+      "capturedOn": "2026-07-26",
+      "query": "SELECT date_trunc_ymd(requested_datetime) AS day, count(*) AS n WHERE requested_datetime >= '2026-05-15T00:00:00' AND requested_datetime < '2026-06-28T00:00:00' AND analysis_neighborhood = 'Treasure Island' GROUP BY day ORDER BY day LIMIT 5000",
+      "targets": [0, 0, 2, 0, 0],
+      "controls": [1, 2, 1, 0, 3, 1, 2, 3, 2]
+    },
+    {
+      "source": "dispatch-closed",
+      "dataset": "2zdj-bwza",
+      "capturedOn": "2026-07-26",
+      "query": "SELECT date_trunc_ymd(received_datetime) AS day, count(*) AS n WHERE received_datetime >= '2026-05-15T00:00:00' AND received_datetime < '2026-06-28T00:00:00' AND analysis_neighborhood = 'Treasure Island' GROUP BY day ORDER BY day LIMIT 5000",
+      "targets": [4, 13, 2, 6, 4],
+      "controls": [3, 5, 2, 3, 1, 4, 2, 6, 4]
+    }
+  ],
+  "expect": {
+    "classification": "mixed"
+  }
+}

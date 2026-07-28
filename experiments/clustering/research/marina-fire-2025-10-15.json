@@ -1,0 +1,109 @@
+{
+  "id": "marina-fire-2025-10-15",
+  "evalRole": "research-linkage",
+  "note": "One confirmed three-alarm fire represented by five of 40 Fire/EMS unit-response rows, one dispatch call, and one police fire report. Unit rows are not independent events.",
+  "capturedAt": "2026-07-27",
+  "expectedBaselineOutcome": "fail: the privacy-displaced police report is about 130 meters from the shared Fire/EMS and dispatch point",
+  "evidenceUrls": [
+    "https://www.kqed.org/news/12059958/three-firefighters-injured-in-sf-marina-district-blaze"
+  ],
+  "limitations": [
+    "The records are a frozen snapshot; live source queries and reporting may later change."
+  ],
+  "sourceQueries": [
+    "https://data.sfgov.org/resource/nuek-vuh3.json?$where=call_number%3D%27252880356%27",
+    "https://data.sfgov.org/resource/2zdj-bwza.json?$where=cad_number%3D%27252880366%27",
+    "https://data.sfgov.org/resource/wg3w-h783.json?$where=row_id%3D%27151887168000%27"
+  ],
+  "expect": {
+    "clusters": [
+      {
+        "anchor": "fire-ems:252880356-AR1",
+        "minimumSize": 6,
+        "sources": ["dispatch-closed", "fire-ems", "police-incidents"]
+      }
+    ]
+  },
+  "datasets": [
+    {
+      "source": "fire-ems",
+      "sampleOfRows": 40,
+      "rows": [
+        {
+          "rowid": "252880356-AR1",
+          "received_dttm": "2025-10-15T04:14:14.000",
+          "call_type": "Structure Fire / Smoke in Building",
+          "case_location": {
+            "type": "Point",
+            "coordinates": [-122.445965371, 37.799580911]
+          }
+        },
+        {
+          "rowid": "252880356-B01",
+          "received_dttm": "2025-10-15T04:14:14.000",
+          "call_type": "Structure Fire / Smoke in Building",
+          "case_location": {
+            "type": "Point",
+            "coordinates": [-122.445965371, 37.799580911]
+          }
+        },
+        {
+          "rowid": "252880356-B02",
+          "received_dttm": "2025-10-15T04:14:14.000",
+          "call_type": "Structure Fire / Smoke in Building",
+          "case_location": {
+            "type": "Point",
+            "coordinates": [-122.445965371, 37.799580911]
+          }
+        },
+        {
+          "rowid": "252880356-B04",
+          "received_dttm": "2025-10-15T04:14:14.000",
+          "call_type": "Structure Fire / Smoke in Building",
+          "case_location": {
+            "type": "Point",
+            "coordinates": [-122.445965371, 37.799580911]
+          }
+        },
+        {
+          "rowid": "252880356-B05",
+          "received_dttm": "2025-10-15T04:14:14.000",
+          "call_type": "Structure Fire / Smoke in Building",
+          "case_location": {
+            "type": "Point",
+            "coordinates": [-122.445965371, 37.799580911]
+          }
+        }
+      ]
+    },
+    {
+      "source": "dispatch-closed",
+      "rows": [
+        {
+          "cad_number": "252880366",
+          "received_datetime": "2025-10-15T04:22:01.000",
+          "call_type_original_desc": "FULL BOX",
+          "intersection_point": {
+            "type": "Point",
+            "coordinates": [-122.445965371, 37.799580911]
+          }
+        }
+      ]
+    },
+    {
+      "source": "police-incidents",
+      "rows": [
+        {
+          "row_id": "151887168000",
+          "incident_datetime": "2025-10-15T04:21:00.000",
+          "incident_category": "Fire Report",
+          "incident_description": "Fire Report",
+          "point": {
+            "type": "Point",
+            "coordinates": [-122.444519043, 37.799766541]
+          }
+        }
+      ]
+    }
+  ]
+}

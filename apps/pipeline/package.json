@@ -1,0 +1,23 @@
+{
+  "name": "@public-patterns/pipeline",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "wrangler deploy --dry-run --outdir dist",
+    "check": "tsc --noEmit",
+    "db:migrate:local": "wrangler d1 migrations apply public-patterns-pipeline --local",
+    "dev": "wrangler dev --local",
+    "test": "vitest run",
+    "test:integration": "node ../../scripts/smoke-pipeline.mjs"
+  },
+  "dependencies": {
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260724.1",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10",
+    "wrangler": "^4.114.0"
+  }
+}

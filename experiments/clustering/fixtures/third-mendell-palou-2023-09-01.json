@@ -1,0 +1,130 @@
+{
+  "id": "third-mendell-palou-2023-09-01",
+  "evalRole": "detection-positive",
+  "note": "A mixed-classification response episode, not six independent incidents.",
+  "selection": "All 6 calls at the target intersection plus 3 distant calls from the same hour.",
+  "sourceQueries": [
+    "https://data.sfgov.org/resource/2zdj-bwza.json?$select=cad_number,received_datetime,call_type_original_desc,onview_flag,disposition,intersection_point&$where=cad_number%20in(%27232442759%27,%27232442782%27,%27232442787%27,%27232442841%27,%27232442861%27,%27232442873%27)&$order=received_datetime,cad_number",
+    "https://data.sfgov.org/resource/2zdj-bwza.json?$select=cad_number,received_datetime,call_type_original_desc,onview_flag,disposition,intersection_point&$where=received_datetime%20%3E=%20%272023-09-01T19:00:00%27%20AND%20received_datetime%20%3C%20%272023-09-01T20:00:00%27%20AND%20intersection_point%20is%20not%20null%20AND%20intersection_name%20!=%20%2703RD%20ST%20%5C%20MENDELL%20ST%20%5C%20PALOU%20AVE%27&$order=received_datetime,cad_number&$limit=3"
+  ],
+  "config": {
+    "algorithm": "hdbscan",
+    "spaceScaleMeters": 200,
+    "timeScaleHours": 2,
+    "minimumClusterSize": 5
+  },
+  "expect": {
+    "clusters": [
+      {
+        "anchor": "dispatch:232442841",
+        "minimumSize": 5,
+        "sources": ["dispatch-closed"]
+      }
+    ],
+    "apart": [
+      ["dispatch:232442841", "dispatch:232442758"],
+      ["dispatch:232442841", "dispatch:232442774"]
+    ]
+  },
+  "datasets": [
+    {
+      "source": "dispatch-closed",
+      "rows": [
+        {
+          "cad_number": "232442759",
+          "received_datetime": "2023-09-01T19:00:54.000",
+          "call_type_original_desc": "TRAF VIOLATION CITE",
+          "onview_flag": "N",
+          "disposition": "GOA",
+          "intersection_point": {
+            "type": "Point",
+            "coordinates": [-122.39096789, 37.734013872]
+          }
+        },
+        {
+          "cad_number": "232442782",
+          "received_datetime": "2023-09-01T19:09:06.000",
+          "call_type_original_desc": "PASSING CALL",
+          "onview_flag": "Y",
+          "intersection_point": {
+            "type": "Point",
+            "coordinates": [-122.39096789, 37.734013872]
+          }
+        },
+        {
+          "cad_number": "232442787",
+          "received_datetime": "2023-09-01T19:09:21.000",
+          "call_type_original_desc": "PASSING CALL",
+          "onview_flag": "Y",
+          "intersection_point": {
+            "type": "Point",
+            "coordinates": [-122.39096789, 37.734013872]
+          }
+        },
+        {
+          "cad_number": "232442841",
+          "received_datetime": "2023-09-01T19:25:32.000",
+          "call_type_original_desc": "SHOT SPOTTER",
+          "onview_flag": "N",
+          "intersection_point": {
+            "type": "Point",
+            "coordinates": [-122.39096789, 37.734013872]
+          }
+        },
+        {
+          "cad_number": "232442861",
+          "received_datetime": "2023-09-01T19:31:27.000",
+          "call_type_original_desc": "SHOOTING",
+          "onview_flag": "Y",
+          "disposition": "HAN",
+          "intersection_point": {
+            "type": "Point",
+            "coordinates": [-122.39096789, 37.734013872]
+          }
+        },
+        {
+          "cad_number": "232442873",
+          "received_datetime": "2023-09-01T19:35:33.000",
+          "call_type_original_desc": "VEH ACCIDENT",
+          "onview_flag": "Y",
+          "intersection_point": {
+            "type": "Point",
+            "coordinates": [-122.39096789, 37.734013872]
+          }
+        },
+        {
+          "cad_number": "232442758",
+          "received_datetime": "2023-09-01T19:01:11.000",
+          "call_type_original_desc": "PASSING CALL",
+          "onview_flag": "Y",
+          "intersection_point": {
+            "type": "Point",
+            "coordinates": [-122.41250093, 37.759028146]
+          }
+        },
+        {
+          "cad_number": "232442774",
+          "received_datetime": "2023-09-01T19:03:15.000",
+          "call_type_original_desc": "COMPLAINT UNKN",
+          "onview_flag": "N",
+          "disposition": "NCR",
+          "intersection_point": {
+            "type": "Point",
+            "coordinates": [-122.408036236, 37.786409614]
+          }
+        },
+        {
+          "cad_number": "232442769",
+          "received_datetime": "2023-09-01T19:03:56.000",
+          "call_type_original_desc": "TRAF VIOLATION TOW",
+          "onview_flag": "N",
+          "disposition": "CIT",
+          "intersection_point": {
+            "type": "Point",
+            "coordinates": [-122.420506833, 37.758544721]
+          }
+        }
+      ]
+    }
+  ]
+}

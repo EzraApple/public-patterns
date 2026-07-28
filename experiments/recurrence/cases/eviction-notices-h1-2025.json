@@ -1,0 +1,41 @@
+{
+  "id": "eviction-notices-h1-2025",
+  "note": "Each month in H1 2025 exceeded its 2024 counterpart: 812 notices versus 385.",
+  "role": "long-horizon-positive",
+  "targetEvidence": [
+    "https://www.sfchronicle.com/realestate/article/san-francisco-eviction-notices-20779377.php"
+  ],
+  "targetWindows": [
+    "2025-01-01",
+    "2025-02-01",
+    "2025-03-01",
+    "2025-04-01",
+    "2025-05-01",
+    "2025-06-01"
+  ],
+  "controlWindows": [
+    "2024-01-01",
+    "2024-02-01",
+    "2024-03-01",
+    "2024-04-01",
+    "2024-05-01",
+    "2024-06-01"
+  ],
+  "limitations": [
+    "The monthly counts are a frozen 2026-07-27 snapshot; the live dataset and reporting may later change.",
+    "These are filed eviction notices, not court filings or completed evictions."
+  ],
+  "series": [
+    {
+      "source": "eviction-notices",
+      "dataset": "5cei-gny5",
+      "capturedOn": "2026-07-27",
+      "query": "SELECT date_extract_y(file_date) AS year, date_extract_m(file_date) AS month, count(*) AS notices WHERE file_date BETWEEN '2024-01-01T00:00:00' AND '2025-06-30T23:59:59' GROUP BY year, month ORDER BY year, month",
+      "targets": [119, 128, 131, 177, 153, 104],
+      "controls": [70, 63, 55, 55, 51, 91]
+    }
+  ],
+  "expect": {
+    "classification": "single-source-positive"
+  }
+}

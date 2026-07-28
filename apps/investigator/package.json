@@ -1,0 +1,24 @@
+{
+  "name": "@public-patterns/investigator",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "wrangler deploy --dry-run --outdir dist",
+    "check": "tsc --noEmit && tsc --noEmit -p agent/tsconfig.json",
+    "dev": "wrangler dev --local",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@cloudflare/sandbox": "0.12.4",
+    "@opencode-ai/plugin": "0.0.0-next-16303",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260724.1",
+    "@types/node": "^24.3.0",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10",
+    "wrangler": "^4.114.0"
+  }
+}

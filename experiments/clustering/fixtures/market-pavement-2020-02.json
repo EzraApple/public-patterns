@@ -1,0 +1,169 @@
+{
+  "id": "market-pavement-2020-02",
+  "evalRole": "archived-negative",
+  "note": "Periodic integration-like output that should be detected, then penalized by a future ranking stage.",
+  "selection": "The first 5 target rows on February 6, 8, and 10, plus the first 4 valid distant rows in the five-day window.",
+  "sourceQueries": [
+    "https://data.sfgov.org/resource/vw6y-z8j6.json?$select=service_request_id,requested_datetime,service_name,lat,long&$where=requested_datetime%20%3E=%20%272020-02-06T00:00:00%27%20AND%20requested_datetime%20%3C%20%272020-02-11T00:00:00%27%20AND%20service_name=%27Street%20Defects%27%20AND%20lat%20%3E=%2037.7845%20AND%20lat%20%3C%2037.7855%20AND%20long%20%3E=%20-122.4065%20AND%20long%20%3C%20-122.4055&$order=requested_datetime,service_request_id&$limit=5000",
+    "https://data.sfgov.org/resource/vw6y-z8j6.json?$select=service_request_id,requested_datetime,service_name,lat,long&$where=requested_datetime%20%3E=%20%272020-02-06T00:00:00%27%20AND%20requested_datetime%20%3C%20%272020-02-11T00:00:00%27%20AND%20lat%20%3E=%2037.70%20AND%20lat%20%3C%2037.77&$order=requested_datetime,service_request_id&$limit=4"
+  ],
+  "config": {
+    "algorithm": "hdbscan",
+    "spaceScaleMeters": 200,
+    "timeScaleHours": 48,
+    "minimumClusterSize": 5
+  },
+  "expect": {
+    "clusters": [
+      {
+        "anchor": "311:12045128",
+        "minimumSize": 5,
+        "sources": ["311"]
+      }
+    ],
+    "apart": [
+      ["311:12045128", "311:12045111"],
+      ["311:12045128", "311:12045112"]
+    ]
+  },
+  "datasets": [
+    {
+      "source": "311",
+      "rows": [
+        {
+          "service_request_id": "12045128",
+          "requested_datetime": "2020-02-06T00:24:45.000",
+          "service_name": "Street Defects",
+          "lat": "37.785396575928",
+          "long": "-122.406425476074"
+        },
+        {
+          "service_request_id": "12045153",
+          "requested_datetime": "2020-02-06T01:24:48.000",
+          "service_name": "Street Defects",
+          "lat": "37.785396575928",
+          "long": "-122.406425476074"
+        },
+        {
+          "service_request_id": "12045170",
+          "requested_datetime": "2020-02-06T02:24:40.000",
+          "service_name": "Street Defects",
+          "lat": "37.785396575928",
+          "long": "-122.406425476074"
+        },
+        {
+          "service_request_id": "12045180",
+          "requested_datetime": "2020-02-06T03:24:45.000",
+          "service_name": "Street Defects",
+          "lat": "37.785396575928",
+          "long": "-122.406425476074"
+        },
+        {
+          "service_request_id": "12045203",
+          "requested_datetime": "2020-02-06T04:23:51.000",
+          "service_name": "Street Defects",
+          "lat": "37.785396575928",
+          "long": "-122.406425476074"
+        },
+        {
+          "service_request_id": "12055352",
+          "requested_datetime": "2020-02-08T00:25:10.000",
+          "service_name": "Street Defects",
+          "lat": "37.785396575928",
+          "long": "-122.406425476074"
+        },
+        {
+          "service_request_id": "12055374",
+          "requested_datetime": "2020-02-08T01:24:19.000",
+          "service_name": "Street Defects",
+          "lat": "37.785396575928",
+          "long": "-122.406425476074"
+        },
+        {
+          "service_request_id": "12055402",
+          "requested_datetime": "2020-02-08T02:23:20.000",
+          "service_name": "Street Defects",
+          "lat": "37.785396575928",
+          "long": "-122.406425476074"
+        },
+        {
+          "service_request_id": "12055417",
+          "requested_datetime": "2020-02-08T03:23:18.000",
+          "service_name": "Street Defects",
+          "lat": "37.785396575928",
+          "long": "-122.406425476074"
+        },
+        {
+          "service_request_id": "12055432",
+          "requested_datetime": "2020-02-08T04:23:20.000",
+          "service_name": "Street Defects",
+          "lat": "37.785396575928",
+          "long": "-122.406425476074"
+        },
+        {
+          "service_request_id": "12062489",
+          "requested_datetime": "2020-02-10T00:23:37.000",
+          "service_name": "Street Defects",
+          "lat": "37.785396575928",
+          "long": "-122.406425476074"
+        },
+        {
+          "service_request_id": "12062521",
+          "requested_datetime": "2020-02-10T01:23:40.000",
+          "service_name": "Street Defects",
+          "lat": "37.785396575928",
+          "long": "-122.406425476074"
+        },
+        {
+          "service_request_id": "12062539",
+          "requested_datetime": "2020-02-10T02:23:59.000",
+          "service_name": "Street Defects",
+          "lat": "37.785396575928",
+          "long": "-122.406425476074"
+        },
+        {
+          "service_request_id": "12062556",
+          "requested_datetime": "2020-02-10T03:23:34.000",
+          "service_name": "Street Defects",
+          "lat": "37.785396575928",
+          "long": "-122.406425476074"
+        },
+        {
+          "service_request_id": "12062578",
+          "requested_datetime": "2020-02-10T04:23:42.000",
+          "service_name": "Street Defects",
+          "lat": "37.785396575928",
+          "long": "-122.406425476074"
+        },
+        {
+          "service_request_id": "12045111",
+          "requested_datetime": "2020-02-06T00:01:00.000",
+          "service_name": "Parking Enforcement",
+          "lat": "37.75845498",
+          "long": "-122.39531709"
+        },
+        {
+          "service_request_id": "12045112",
+          "requested_datetime": "2020-02-06T00:01:00.000",
+          "service_name": "MUNI Feedback",
+          "lat": "37.742053985596",
+          "long": "-122.498191833496"
+        },
+        {
+          "service_request_id": "12045137",
+          "requested_datetime": "2020-02-06T00:41:00.000",
+          "service_name": "Parking Enforcement",
+          "lat": "37.708510799937",
+          "long": "-122.456086861776"
+        },
+        {
+          "service_request_id": "12045140",
+          "requested_datetime": "2020-02-06T00:52:00.000",
+          "service_name": "Encampments",
+          "lat": "37.727856607145",
+          "long": "-122.4020539516"
+        }
+      ]
+    }
+  ]
+}

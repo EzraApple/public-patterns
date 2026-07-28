@@ -1,0 +1,39 @@
+{
+  "id": "giants-monday-home-games-2025",
+  "note": "Four 6:45 PM Monday home games compared with four nearby non-home-game Mondays from 6–11 PM.",
+  "role": "weak-recurrence-context",
+  "limitations": [
+    "The 311 bounding box and 700-meter dispatch circle are similar but not identical catchments.",
+    "The May 26 control is Memorial Day and may not represent a typical Monday.",
+    "The counts are a frozen 2026-07-26 snapshot; live datasets and the game schedule may later change."
+  ],
+  "targetEvidence": [
+    "https://www.mlb.com/giants/schedule/2025",
+    "https://statsapi.mlb.com/api/v1/schedule?sportId=1&teamId=137&startDate=2025-03-01&endDate=2025-09-30&hydrate=team,venue"
+  ],
+  "targetWindows": ["2025-04-07", "2025-04-21", "2025-05-12", "2025-05-19"],
+  "controlWindows": ["2025-04-14", "2025-04-28", "2025-05-05", "2025-05-26"],
+  "series": [
+    {
+      "source": "311",
+      "dataset": "vw6y-z8j6",
+      "capturedOn": "2026-07-26",
+      "query": "SELECT date_trunc_ymd(requested_datetime) AS day, service_name, source, count(*) AS n WHERE requested_datetime >= '2025-04-01T00:00:00' AND requested_datetime < '2025-06-01T00:00:00' AND date_extract_dow(requested_datetime) = 1 AND date_extract_hh(requested_datetime) BETWEEN 18 AND 22 AND lat BETWEEN 37.7723 AND 37.7849 AND long BETWEEN -122.3973 AND -122.3813 GROUP BY day, service_name, source ORDER BY day, n DESC LIMIT 5000",
+      "countMethod": "Sum n across every grouped row for each date.",
+      "targets": [6, 10, 4, 4],
+      "controls": [1, 3, 4, 2]
+    },
+    {
+      "source": "dispatch-closed",
+      "dataset": "2zdj-bwza",
+      "capturedOn": "2026-07-26",
+      "query": "SELECT date_trunc_ymd(received_datetime) AS day, call_type_final_desc, agency, onview_flag, count(*) AS n WHERE received_datetime >= '2025-04-01T00:00:00' AND received_datetime < '2025-06-01T00:00:00' AND date_extract_dow(received_datetime) = 1 AND date_extract_hh(received_datetime) BETWEEN 18 AND 22 AND within_circle(intersection_point, 37.7786, -122.3893, 700) GROUP BY day, call_type_final_desc, agency, onview_flag ORDER BY day, n DESC LIMIT 5000",
+      "countMethod": "Sum n across every grouped row for each date.",
+      "targets": [7, 4, 8, 7],
+      "controls": [4, 2, 6, 3]
+    }
+  ],
+  "expect": {
+    "classification": "all-sources-positive"
+  }
+}

@@ -1,0 +1,115 @@
+{
+  "id": "cabrillo-la-playa-2026-07-21",
+  "note": "Mixed-source proximity candidate, not a confirmed shared incident.",
+  "sourceQueries": [
+    "https://data.sfgov.org/resource/vw6y-z8j6.json?$select=service_request_id,requested_datetime,service_name,lat,long&$where=service_request_id%20in(%27101004475163%27,%27101004475179%27,%27101004475198%27,%27101004475201%27,%27101004475224%27,%27101004475303%27,%27101004475102%27)",
+    "https://data.sfgov.org/resource/2zdj-bwza.json?$select=cad_number,received_datetime,call_type_original_desc,intersection_point&$where=cad_number%20in(%27262021545%27,%27262021547%27,%27262021460%27)"
+  ],
+  "config": {
+    "algorithm": "hdbscan",
+    "spaceScaleMeters": 200,
+    "timeScaleHours": 2,
+    "minimumClusterSize": 5
+  },
+  "expect": {
+    "clusters": [
+      {
+        "anchor": "dispatch:262021545",
+        "minimumSize": 5,
+        "sources": ["311", "dispatch-closed"]
+      }
+    ],
+    "apart": [
+      ["dispatch:262021545", "311:101004475102"],
+      ["dispatch:262021545", "dispatch:262021460"]
+    ]
+  },
+  "datasets": [
+    {
+      "source": "311",
+      "rows": [
+        {
+          "service_request_id": "101004475163",
+          "requested_datetime": "2026-07-21T12:12:08.000",
+          "service_name": "Damage Property",
+          "lat": "37.77320399946627",
+          "long": "-122.51030689191451"
+        },
+        {
+          "service_request_id": "101004475179",
+          "requested_datetime": "2026-07-21T12:13:28.000",
+          "service_name": "Encampment",
+          "lat": "37.772958554689815",
+          "long": "-122.51018356700598"
+        },
+        {
+          "service_request_id": "101004475198",
+          "requested_datetime": "2026-07-21T12:15:53.000",
+          "service_name": "Noise",
+          "lat": "37.77313680339928",
+          "long": "-122.5104545726188"
+        },
+        {
+          "service_request_id": "101004475201",
+          "requested_datetime": "2026-07-21T12:16:37.000",
+          "service_name": "General Request",
+          "lat": "37.7732477928599",
+          "long": "-122.51021463453252"
+        },
+        {
+          "service_request_id": "101004475224",
+          "requested_datetime": "2026-07-21T12:18:31.000",
+          "service_name": "Street and Sidewalk Cleaning",
+          "lat": "37.77308283207401",
+          "long": "-122.51038065513349"
+        },
+        {
+          "service_request_id": "101004475303",
+          "requested_datetime": "2026-07-21T12:26:43.000",
+          "service_name": "Encampment",
+          "lat": "37.773032640015586",
+          "long": "-122.51014655283086"
+        },
+        {
+          "service_request_id": "101004475102",
+          "requested_datetime": "2026-07-21T12:05:40.000",
+          "service_name": "Street and Sidewalk Cleaning",
+          "lat": "37.71640413",
+          "long": "-122.39992392"
+        }
+      ]
+    },
+    {
+      "source": "dispatch-closed",
+      "rows": [
+        {
+          "cad_number": "262021545",
+          "received_datetime": "2026-07-21T12:22:40.000",
+          "call_type_original_desc": "SUSPICIOUS PERSON",
+          "intersection_point": {
+            "type": "Point",
+            "coordinates": [-122.510036956, 37.773259469]
+          }
+        },
+        {
+          "cad_number": "262021547",
+          "received_datetime": "2026-07-21T12:24:23.000",
+          "call_type_original_desc": "MEET W/CITY EMPLOYEE",
+          "intersection_point": {
+            "type": "Point",
+            "coordinates": [-122.510036956, 37.773259469]
+          }
+        },
+        {
+          "cad_number": "262021460",
+          "received_datetime": "2026-07-21T12:00:33.000",
+          "call_type_original_desc": "SUSPICIOUS PERSON",
+          "intersection_point": {
+            "type": "Point",
+            "coordinates": [-122.414430198, 37.784657141]
+          }
+        }
+      ]
+    }
+  ]
+}

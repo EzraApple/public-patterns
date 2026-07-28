@@ -1,0 +1,93 @@
+{
+  "provenance": "Six candidates from the 2026-02-09 through 2026-02-16 DBSCAN scan",
+  "candidates": [
+    {
+      "name": "three-link",
+      "size": 13,
+      "first": "2026-02-10T08:07:54",
+      "sourceCounts": {
+        "dispatch-closed": 7,
+        "fire-ems": 3,
+        "police-incidents": 3
+      },
+      "isLocal": true,
+      "exactCadLinkCount": 3,
+      "responderEventCount": 9
+    },
+    {
+      "name": "shooting",
+      "size": 17,
+      "first": "2026-02-14T01:36:00",
+      "sourceCounts": {
+        "311": 5,
+        "dispatch-closed": 4,
+        "fire-ems": 6,
+        "police-incidents": 2
+      },
+      "isLocal": true,
+      "exactCadLinkCount": 1,
+      "responderEventCount": 6
+    },
+    {
+      "name": "homicide",
+      "size": 14,
+      "first": "2026-02-11T07:56:15",
+      "sourceCounts": {
+        "311": 1,
+        "dispatch-closed": 1,
+        "fire-ems": 9,
+        "police-incidents": 3
+      },
+      "isLocal": true,
+      "exactCadLinkCount": 1,
+      "responderEventCount": 4
+    },
+    {
+      "name": "routine",
+      "size": 12,
+      "first": "2026-02-14T11:47:55",
+      "sourceCounts": {
+        "311": 9,
+        "dispatch-closed": 2,
+        "police-incidents": 1
+      },
+      "isLocal": true,
+      "exactCadLinkCount": 1,
+      "responderEventCount": 2
+    },
+    {
+      "name": "retail",
+      "size": 10,
+      "first": "2026-02-13T19:08:00",
+      "sourceCounts": {
+        "dispatch-closed": 5,
+        "police-incidents": 5
+      },
+      "isLocal": true,
+      "exactCadLinkCount": 4,
+      "responderEventCount": 6
+    },
+    {
+      "name": "boundary-miss",
+      "size": 19,
+      "first": "2026-02-14T08:48:47",
+      "sourceCounts": {
+        "311": 1,
+        "dispatch-closed": 7,
+        "fire-ems": 9,
+        "police-incidents": 2
+      },
+      "isLocal": false,
+      "exactCadLinkCount": 2,
+      "responderEventCount": 12
+    }
+  ],
+  "expectedOrder": [
+    "shooting",
+    "homicide",
+    "three-link",
+    "routine",
+    "retail",
+    "boundary-miss"
+  ]
+}

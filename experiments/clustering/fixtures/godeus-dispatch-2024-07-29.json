@@ -1,0 +1,134 @@
+{
+  "id": "godeus-dispatch-2024-07-29",
+  "note": "A mixed-kind dispatch cluster; coordinated enforcement remains a plausible explanation.",
+  "selection": "All 7 calls at Godeus and Mission, plus the first 4 geocoded calls elsewhere in the same hour.",
+  "sourceQueries": [
+    "https://data.sfgov.org/resource/2zdj-bwza.json?$select=cad_number,received_datetime,call_type_original_desc,intersection_point&$where=received_datetime%20%3E=%20%272024-07-29T17:00:00%27%20AND%20received_datetime%20%3C%20%272024-07-29T18:00:00%27%20AND%20intersection_name=%27GODEUS%20ST%20%5C%20MISSION%20ST%27&$order=received_datetime,cad_number",
+    "https://data.sfgov.org/resource/2zdj-bwza.json?$select=cad_number,received_datetime,call_type_original_desc,intersection_point&$where=received_datetime%20%3E=%20%272024-07-29T17:00:00%27%20AND%20received_datetime%20%3C%20%272024-07-29T18:00:00%27%20AND%20intersection_point%20is%20not%20null%20AND%20intersection_name%20!=%20%27GODEUS%20ST%20%5C%20MISSION%20ST%27&$order=received_datetime,cad_number&$limit=4"
+  ],
+  "config": {
+    "algorithm": "hdbscan",
+    "spaceScaleMeters": 200,
+    "timeScaleHours": 2,
+    "minimumClusterSize": 5
+  },
+  "expect": {
+    "clusters": [
+      {
+        "anchor": "dispatch:242112212",
+        "minimumSize": 5,
+        "sources": ["dispatch-closed"]
+      }
+    ],
+    "apart": [
+      ["dispatch:242112212", "dispatch:242112126"],
+      ["dispatch:242112212", "dispatch:242112133"]
+    ]
+  },
+  "datasets": [
+    {
+      "source": "dispatch-closed",
+      "rows": [
+        {
+          "cad_number": "242112132",
+          "received_datetime": "2024-07-29T17:03:24.000",
+          "call_type_original_desc": "SUSPICIOUS PERSON",
+          "intersection_point": {
+            "type": "Point",
+            "coordinates": [-122.421680448, 37.742821174]
+          }
+        },
+        {
+          "cad_number": "242112146",
+          "received_datetime": "2024-07-29T17:07:53.000",
+          "call_type_original_desc": "PETTY THEFT",
+          "intersection_point": {
+            "type": "Point",
+            "coordinates": [-122.421680448, 37.742821174]
+          }
+        },
+        {
+          "cad_number": "242112212",
+          "received_datetime": "2024-07-29T17:29:04.000",
+          "call_type_original_desc": "PETTY THEFT",
+          "intersection_point": {
+            "type": "Point",
+            "coordinates": [-122.421680448, 37.742821174]
+          }
+        },
+        {
+          "cad_number": "242112217",
+          "received_datetime": "2024-07-29T17:29:44.000",
+          "call_type_original_desc": "SUSPICIOUS PERSON",
+          "intersection_point": {
+            "type": "Point",
+            "coordinates": [-122.421680448, 37.742821174]
+          }
+        },
+        {
+          "cad_number": "242112242",
+          "received_datetime": "2024-07-29T17:38:12.000",
+          "call_type_original_desc": "SUSPICIOUS PERSON",
+          "intersection_point": {
+            "type": "Point",
+            "coordinates": [-122.421680448, 37.742821174]
+          }
+        },
+        {
+          "cad_number": "242112250",
+          "received_datetime": "2024-07-29T17:42:56.000",
+          "call_type_original_desc": "SUSPICIOUS PERSON",
+          "intersection_point": {
+            "type": "Point",
+            "coordinates": [-122.421680448, 37.742821174]
+          }
+        },
+        {
+          "cad_number": "242112299",
+          "received_datetime": "2024-07-29T17:53:03.000",
+          "call_type_original_desc": "COMPLAINT UNKN",
+          "intersection_point": {
+            "type": "Point",
+            "coordinates": [-122.421680448, 37.742821174]
+          }
+        },
+        {
+          "cad_number": "242112126",
+          "received_datetime": "2024-07-29T17:00:28.000",
+          "call_type_original_desc": "TRAF VIOLATION TOW",
+          "intersection_point": {
+            "type": "Point",
+            "coordinates": [-122.440213335, 37.778511464]
+          }
+        },
+        {
+          "cad_number": "242112128",
+          "received_datetime": "2024-07-29T17:01:25.000",
+          "call_type_original_desc": "TRAF VIOLATION CITE",
+          "intersection_point": {
+            "type": "Point",
+            "coordinates": [-122.440798149, 37.798324416]
+          }
+        },
+        {
+          "cad_number": "242112137",
+          "received_datetime": "2024-07-29T17:02:44.000",
+          "call_type_original_desc": "GRAND THEFT",
+          "intersection_point": {
+            "type": "Point",
+            "coordinates": [-122.416989832, 37.787200626]
+          }
+        },
+        {
+          "cad_number": "242112133",
+          "received_datetime": "2024-07-29T17:03:27.000",
+          "call_type_original_desc": "TRAF VIOLATION CITE",
+          "intersection_point": {
+            "type": "Point",
+            "coordinates": [-122.390319484, 37.788134502]
+          }
+        }
+      ]
+    }
+  ]
+}

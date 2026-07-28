@@ -1,6 +1,6 @@
 # 311 cases
 
-**Status:** likely first source
+**Status:** experimental
 
 **Last verified:** 2026-07-24 01:00 PDT
 
@@ -78,12 +78,57 @@ instead of ingesting `SELECT *`.
 For historical baselines, use upstream grouped queries partitioned by month or
 year. Do not download 8.8M raw cases for the MVP.
 
+## Current local slice
+
+The shared DataSF adapter keyset-pages 311 on one fixed `data_loaded_at` window
+and `service_request_id`; source configurations choose the event or portal
+field that safely advances their cursor. One run commits at most four
+500-observation batches with an opaque resume cursor. The
+gateway validates DataSF JSON and emits the shared observation shape; its
+`data` field retains the selected source-specific JSON, including public
+location, lifecycle, classification, and media fields.
+
+Observations are append-only. Repeated delivery of the exact same publisher
+version is ignored, while different content remains history even if the
+publisher load timestamp does not advance.
+Consumers derive a current case by choosing the latest observation for its
+source ID. Malformed source rows are retained separately with validation
+issues, and exact error replays are ignored.
+
+A live local two-day replay returned 34,841 recently loaded rows, including
+older events republished in the current portal batch. This is a dated direct
+observation, not an expected daily volume. It supports retaining the separate
+load-time cursor and keeping the page bound explicit.
+
+The first detector reads current observations and groups `kind` (the 311
+service name) by `area` (analysis neighborhood). It waits for a complete
+four-week local baseline and derives results only when requested.
+
+## Historical detector checks
+
+Direct DataSF queries on 2026-07-24 found:
+
+- `Graffiti` in `Mission` on 2024-06-05: 455 cases versus matching-weekday
+  baseline counts of 48, 17, 38, and 43.
+- `Illegal Postings` in `Mission` on 2025-06-10: 208 cases versus a baseline
+  mean of 5.75.
+
+These validate that the simple burst rule fires on known large discontinuities.
+They do not establish cause or editorial significance; the graffiti burst may
+reflect bulk reporting or a taxonomy change.
+
+A point-level query on 2026-07-26 found 145 `Graffiti Public` cases in a
+roughly 26 by 86 meter Cortland Avenue area within 25 minutes on 2025-02-03.
+The matching area and clock window one week before and after had no cases.
+This is consistent with a systematic field survey. A deterministic 10-row
+sample plus four same-window controls is retained as a clustering replay, not
+as 145 independently occurring conditions.
+
 ## Retention recommendation
 
-- Keep normalized lifecycle state and durable aggregates.
-- Raw changed rows can expire after a short debugging window.
-- Snapshot rows and referenced media metadata used in published evidence.
-- Query historical raw cases from DataSF during investigations.
+- Keep the compact observation history while its measured size remains cheap.
+- Query richer historical cases from DataSF during investigations.
+- Add explicit evidence snapshots only when publishing requires reproducibility.
 
 ## Quality and interpretation risks
 

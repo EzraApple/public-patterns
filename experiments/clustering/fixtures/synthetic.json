@@ -1,0 +1,83 @@
+{
+  "id": "synthetic-shared-space",
+  "config": {
+    "algorithm": "hdbscan",
+    "spaceScaleMeters": 200,
+    "timeScaleHours": 2,
+    "minimumClusterSize": 5
+  },
+  "expect": {
+    "together": [
+      [
+        "311:311-1",
+        "311:311-2",
+        "311:311-3",
+        "dispatch:dispatch-1",
+        "dispatch:dispatch-2"
+      ]
+    ],
+    "apart": [
+      ["311:311-1", "dispatch:dispatch-noise"]
+    ]
+  },
+  "datasets": [
+    {
+      "source": "311",
+      "rows": [
+        {
+          "service_request_id": "311-1",
+          "requested_datetime": "2026-07-24T10:00:00",
+          "service_name": "Noise Report",
+          "lat": "37.7700",
+          "long": "-122.4200"
+        },
+        {
+          "service_request_id": "311-2",
+          "requested_datetime": "2026-07-24T10:05:00",
+          "service_name": "Noise Report",
+          "lat": "37.7701",
+          "long": "-122.4201"
+        },
+        {
+          "service_request_id": "311-3",
+          "requested_datetime": "2026-07-24T10:10:00",
+          "service_name": "Noise Report",
+          "lat": "37.7699",
+          "long": "-122.4199"
+        }
+      ]
+    },
+    {
+      "source": "dispatch-closed",
+      "rows": [
+        {
+          "cad_number": "dispatch-1",
+          "received_datetime": "2026-07-24T10:02:00",
+          "call_type_original_desc": "Noise Complaint",
+          "intersection_point": {
+            "type": "Point",
+            "coordinates": [-122.4201, 37.7700]
+          }
+        },
+        {
+          "cad_number": "dispatch-2",
+          "received_datetime": "2026-07-24T10:08:00",
+          "call_type_original_desc": "Noise Complaint",
+          "intersection_point": {
+            "type": "Point",
+            "coordinates": [-122.4199, 37.7701]
+          }
+        },
+        {
+          "cad_number": "dispatch-noise",
+          "received_datetime": "2026-07-25T18:00:00",
+          "call_type_original_desc": "Traffic Stop",
+          "intersection_point": {
+            "type": "Point",
+            "coordinates": [-122.5000, 37.7900]
+          }
+        }
+      ]
+    }
+  ]
+}

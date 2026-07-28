@@ -1,0 +1,27 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "public-patterns-pipeline",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-07-24",
+  "workers_dev": false,
+  "vars": {
+    "PUBLIC_PATTERNS_ENV": "dev"
+  },
+  "secrets": {
+    "required": [
+      "TRANSIT_511_API_KEY"
+    ]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "public-patterns-pipeline",
+      // Local development ignores this placeholder; provision production in CI before deployment.
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "observability": {
+    "enabled": true
+  }
+}
