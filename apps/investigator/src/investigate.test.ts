@@ -13,8 +13,26 @@ function createSandbox(
       JSON.stringify(submission),
     ],
     ["/workspace/output/brief.md", "# Finding"],
+    ["/workspace/output/article.md", "# Event headline"],
   ]);
+  const archives = new Map<string, string>();
+  const archive = {
+    put: vi.fn(
+      async (
+        key: string,
+        value: string,
+        _options: {
+          httpMetadata: { contentType: string };
+          customMetadata: Record<string, string>;
+        },
+      ) => {
+        archives.set(key, value);
+      },
+    ),
+  };
   return {
+    archive,
+    archives,
     files,
     sandbox: {
       mkdir: vi.fn(),
@@ -45,24 +63,41 @@ describe("investigateInSandbox", () => {
       outcome: "investigate",
       confidence: 0.8,
       briefPath: "output/brief.md",
+      articlePath: "output/article.md",
       evidence: ["observation:123"],
     };
-    const { files, sandbox } = createSandbox(submission);
+    const { archive, archives, files, sandbox } = createSandbox(submission);
 
     const result = await investigateInSandbox({
+      archive,
       sandbox,
       input: { id: "case-1", case: { observations: [123] } },
       deepseekApiKey: "test-key",
+      environment: "test",
     });
 
     expect(result).toEqual({
       id: "case-1",
+      archiveKey: expect.stringMatching(
+        /^investigations\/\d{4}-\d{2}-\d{2}\/case-1\/.+\.json$/,
+      ),
       submission: {
         outcome: "investigate",
         confidence: 0.8,
         evidence: ["observation:123"],
       },
       brief: "# Finding",
+      article: "# Event headline",
+    });
+    expect(JSON.parse(archives.get(result.archiveKey)!)).toMatchObject({
+      version: 1,
+      environment: "test",
+      status: "completed",
+      investigation: {
+        id: "case-1",
+        case: { observations: [123] },
+      },
+      result,
     });
     expect(sandbox.exec).toHaveBeenCalledWith(
       expect.stringContaining("--agent investigator"),
@@ -92,7 +127,7 @@ describe("investigateInSandbox", () => {
     ];
 
     for (const briefPath of invalidPaths) {
-      const { sandbox } = createSandbox({
+      const { archive, sandbox } = createSandbox({
         outcome: "watch",
         confidence: 0.5,
         briefPath,
@@ -101,23 +136,67 @@ describe("investigateInSandbox", () => {
 
       await expect(
         investigateInSandbox({
+          archive,
           sandbox,
           input: { id: "case-2", case: {} },
           deepseekApiKey: "test-key",
+          environment: "test",
         }),
       ).rejects.toThrow("must be");
     }
   });
 
+  it("requires an article for investigate outcomes", async () => {
+    const { archive, sandbox } = createSandbox({
+      outcome: "investigate",
+      confidence: 0.8,
+      briefPath: "output/brief.md",
+      evidence: [],
+    });
+
+    await expect(
+      investigateInSandbox({
+        archive,
+        sandbox,
+        input: { id: "case-article", case: {} },
+        deepseekApiKey: "test-key",
+        environment: "test",
+      }),
+    ).rejects.toThrow("article");
+  });
+
+  it("rejects blank submitted articles", async () => {
+    const { archive, files, sandbox } = createSandbox({
+      outcome: "investigate",
+      confidence: 0.8,
+      briefPath: "output/brief.md",
+      articlePath: "output/article.md",
+      evidence: [],
+    });
+    files.set("/workspace/output/article.md", "  ");
+
+    await expect(
+      investigateInSandbox({
+        archive,
+        sandbox,
+        input: { id: "case-blank-article", case: {} },
+        deepseekApiKey: "test-key",
+        environment: "test",
+      }),
+    ).rejects.toThrow("article");
+  });
+
   it("redacts the provider key from run failures", async () => {
-    const { sandbox } = createSandbox(
+    const { archive, archives, sandbox } = createSandbox(
       {},
       "provider rejected secret-test-key",
     );
     const error = await investigateInSandbox({
+      archive,
       sandbox,
       input: { id: "case-3", case: {} },
       deepseekApiKey: "secret-test-key",
+      environment: "test",
     }).catch((caught: unknown) => caught);
 
     expect(error).toBeInstanceOf(Error);
@@ -125,6 +204,9 @@ describe("investigateInSandbox", () => {
       "provider rejected [redacted]",
     );
     expect((error as Error).message).not.toContain("secret-test-key");
+    const archivedFailure = [...archives.values()][0]!;
+    expect(archivedFailure).toContain("provider rejected [redacted]");
+    expect(archivedFailure).not.toContain("secret-test-key");
   });
 });
 

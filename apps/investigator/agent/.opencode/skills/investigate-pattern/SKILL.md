@@ -17,6 +17,9 @@ REQUIRED: Use `analyze-signal` for every case.
 Use `research-evidence` when source URLs are provided, field meanings need
 verification, or external context could materially change the outcome.
 
+REQUIRED: Use `write-article` after the brief is complete when the outcome is
+`investigate`.
+
 ## Triage
 
 1. Read `case/input.json`. Ignore evaluation labels, expected results, fixture
@@ -31,11 +34,15 @@ verification, or external context could materially change the outcome.
 7. Apply the story test: could one accurate paragraph explain what happened or
    changed, why it is mildly interesting, and point to linked evidence or a
    useful visualization?
-8. Choose the smallest useful next check and then classify:
+8. Establish why the story is timely. An older period qualifies only when a
+   recent event, data release, or current source provides a new reason to
+   revisit it, or when the historical pattern is explicitly the subject.
+   Newly surfacing a resolved old event is not itself a publication reason.
+9. Choose the smallest useful next check and then classify:
 
 | Outcome | Use when |
 | --- | --- |
-| `investigate` | Meaningfully distinct sources add facts, context, comparison, consequences, or corroboration that together support the story test. |
+| `investigate` | Meaningfully distinct sources support the story test and there is a clear timely or explicitly historical reason to publish. |
 | `watch` | A potentially useful connection exists, but source independence, added information, or evidence quality remains unclear. |
 | `discard` | Records merely repeat one originating call or administrative event without adding meaningful understanding. |
 
@@ -61,12 +68,14 @@ Write `output/brief.md` with:
 - record IDs, queries, and URLs supporting material claims
 
 Keep working notes and disposable scripts in `work/`. Keep the brief concise;
-it is internal triage, not an article.
+it is internal triage, not an article. When the outcome is `investigate`, add a
+publishable `output/article.md` following `write-article`. Do not draft an
+article for `watch` or `discard`.
 
 Before submitting, remove every asserted record-to-record link or ranked
 explanation that lacks an explicit linking field or independent evidence.
 Uncertain linkage does not prevent `discard`; state that the exact mechanism is
 unknown and base the outcome only on what is evidenced.
 
-Call `submit_brief` exactly once after the brief is ready. Reference source
-record IDs and URLs directly; never invent citations.
+Call `submit_brief` exactly once after the brief and any required article are
+ready. Reference source record IDs and URLs directly; never invent citations.

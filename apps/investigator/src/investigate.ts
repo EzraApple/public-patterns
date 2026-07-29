@@ -1,5 +1,6 @@
 import {
   type InvestigationResult,
+  investigationResultSchema,
   investigationSubmissionSchema,
   type InvestigationInput,
 } from "@public-patterns/contracts/investigation";
@@ -23,8 +24,20 @@ type InvestigationSandbox = {
   }>;
 };
 
+type InvestigationArchive = {
+  put(
+    key: string,
+    value: string,
+    options: {
+      httpMetadata: { contentType: string };
+      customMetadata: Record<string, string>;
+    },
+  ): Promise<unknown>;
+};
+
 const AGENT_COMMAND =
-  'opencode2 run --standalone --auto --agent investigator --format json "Investigate the case in case/input.json and submit the resulting brief."';
+  'opencode2 run --standalone --auto --agent investigator --format json "Investigate the case in case/input.json. Submit the internal brief and, when warranted, a publishable article."';
+const maxArchivedOutput = 1_000_000;
 
 export async function investigateCase(
   env: Env,
@@ -43,9 +56,11 @@ export async function investigateCase(
 
   try {
     return await investigateInSandbox({
+      archive: env.ARCHIVE,
       sandbox,
       input,
       deepseekApiKey: env.DEEPSEEK_API_KEY,
+      environment: env.PUBLIC_PATTERNS_ENV,
     });
   } finally {
     await sandbox
@@ -55,13 +70,17 @@ export async function investigateCase(
 }
 
 export async function investigateInSandbox({
+  archive,
   sandbox,
   input,
   deepseekApiKey,
+  environment,
 }: {
+  archive: InvestigationArchive;
   sandbox: InvestigationSandbox;
   input: InvestigationInput;
   deepseekApiKey: string;
+  environment: string;
 }) {
   await Promise.all(
     ["case", "work", "output"].map((directory) =>
@@ -81,7 +100,7 @@ export async function investigateInSandbox({
         DEEPSEEK_API_KEY: deepseekApiKey,
         OPENCODE_ENABLE_EXA: "1",
       },
-      timeout: 900_000,
+      timeout: 720_000,
     });
   } catch (error) {
     run = {
@@ -92,6 +111,12 @@ export async function investigateInSandbox({
     };
   }
 
+  const archivedAt = new Date().toISOString();
+  const archiveKey =
+    `investigations/${archivedAt.slice(0, 10)}/${input.id}/` +
+    `${crypto.randomUUID()}.json`;
+
+  let result: InvestigationResult;
   try {
     const submissionFile = await sandbox.readFile(
       "/workspace/output/submission.json",
@@ -102,16 +127,21 @@ export async function investigateInSandbox({
     const briefFile = await sandbox.readFile(
       `/workspace/${submission.briefPath}`,
     );
+    const articleFile = submission.articlePath
+      ? await sandbox.readFile(`/workspace/${submission.articlePath}`)
+      : null;
 
-    return {
+    result = investigationResultSchema.parse({
       id: input.id,
+      archiveKey,
       submission: {
         outcome: submission.outcome,
         confidence: submission.confidence,
         evidence: submission.evidence,
       },
       brief: briefFile.content,
-    };
+      article: articleFile?.content ?? null,
+    });
   } catch (submissionError) {
     const output = run.stderr || run.stdout;
     const detail = deepseekApiKey
@@ -121,11 +151,95 @@ export async function investigateInSandbox({
       submissionError instanceof Error
         ? submissionError.message
         : String(submissionError);
-    if (!run.success) {
-      throw new Error(
-        `OpenCode exited ${run.exitCode}: ${detail.slice(-2_000)}; submission unavailable: ${reason}`,
-      );
-    }
-    throw new Error(`OpenCode completed without a valid submission: ${reason}`);
+    const failure = !run.success
+      ? new Error(
+          `OpenCode exited ${run.exitCode}: ${detail.slice(-2_000)}; submission unavailable: ${reason}`,
+        )
+      : new Error(`OpenCode completed without a valid submission: ${reason}`);
+    await archiveInvestigation({
+      archive,
+      archiveKey,
+      archivedAt,
+      environment,
+      input,
+      run,
+      deepseekApiKey,
+      failure,
+    }).catch((archiveError) =>
+      console.error("Failed to archive investigation failure", archiveError),
+    );
+    throw failure;
   }
+  await archiveInvestigation({
+    archive,
+    archiveKey,
+    archivedAt,
+    environment,
+    input,
+    run,
+    deepseekApiKey,
+    result,
+  });
+  return result;
+}
+
+async function archiveInvestigation({
+  archive,
+  archiveKey,
+  archivedAt,
+  environment,
+  input,
+  run,
+  deepseekApiKey,
+  result,
+  failure,
+}: {
+  archive: InvestigationArchive;
+  archiveKey: string;
+  archivedAt: string;
+  environment: string;
+  input: InvestigationInput;
+  run: Awaited<ReturnType<InvestigationSandbox["exec"]>>;
+  deepseekApiKey: string;
+  result?: InvestigationResult;
+  failure?: Error;
+}) {
+  const status = result ? "completed" : "failed";
+  await archive.put(
+    archiveKey,
+    JSON.stringify(
+      {
+        version: 1,
+        archivedAt,
+        environment,
+        status,
+        investigation: input,
+        session: {
+          success: run.success,
+          exitCode: run.exitCode,
+          stdout: limit(redact(run.stdout, deepseekApiKey)),
+          stderr: limit(redact(run.stderr, deepseekApiKey)),
+        },
+        ...(result ? { result } : { error: failure?.message ?? "unknown error" }),
+      },
+      null,
+      2,
+    ),
+    {
+      httpMetadata: { contentType: "application/json" },
+      customMetadata: { environment, status },
+    },
+  );
+}
+
+function redact(value: string, secret: string) {
+  return secret ? value.replaceAll(secret, "[redacted]") : value;
+}
+
+function limit(value: string) {
+  if (value.length <= maxArchivedOutput) {
+    return value;
+  }
+  const half = maxArchivedOutput / 2;
+  return `${value.slice(0, half)}\n[output truncated]\n${value.slice(-half)}`;
 }

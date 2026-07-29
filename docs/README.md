@@ -15,6 +15,8 @@ working recommendations, and unresolved questions.
   evaluation scripts, and recorded stress-test results
 - [`operations/deployment.md`](./operations/deployment.md) — CI deployment and
   credential boundaries
+- [`operations/investigation-archives.md`](./operations/investigation-archives.md)
+  — D1 index and R2 session audit workflow
 
 Likely future sections should be added only when they have real content:
 

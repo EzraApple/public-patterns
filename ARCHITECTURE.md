@@ -49,12 +49,12 @@ The current stack is deliberately small:
 - **A pipeline Worker** ingests sources and runs cheap detectors.
 - **D1** stores observations, source errors, and ingestion cursors.
 - **An investigator Worker** runs one sandboxed agent per selected candidate.
+- **R2** stores investigation audit bundles for review and replay.
 
 Add infrastructure only when a concrete need appears:
 
 - a Cron Trigger when ingestion is deployed
 - a Queue when one request can no longer finish bounded work safely
-- R2 when published evidence or disappearing source payloads need immutable files
 - Workflows when an investigation becomes a durable multi-step operation
 - PostHog when there is a real product surface to measure
 - Vectorize only if ordinary metadata and full-text search prove insufficient
@@ -72,9 +72,11 @@ flowchart LR
     Pipeline["Pipeline Worker<br/>ingestion + detectors"]
     Investigator["Investigator Worker<br/>sandboxed agent"]
     Storage[("D1")]
+    Archive[("R2")]
 
     Pipeline --> Storage
-    Pipeline -.->|"candidate (later)"| Investigator
+    Pipeline -->|"candidate"| Investigator
+    Investigator --> Archive
     Web --> Storage
 ```
 
@@ -186,7 +188,10 @@ The first agent experiment uses OpenCode 2 with DeepSeek V4 Pro Thinking inside
 one ephemeral Cloudflare Sandbox per investigation. The candidate arrives as
 flexible JSON on disk; the agent can use Python, web research, and baked-in
 analysis skills, then signals completion through a typed `submit_brief` tool.
-The Worker accepts the submitted brief and destroys the sandbox.
+The Worker accepts the submitted brief and article, archives the input, redacted
+session output, and result in R2, then destroys the sandbox. D1 keeps the
+searchable investigation record and its R2 object key. Compact eval definitions
+stay in git; bulky source snapshots and replay evidence belong in R2.
 
 An investigation does not need to uncover a mystery. It may advance when
 meaningfully distinct sources add enough context, consequences, comparison, or
@@ -197,11 +202,13 @@ sources or a useful visualization; richer presentation is optional.
 
 The investigator is a separate Worker because Containers, model spend, and
 failure isolation differ materially from ingestion. The private workbench is
-the only production trigger, so model spend remains manual. The current
-prototype passes a limited DeepSeek key into each ephemeral sandbox; move that
-credential behind a short-lived proxy before investigations accept untrusted
-inputs or run automatically. Workflows, persistent sessions, MCP, and R2 remain
-deferred until an investigation demonstrates the need.
+available for manual runs. During the initial tuning trial, one morning job
+selects one previously uninvestigated burst; its article remains private until
+reviewed. The current prototype passes a limited DeepSeek key into each
+ephemeral sandbox; move that credential behind a short-lived proxy before this
+automatic trial expands or investigations accept untrusted inputs. Workflows,
+persistent sessions, and MCP remain deferred until an investigation
+demonstrates the need.
 
 ## Initial sources and detectors
 

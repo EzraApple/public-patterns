@@ -22,6 +22,7 @@ await writeFile(
       const input = await request.json();
       return Response.json({
         id: input.id,
+        archiveKey: "investigations/fixture.json",
         submission: {
           outcome: "investigate",
           confidence: 0.8,
@@ -29,7 +30,8 @@ await writeFile(
             "nearby:" + input.case.nearbyObservations.length
           ]
         },
-        brief: "# Fixture investigation"
+        brief: "# Fixture investigation",
+        article: "# Fixture article"
       });
     }
   };`,
@@ -95,6 +97,7 @@ const server = spawn(
     "0",
     "--persist-to",
     stateDirectory,
+    "--test-scheduled",
     "--var",
     "ENABLE_DEV_FIXTURES:true",
   ],
@@ -248,6 +251,28 @@ try {
     saved.brief !== investigation.brief
   ) {
     throw new Error(`Investigation was not saved: ${JSON.stringify(saved)}`);
+  }
+
+  const scheduledResponse = await fetch(
+    `${origin}/__scheduled?cron=30+15+*+*+*&time=${Date.parse("2026-07-24T15:30:00Z")}`,
+  );
+  for (
+    let attempt = 0;
+    attempt < 20 &&
+    !serverOutput.includes("Daily investigation completed") &&
+    !serverOutput.includes("Daily investigation failed");
+    attempt += 1
+  ) {
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  if (
+    !scheduledResponse.ok ||
+    !serverOutput.includes("Daily investigation completed") ||
+    serverOutput.includes("Daily investigation failed")
+  ) {
+    throw new Error(
+      `Daily investigation failed: ${await scheduledResponse.text()}`,
+    );
   }
 
   console.log("Pipeline Worker+D1 investigation smoke test passed");

@@ -1,0 +1,31 @@
+.site-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: #173d55;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.5rem;
+  letter-spacing: -0.035em;
+  text-decoration: none;
+  text-transform: none;
+}
+
+.site-brand-bridge {
+  width: 2.5rem;
+  height: 2.5rem;
+  flex: 0 0 auto;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+@media (max-width: 720px) {
+  .site-brand {
+    gap: 0.42rem;
+    font-size: 1.3rem;
+  }
+
+  .site-brand-bridge {
+    width: 2.2rem;
+    height: 2.2rem;
+  }
+}
