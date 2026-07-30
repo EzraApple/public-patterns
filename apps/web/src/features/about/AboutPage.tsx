@@ -1,77 +1,91 @@
 import { SiteBrand } from "@/features/site/SiteBrand";
 import "./about.css";
 
-const flow = [
+const runtimeStages = [
   {
-    number: "01",
-    label: "Public records",
-    detail: "Nine San Francisco data sources, kept with their source history.",
+    id: "01 / ingest",
+    runtime: "cron */5m",
+    title: "Ingest",
+    detail:
+      "Rotate across nine public sources and append every observed publisher version to D1.",
   },
   {
-    number: "02",
-    label: "Candidate signals",
-    detail: "Cheap detectors and offline experiments surface unusual activity.",
+    id: "02 / detect",
+    runtime: "derived query",
+    title: "Detect",
+    detail:
+      "Compare category and area counts against matching-weekday baselines to produce candidate bursts.",
   },
   {
-    number: "03",
-    label: "Investigation",
-    detail: "A sandboxed agent checks nearby records, links, and public reporting.",
+    id: "03 / investigate",
+    runtime: "cron 15:30 UTC",
+    title: "Investigate",
+    detail:
+      "Select the strongest new candidate and give its evidence and nearby records to a sandboxed agent.",
   },
   {
-    number: "04",
-    label: "Sourced article",
-    detail: "A concise account preserves citations, limits, and useful evidence.",
+    id: "04 / archive",
+    runtime: "typed result",
+    title: "Archive",
+    detail:
+      "Validate the outcome, brief, evidence, and optional article; index the result in D1 and archive the run in R2.",
   },
 ] as const;
 
 const methods = [
   {
-    title: "What gets stored",
+    id: "storage.observations",
+    title: "Append-only observations",
     details: [
       "Each source record becomes an append-only observation in D1. Identity, event time, update time, category, and area are normalized for basic queries; the remaining source-specific fields stay available as JSON.",
       "Exact ingestion retries are collapsed, but publisher revisions are retained. A consumer can therefore read the latest known version or reconstruct how a record changed without forcing every source into one rigid schema.",
     ],
-    status: "Runs in the ingestion pipeline",
+    status: "production",
   },
   {
-    title: "What currently triggers a candidate",
+    id: "detector.weekday-burst",
+    title: "Weekday burst detector",
     details: [
       "The detector that currently runs groups observations by category and publisher-provided area, then compares a selected day with the previous four matching weekdays. It waits until that baseline exists and derives results on request rather than persisting detector state.",
-      "This catches obvious changes in volume but cannot identify every kind of pattern. Its thresholds are provisional, and its output is only a list of leads to inspect—not a statistical claim or an automatic story.",
+      "The daily job sorts ready bursts by excess count and ratio, skips candidates already investigated, and sends the strongest remaining candidate forward. Thresholds are provisional; detector output is a lead, not a causal claim.",
     ],
-    status: "Runs in the pipeline with provisional settings",
+    status: "production / provisional thresholds",
   },
   {
-    title: "The clustering experiment",
+    id: "experiment.dbscan",
+    title: "Spatiotemporal clustering",
     details: [
       "Separate Python scripts project supported 311, dispatch, Fire/EMS, police, and building records into shared longitude, latitude, and time coordinates. After scaling, the current DBSCAN baseline looks for at least five nearby points at roughly 100-meter and one-hour scales.",
       "DBSCAN is useful because it leaves isolated points unassigned, but it can chain activity through dense areas. HDBSCAN was also tested and rejected as the default because ordinary background density produced city-scale blobs. Neither algorithm currently runs in production.",
     ],
-    status: "Offline Python experiment",
+    status: "offline experiment",
   },
   {
-    title: "How those clusters are sorted",
+    id: "experiment.cluster-ranking",
+    title: "Cluster ranking",
     details: [
       "The offline scanner first separates compact local candidates by how many distinct sources they contain. Within those tiers it considers distinct Fire calls and police incidents, exact police-dispatch CAD links, and finally raw row count.",
       "This avoids letting a large batch from one dataset outrank broader corroboration. It still does not measure newsworthiness: on an untouched holdout, routine warrant and arrest activity could rank above more interesting episodes.",
     ],
-    status: "Used by the offline scanner",
+    status: "offline experiment",
   },
   {
-    title: "How recurrence is tested",
+    id: "experiment.recurrence",
+    title: "Recurrence evaluation",
     details: [
       "Recurrence evaluations begin with known episodes such as holidays, scheduled events, or a longer change in eviction filings. Each case freezes the source queries, target windows, control windows, and observed counts so later changes remain visible.",
       "The evaluator reports support, absolute difference, relative lift, and whether sources agree on direction. It can show that several datasets moved together, but it does not discover the windows, merge them into an event, or decide whether the result matters editorially.",
     ],
-    status: "Offline historical evaluations",
+    status: "offline experiment",
   },
   {
-    title: "What the agent does",
+    id: "runtime.investigator",
+    title: "Sandboxed investigator",
     details: [
-      "When a candidate is selected manually, its evidence is written into a temporary Cloudflare Sandbox. An OpenCode-based agent can use Python, query public records, and research the web before returning an internal brief and, when justified, a draft article.",
-      "The sandbox is destroyed after the run. The agent may recommend an article, more monitoring, or no further action; a person still reviews anything intended for publication, including its citations and uncertainty.",
+      "At 15:30 UTC each day, the pipeline autonomously selects one ready candidate. Its signal, source observations, and nearby records are written into a temporary Cloudflare Sandbox where an OpenCode-based agent can use Python, query public records, and research the web.",
+      "The agent submits a typed investigate, watch, or discard outcome with confidence, evidence, a brief, and an article when warranted. The Worker validates and archives the result before destroying the sandbox. The run is autonomous.",
     ],
-    status: "Manually triggered and reviewed",
+    status: "production / autonomous daily run",
   },
 ] as const;
 
@@ -104,13 +118,13 @@ export function AboutPage() {
       <main>
         <section className="about-hero" id="overview">
           <div className="about-hero-copy">
-            <p className="about-eyebrow">Project overview</p>
-            <h1>Software looking closely at how San Francisco changes.</h1>
+            <p className="about-eyebrow">public-patterns / system</p>
+            <h1>Autonomous investigation for San Francisco public data.</h1>
             <p>
-              Public Patterns watches civic data for unusual changes, recurring
-              activity, and connections worth explaining. The goal is not to
-              manufacture mysteries. It is to publish small, useful stories
-              whose evidence remains visible.
+              Cloudflare Workers continuously ingest public records, detect
+              unusual activity, select candidates, and run evidence-backed
+              investigations in disposable sandboxes. Every run leaves a typed,
+              replayable audit trail.
             </p>
             <div className="about-socials">
               <a
@@ -133,38 +147,19 @@ export function AboutPage() {
               </a>
             </div>
           </div>
-
-          <dl className="about-summary">
-            <div>
-              <dt>Scope</dt>
-              <dd>San Francisco first</dd>
-            </div>
-            <div>
-              <dt>Status</dt>
-              <dd>Experimental</dd>
-            </div>
-            <div>
-              <dt>Sources</dt>
-              <dd>Nine active datasets</dd>
-            </div>
-            <div>
-              <dt>Output</dt>
-              <dd>Sourced public articles</dd>
-            </div>
-          </dl>
         </section>
 
         <section className="about-flow" id="system" aria-labelledby="flow-title">
           <div className="about-section-heading">
-            <p className="about-eyebrow">The system</p>
-            <h2 id="flow-title">From public record to public explanation</h2>
+            <p className="about-eyebrow">runtime path</p>
+            <h2 id="flow-title">Source → signal → agent → archive</h2>
           </div>
           <div className="about-flow-grid">
-            {flow.map((stage) => (
-              <article key={stage.number}>
-                <span>{stage.number}</span>
-                <div className="about-flow-mark" aria-hidden="true" />
-                <h3>{stage.label}</h3>
+            {runtimeStages.map((stage) => (
+              <article key={stage.id}>
+                <code>{stage.id}</code>
+                <span>{stage.runtime}</span>
+                <h3>{stage.title}</h3>
                 <p>{stage.detail}</p>
               </article>
             ))}
@@ -177,39 +172,31 @@ export function AboutPage() {
           aria-labelledby="methods-title"
         >
           <div className="about-section-heading">
-            <p className="about-eyebrow">For those curious</p>
-            <h2 id="methods-title">How it currently works</h2>
+            <p className="about-eyebrow">implementation</p>
+            <h2 id="methods-title">Current system notes</h2>
             <p>
-              This is the short version of the machinery behind the articles.
-              Only the weekday comparison currently runs in the pipeline;
-              clustering and recurrence remain offline experiments. None of
-              these steps publishes without review.
+              Production behavior and offline research are labeled separately.
+              The weekday detector and daily investigator run in production;
+              clustering and recurrence remain evaluation harnesses.
             </p>
           </div>
 
           <div className="about-method-list">
             {methods.map((method) => (
-              <article key={method.title}>
-                <h3>{method.title}</h3>
-                {method.details.map((detail) => (
-                  <p key={detail}>{detail}</p>
-                ))}
-                <span>{method.status}</span>
+              <article key={method.id}>
+                <div className="about-method-key">
+                  <code>{method.id}</code>
+                  <span>{method.status}</span>
+                </div>
+                <div>
+                  <h3>{method.title}</h3>
+                  {method.details.map((detail) => (
+                    <p key={detail}>{detail}</p>
+                  ))}
+                </div>
               </article>
             ))}
           </div>
-        </section>
-
-        <section className="about-principles">
-          <p className="about-eyebrow">Editorial boundary</p>
-          <blockquote>
-            Correlation is evidence to investigate—not proof of cause.
-          </blockquote>
-          <p>
-            Published claims should be traceable to public records or reporting.
-            Uncertainty stays visible, negative results remain useful, and no
-            detector is allowed to turn proximity into a confident explanation.
-          </p>
         </section>
       </main>
 
