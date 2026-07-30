@@ -1,8 +1,9 @@
-import { stat, writeFile } from "node:fs/promises";
+import { readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { Plugin } from "@opencode-ai/plugin";
 import { z } from "zod";
+import { articleDraftSchema } from "../article-schema.ts";
 
 const WORKSPACE = "/workspace";
 const OUTPUT_DIRECTORY = `${WORKSPACE}/output`;
@@ -41,22 +42,28 @@ export default Plugin.define({
             articlePath: outputPath
               .optional()
               .describe(
-                "Publishable article path. Required for investigate outcomes.",
+                "Structured article JSON path. Required for investigate outcomes.",
+              ),
+            reviewPath: outputPath
+              .optional()
+              .describe(
+                "Final claim and editorial review path. Required for investigate outcomes.",
               ),
             evidence: z
               .array(z.string())
               .describe("Source record IDs or URLs supporting the brief."),
           })
           .superRefine((submission, context) => {
-            if (
-              submission.outcome === "investigate" &&
-              !submission.articlePath
-            ) {
-              context.addIssue({
-                code: "custom",
-                path: ["articlePath"],
-                message: "Investigate outcomes require an article.",
-              });
+            if (submission.outcome === "investigate") {
+              for (const field of ["articlePath", "reviewPath"] as const) {
+                if (!submission[field]) {
+                  context.addIssue({
+                    code: "custom",
+                    path: [field],
+                    message: `Investigate outcomes require ${field}.`,
+                  });
+                }
+              }
             }
           }),
         output: z.object({ accepted: z.boolean() }),
@@ -69,9 +76,29 @@ export default Plugin.define({
           const articlePath = submission.articlePath
             ? await requireOutputFile(submission.articlePath)
             : undefined;
+          const reviewPath = submission.reviewPath
+            ? await requireOutputFile(submission.reviewPath)
+            : undefined;
+          if (articlePath) {
+            articleDraftSchema.parse(
+              JSON.parse(
+                await readFile(path.resolve(WORKSPACE, articlePath), "utf8"),
+              ),
+            );
+          }
+          if (
+            reviewPath &&
+            !(await readFile(path.resolve(WORKSPACE, reviewPath), "utf8")).trim()
+          ) {
+            throw new Error("The article review cannot be blank.");
+          }
           await writeFile(
             SUBMISSION_PATH,
-            JSON.stringify({ ...submission, briefPath, articlePath }, null, 2),
+            JSON.stringify(
+              { ...submission, briefPath, articlePath, reviewPath },
+              null,
+              2,
+            ),
           );
           return {
             output: { accepted: true },

@@ -26,6 +26,8 @@ REQUIRED: Use `write-article` after the brief is complete when the outcome is
    notes, selection notes, and detector settings if they appear.
 2. Inventory the records, sources, time coverage, geography, and missing fields.
 3. Establish what the records directly show before calculating or researching.
+   The detector signal is only a lead; do not assume its grouping or framing is
+   the eventual story.
 4. Compare against an appropriate baseline only when the available data supports
    one. Missing comparison data is a result, not permission to invent a proxy.
 5. Answer two separate questions: what generated the records, and whether a
@@ -69,8 +71,8 @@ Write `output/brief.md` with:
 
 Keep working notes and disposable scripts in `work/`. Keep the brief concise;
 it is internal triage, not an article. When the outcome is `investigate`, add a
-publishable `output/article.md` following `write-article`. Do not draft an
-article for `watch` or `discard`.
+publishable `output/article.json` and `output/review.md` following
+`write-article`. Do not draft an article for `watch` or `discard`.
 
 Before submitting, remove every asserted record-to-record link or ranked
 explanation that lacks an explicit linking field or independent evidence.

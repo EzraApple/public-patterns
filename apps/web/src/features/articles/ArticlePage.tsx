@@ -1,17 +1,32 @@
-import { articles, getArticle, type ArticleFigure } from "./articles";
+import type { CSSProperties } from "react";
+import type { Article } from "@public-patterns/contracts/article";
+import ReactMarkdown from "react-markdown";
 import { SiteBrand } from "@/features/site/SiteBrand";
+import {
+  formatPublicationDate,
+  useArticle,
+  useArticles,
+} from "./api";
 import "./article.css";
+
+type ArticleFigure = NonNullable<Article["figure"]>["detail"];
 
 function InspectionTimeline({
   duration,
   events,
-}: Extract<ArticleFigure, { kind: "inspection-timeline" }>) {
+}: Extract<ArticleFigure, { kind: "timeline" }>) {
   return (
     <div className="timeline-graphic">
-      <p className="timeline-duration">{duration}</p>
-      <div className="inspection-timeline">
-        {events.map((event) => (
-          <div className={`inspection-event ${event.tone}`} key={event.date}>
+      {duration && <p className="timeline-duration">{duration}</p>}
+      <div
+        className="inspection-timeline"
+        style={{ "--event-count": events.length } as CSSProperties}
+      >
+        {events.map((event, index) => (
+          <div
+            className={`inspection-event ${event.tone}`}
+            key={`${event.date}-${index}`}
+          >
             <span className="inspection-date">{event.date}</span>
             <div className="timeline-marker">
               <span className="inspection-dot" aria-hidden="true" />
@@ -28,16 +43,17 @@ function InspectionTimeline({
 }
 
 function ComparisonTrend({
+  previousLabel,
+  currentLabel,
   groups,
-}: Extract<ArticleFigure, { kind: "comparison-trend" }>) {
+}: Extract<ArticleFigure, { kind: "comparison" }>) {
   const width = 600;
   const height = 240;
   const plot = { top: 22, right: 18, bottom: 38, left: 42 };
-  const maximum =
-    Math.ceil(
-      Math.max(...groups.flatMap((group) => [group.previous, group.current])) /
-        50,
-    ) * 50;
+  const maximum = Math.max(
+    1,
+    ...groups.flatMap((group) => [group.previous, group.current]),
+  );
   const x = (index: number) =>
     plot.left +
     (index * (width - plot.left - plot.right)) / (groups.length - 1);
@@ -46,16 +62,19 @@ function ComparisonTrend({
     ((maximum - value) * (height - plot.top - plot.bottom)) / maximum;
   const points = (key: "previous" | "current") =>
     groups.map((group, index) => `${x(index)},${y(group[key])}`).join(" ");
-  const ticks = Array.from({ length: maximum / 50 + 1 }, (_, index) => index * 50);
+  const ticks = Array.from(
+    { length: 5 },
+    (_, index) => (maximum * index) / 4,
+  );
 
   return (
     <>
       <div className="chart-legend" aria-hidden="true">
         <span>
-          <i className="previous" /> 2024
+          <i className="previous" /> {previousLabel}
         </span>
         <span>
-          <i className="current" /> 2025
+          <i className="current" /> {currentLabel}
         </span>
       </div>
       <svg
@@ -65,7 +84,7 @@ function ComparisonTrend({
         aria-label={groups
           .map(
             (group) =>
-              `${group.label}: ${group.previous} notices in 2024 and ${group.current} in 2025`,
+              `${group.label}: ${group.previous} for ${previousLabel} and ${group.current} for ${currentLabel}`,
           )
           .join(". ")}
       >
@@ -78,14 +97,14 @@ function ComparisonTrend({
               y2={y(tick)}
             />
             <text x={plot.left - 9} y={y(tick) + 4}>
-              {tick}
+              {Number.isInteger(tick) ? tick : tick.toFixed(1)}
             </text>
           </g>
         ))}
         <polyline className="trend-line previous" points={points("previous")} />
         <polyline className="trend-line current" points={points("current")} />
         {groups.map((group, index) => (
-          <g key={group.label}>
+          <g key={`${group.label}-${index}`}>
             <circle
               className="trend-point previous"
               cx={x(index)}
@@ -137,10 +156,16 @@ function SourceTrace({
   return (
     <>
       <div className="timeline-graphic">
-        <p className="timeline-duration">{duration}</p>
-        <div className="source-trace">
-          {events.map((event) => (
-            <div className="source-event" key={event.source}>
+        {duration && <p className="timeline-duration">{duration}</p>}
+        <div
+          className="source-trace"
+          style={{ "--event-count": events.length } as CSSProperties}
+        >
+          {events.map((event, index) => (
+            <div
+              className="source-event"
+              key={`${event.source}-${event.time}-${index}`}
+            >
               <span className="source-time">{event.time}</span>
               <div className="timeline-marker">
                 <span className="source-dot" aria-hidden="true" />
@@ -153,16 +178,16 @@ function SourceTrace({
           ))}
         </div>
       </div>
-      <p className="source-trace-note">{note}</p>
+      {note && <p className="source-trace-note">{note}</p>}
     </>
   );
 }
 
 function Figure({ figure }: { figure: ArticleFigure }) {
   switch (figure.kind) {
-    case "inspection-timeline":
+    case "timeline":
       return <InspectionTimeline {...figure} />;
-    case "comparison-trend":
+    case "comparison":
       return <ComparisonTrend {...figure} />;
     case "source-trace":
       return <SourceTrace {...figure} />;
@@ -170,7 +195,27 @@ function Figure({ figure }: { figure: ArticleFigure }) {
 }
 
 export function ArticlePage({ slug }: { slug: string }) {
-  const article = getArticle(slug);
+  const { data: article, error, isPending } = useArticle(slug);
+  const { data: articles = [] } = useArticles();
+
+  if (isPending) {
+    return (
+      <main className="article-not-found">
+        <a href="/">Public Patterns</a>
+        <h1>Loading story…</h1>
+      </main>
+    );
+  }
+
+  if (error) {
+    return (
+      <main className="article-not-found">
+        <a href="/">Public Patterns</a>
+        <h1>Story unavailable</h1>
+        <p>Please try again shortly.</p>
+      </main>
+    );
+  }
 
   if (!article) {
     return (
@@ -181,7 +226,9 @@ export function ArticlePage({ slug }: { slug: string }) {
     );
   }
 
-  const related = articles.filter((candidate) => candidate.slug !== article.slug);
+  const related = articles
+    .filter((candidate) => candidate.slug !== article.slug)
+    .slice(0, 3);
 
   return (
     <div className="article-page">
@@ -198,33 +245,39 @@ export function ArticlePage({ slug }: { slug: string }) {
             <p className="article-dek">{article.dek}</p>
             <div className="article-meta">
               <span>By Public Patterns</span>
-              <span>{article.publishedAt}</span>
+              <span>{formatPublicationDate(article.publishedAt)}</span>
               <span>{article.readingMinutes} min read</span>
             </div>
           </header>
 
-          <figure className="article-hero">
-            <img src={article.hero.src} alt={article.hero.alt} />
-            <figcaption>{article.hero.caption}</figcaption>
-          </figure>
+          {article.hero && (
+            <figure className="article-hero">
+              <img src={article.hero.src} alt={article.hero.alt} />
+              <figcaption>{article.hero.caption}</figcaption>
+            </figure>
+          )}
 
           <div className="article-layout">
             <div className="article-body">
-              {article.sections.map((section, index) => (
-                <section key={section.heading ?? index}>
-                  {section.heading && <h2>{section.heading}</h2>}
-                  {section.paragraphs.map((paragraph) => (
-                    <p key={paragraph}>{paragraph}</p>
-                  ))}
-                  {index === 0 && (
-                    <figure className="article-figure">
-                      <h3>{article.figure.title}</h3>
-                      <Figure figure={article.figure.detail} />
-                      <figcaption>{article.figure.caption}</figcaption>
-                    </figure>
-                  )}
-                </section>
-              ))}
+              <ReactMarkdown
+                components={{
+                  a: ({ children, href }) => (
+                    <a href={href} rel="noreferrer" target="_blank">
+                      {children}
+                    </a>
+                  ),
+                }}
+              >
+                {article.body}
+              </ReactMarkdown>
+
+              {article.figure && (
+                <figure className="article-figure">
+                  <h3>{article.figure.title}</h3>
+                  <Figure figure={article.figure.detail} />
+                  <figcaption>{article.figure.caption}</figcaption>
+                </figure>
+              )}
 
               <section className="article-sources" aria-labelledby="source-title">
                 <p className="article-section-label" id="source-title">
@@ -244,7 +297,7 @@ export function ArticlePage({ slug }: { slug: string }) {
 
             <aside className="related-rail" aria-labelledby="related-title">
               <p className="article-section-label" id="related-title">
-                Related reading
+                More investigations
               </p>
               {related.map((relatedArticle) => (
                 <a

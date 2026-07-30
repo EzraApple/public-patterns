@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { articleDraftSchema } from "./article.ts";
 
 export const investigationInputSchema = z.object({
   id: z.string().min(1),
@@ -17,15 +18,20 @@ export const investigationSubmissionSchema = z
     confidence: z.number().min(0).max(1),
     briefPath: outputPathSchema,
     articlePath: outputPathSchema.optional(),
+    reviewPath: outputPathSchema.optional(),
     evidence: z.array(z.string()),
   })
   .superRefine((submission, context) => {
-    if (submission.outcome === "investigate" && !submission.articlePath) {
-      context.addIssue({
-        code: "custom",
-        path: ["articlePath"],
-        message: "investigate outcomes require an article",
-      });
+    if (submission.outcome === "investigate") {
+      for (const path of ["articlePath", "reviewPath"] as const) {
+        if (!submission[path]) {
+          context.addIssue({
+            code: "custom",
+            path: [path],
+            message: `investigate outcomes require ${path}`,
+          });
+        }
+      }
     }
   });
 
@@ -44,7 +50,8 @@ export const investigationResultSchema = z.object({
     evidence: z.array(z.string()),
   }),
   brief: nonBlankString,
-  article: nonBlankString.nullable(),
+  article: articleDraftSchema.nullable(),
+  review: nonBlankString.nullable(),
 });
 
 export type InvestigationResult = z.infer<typeof investigationResultSchema>;

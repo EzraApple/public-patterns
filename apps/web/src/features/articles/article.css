@@ -135,7 +135,7 @@
   line-height: 1.78;
 }
 
-.article-body section:first-child > p:first-child::first-letter {
+.article-body > p:first-child::first-letter {
   float: left;
   margin: 0.08em 0.12em 0 0;
   color: #d44f39;
@@ -187,10 +187,7 @@
 .source-trace {
   display: grid;
   gap: 0;
-}
-
-.inspection-timeline {
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(var(--event-count), minmax(0, 1fr));
 }
 
 .inspection-event,
@@ -256,6 +253,11 @@
 .inspection-event.alert .inspection-dot {
   background: #d44f39;
   box-shadow: 0 0 0 1px #d44f39;
+}
+
+.inspection-event.clear .inspection-dot {
+  background: #39775f;
+  box-shadow: 0 0 0 1px #39775f;
 }
 
 .timeline-copy {
@@ -378,10 +380,6 @@
   color: #b83f2e;
   font-size: 12px;
   font-weight: 700;
-}
-
-.source-trace {
-  grid-template-columns: repeat(3, 1fr);
 }
 
 .source-trace-note {

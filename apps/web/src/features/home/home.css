@@ -202,10 +202,18 @@
     box-shadow 180ms ease;
 }
 
-.home-lead > img {
+.home-lead > img,
+.home-lead-placeholder {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.home-lead-placeholder,
+.home-story-placeholder {
+  background:
+    linear-gradient(145deg, rgba(200, 72, 54, 0.16), transparent 58%),
+    #dfe7e7;
 }
 
 .home-lead > div {
@@ -408,7 +416,8 @@
   grid-template-rows: 9rem 1fr;
 }
 
-.home-story-card > img {
+.home-story-card > img,
+.home-story-placeholder {
   width: 100%;
   height: 100%;
   object-fit: cover;
