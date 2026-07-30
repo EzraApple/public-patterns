@@ -12,6 +12,17 @@ export async function routeRequest(
 ): Promise<Response> {
   const url = new URL(request.url);
 
+  if (
+    request.method === "GET" &&
+    (url.pathname === "/api/articles" ||
+      url.pathname.startsWith("/api/articles/"))
+  ) {
+    const path = url.pathname.slice("/api".length);
+    return env.PIPELINE.fetch(
+      new Request(`https://pipeline${path}${url.search}`),
+    );
+  }
+
   if (url.pathname.startsWith("/api/internal/")) {
     if (request.headers.get("authorization") !== `Bearer ${env.LAB_TOKEN}`) {
       return Response.json({ error: "unauthorized" }, { status: 401 });

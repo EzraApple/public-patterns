@@ -8,13 +8,12 @@ one clear sentence. The public article should still make sense without it.
 | Evidence | Prefer |
 | --- | --- |
 | A short regulatory or response sequence | Timeline |
-| A few categories or matched periods | Bars |
-| Change across many ordered periods | Line |
-| Geography is central to the claim | Map |
-| Source agreement or disagreement | Compact evidence table |
+| A few categories or matched periods | Comparison |
+| Source agreement or response sequence | Source trace |
 
-Avoid a map when location is merely descriptive, a line for two points, or a
-chart whose only purpose is visual variety.
+The first renderer supports timelines, comparisons, and source traces. Leave
+`figure` null when those forms do not fit; do not approximate an unsupported
+map or chart.
 
 ## Evidence discipline
 
@@ -27,21 +26,34 @@ chart whose only purpose is visual variety.
   value.
 - Preserve the source query or snapshot supporting every plotted value.
 
-Put a recommendation in the internal brief using plain JSON so a later renderer
-can interpret it without reading prose:
+Put the supported figure directly in `output/article.json`:
 
 ```json
 {
-  "kind": "timeline",
   "title": "Three days from closure to passing reinspection",
-  "unit": "inspection result",
-  "values": [
-    { "label": "May 2", "value": "Closure" },
-    { "label": "May 5", "value": "Pass" }
-  ],
-  "sourceUrls": ["https://..."]
+  "caption": "San Francisco Department of Public Health inspection records.",
+  "detail": {
+    "kind": "timeline",
+    "duration": "3 days",
+    "events": [
+      {
+        "date": "May 2",
+        "label": "Closed",
+        "detail": "Routine inspection",
+        "tone": "alert"
+      },
+      {
+        "date": "May 5",
+        "label": "Passed",
+        "detail": "Reinspection",
+        "tone": "clear"
+      }
+    ]
+  }
 }
 ```
 
-This is an editorial recommendation, not a durable application schema. Include
-only the fields the proposed graphic needs.
+Comparison details use `previousLabel`, `currentLabel`, and at least two
+`groups` shaped as `{ "label", "previous", "current" }`. Source traces use at
+least two `events` shaped as `{ "source", "time", "detail" }`, with optional
+`duration` and `note`.

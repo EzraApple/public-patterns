@@ -176,7 +176,6 @@ async function startInvestigation({
   const selected = new Set(
     observations.map((observation) => `${observation.source}:${observation.id}`),
   );
-  const id = crypto.randomUUID();
   const caseData = {
     signal: {
       detector: "weekday-burst",
@@ -189,6 +188,7 @@ async function startInvestigation({
         !selected.has(`${observation.source}:${observation.id}`),
     ),
   };
+  const id = crypto.randomUUID();
   const response = await investigator.fetch(
     new Request("https://investigator/investigations", {
       method: "POST",
@@ -237,6 +237,58 @@ export async function getInvestigation(
   return row
     ? investigationResultSchema.safeParse(JSON.parse(row.result_json)).data
     : undefined;
+}
+
+export async function listInvestigations(db: D1Database) {
+  const result = await db
+    .prepare(
+      `SELECT i.id, i.created_at, i.source, i.day, i.kind, i.area,
+              i.result_json,
+              (
+                SELECT slug
+                FROM article_revisions
+                WHERE investigation_id = i.id
+                ORDER BY revision DESC
+                LIMIT 1
+              ) AS published_slug
+       FROM investigations i
+       ORDER BY i.created_at DESC
+       LIMIT 100`,
+    )
+    .all<{
+      id: string;
+      created_at: string;
+      source: string;
+      day: string;
+      kind: string;
+      area: string | null;
+      result_json: string;
+      published_slug: string | null;
+    }>();
+
+  return result.results.flatMap((row) => {
+    const parsed = investigationResultSchema.safeParse(
+      JSON.parse(row.result_json),
+    );
+    if (!parsed.success) {
+      console.warn(`Skipping invalid investigation ${row.id}`);
+      return [];
+    }
+    const investigation = parsed.data;
+    return {
+      id: row.id,
+      createdAt: row.created_at,
+      source: row.source,
+      day: row.day,
+      kind: row.kind,
+      area: row.area,
+      outcome: investigation.submission.outcome,
+      confidence: investigation.submission.confidence,
+      articleTitle: investigation.article?.title ?? null,
+      publishedSlug: row.published_slug,
+      archiveKey: investigation.archiveKey,
+    };
+  });
 }
 
 async function getBurstObservations(

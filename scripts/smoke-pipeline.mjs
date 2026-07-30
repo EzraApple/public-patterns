@@ -31,7 +31,20 @@ await writeFile(
           ]
         },
         brief: "# Fixture investigation",
-        article: "# Fixture article"
+        article: {
+          title: "Fixture article",
+          dek: "A fixture article summary.",
+          category: "Public safety",
+          body: "Fixture article body.",
+          sources: [
+            {
+              label: "Fixture record",
+              href: "https://example.com/fixture"
+            }
+          ],
+          figure: null
+        },
+        review: "# Fixture review"
       });
     }
   };`,
@@ -251,6 +264,137 @@ try {
     saved.brief !== investigation.brief
   ) {
     throw new Error(`Investigation was not saved: ${JSON.stringify(saved)}`);
+  }
+
+  const investigationListResponse = await fetch(`${origin}/investigations`);
+  const investigationList = await investigationListResponse.json();
+  if (
+    !investigationListResponse.ok ||
+    investigationList.investigations?.[0]?.id !== investigation.id ||
+    investigationList.investigations[0]?.articleTitle !== "Fixture article" ||
+    investigationList.investigations[0]?.publishedSlug !== null ||
+    "brief" in investigationList.investigations[0]
+  ) {
+    throw new Error(
+      `Investigation list failed: ${JSON.stringify(investigationList)}`,
+    );
+  }
+
+  const publicationResponse = await fetch(
+    `${origin}/investigations/${investigation.id}/publish`,
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        slug: "fixture-article",
+        significance: 80,
+        hero: null,
+      }),
+    },
+  );
+  const published = await publicationResponse.json();
+  if (
+    publicationResponse.status !== 201 ||
+    published.slug !== "fixture-article" ||
+    published.investigationId !== investigation.id ||
+    published.body !== "Fixture article body."
+  ) {
+    throw new Error(`Article publication failed: ${JSON.stringify(published)}`);
+  }
+
+  const articleListResponse = await fetch(`${origin}/articles`);
+  const articleList = await articleListResponse.json();
+  if (
+    !articleListResponse.ok ||
+    articleList.articles?.length !== 1 ||
+    articleList.articles[0]?.slug !== "fixture-article" ||
+    "body" in articleList.articles[0]
+  ) {
+    throw new Error(`Article list failed: ${JSON.stringify(articleList)}`);
+  }
+
+  const articleResponse = await fetch(`${origin}/articles/fixture-article`);
+  const article = await articleResponse.json();
+  if (!articleResponse.ok || article.body !== "Fixture article body.") {
+    throw new Error(`Article read failed: ${JSON.stringify(article)}`);
+  }
+
+  const replayPublicationResponse = await fetch(
+    `${origin}/investigations/${investigation.id}/publish`,
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        slug: "fixture-article",
+        significance: 80,
+        hero: null,
+      }),
+    },
+  );
+  if (!replayPublicationResponse.ok) {
+    throw new Error(
+      `Idempotent publication failed: ${await replayPublicationResponse.text()}`,
+    );
+  }
+
+  const changedPublicationResponse = await fetch(
+    `${origin}/investigations/${investigation.id}/publish`,
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        slug: "fixture-article",
+        significance: 81,
+        hero: null,
+      }),
+    },
+  );
+  if (changedPublicationResponse.status !== 409) {
+    throw new Error(
+      `Changed publication returned ${changedPublicationResponse.status}`,
+    );
+  }
+
+  const secondInvestigationResponse = await fetch(`${origin}/investigations`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      source: "311",
+      day: "2026-07-23",
+      kind: "Noise Report",
+      area: "Mission",
+    }),
+  });
+  const secondInvestigation = await secondInvestigationResponse.json();
+  const stolenSlugResponse = await fetch(
+    `${origin}/investigations/${secondInvestigation.id}/publish`,
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        slug: "fixture-article",
+        significance: 80,
+        hero: null,
+      }),
+    },
+  );
+  if (!secondInvestigationResponse.ok || stolenSlugResponse.status !== 409) {
+    throw new Error(
+      `Cross-investigation slug conflict returned ${stolenSlugResponse.status}`,
+    );
+  }
+
+  const publishedListResponse = await fetch(`${origin}/investigations`);
+  const publishedList = await publishedListResponse.json();
+  if (
+    !publishedListResponse.ok ||
+    publishedList.investigations?.find(
+      (candidate) => candidate.id === investigation.id,
+    )?.publishedSlug !== "fixture-article"
+  ) {
+    throw new Error(
+      `Published investigation was not linked: ${JSON.stringify(publishedList)}`,
+    );
   }
 
   const scheduledResponse = await fetch(

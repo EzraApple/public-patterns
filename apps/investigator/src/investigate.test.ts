@@ -13,7 +13,20 @@ function createSandbox(
       JSON.stringify(submission),
     ],
     ["/workspace/output/brief.md", "# Finding"],
-    ["/workspace/output/article.md", "# Event headline"],
+    [
+      "/workspace/output/article.json",
+      JSON.stringify({
+        title: "Event headline",
+        dek: "A concise summary.",
+        category: "Public safety",
+        body: "The supported account.",
+        sources: [
+          { label: "Public record", href: "https://example.com/record" },
+        ],
+        figure: null,
+      }),
+    ],
+    ["/workspace/output/review.md", "# Claim review\n\nAll claims verified."],
   ]);
   const archives = new Map<string, string>();
   const archive = {
@@ -63,7 +76,8 @@ describe("investigateInSandbox", () => {
       outcome: "investigate",
       confidence: 0.8,
       briefPath: "output/brief.md",
-      articlePath: "output/article.md",
+      articlePath: "output/article.json",
+      reviewPath: "output/review.md",
       evidence: ["observation:123"],
     };
     const { archive, archives, files, sandbox } = createSandbox(submission);
@@ -87,7 +101,17 @@ describe("investigateInSandbox", () => {
         evidence: ["observation:123"],
       },
       brief: "# Finding",
-      article: "# Event headline",
+      article: {
+        title: "Event headline",
+        dek: "A concise summary.",
+        category: "Public safety",
+        body: "The supported account.",
+        sources: [
+          { label: "Public record", href: "https://example.com/record" },
+        ],
+        figure: null,
+      },
+      review: "# Claim review\n\nAll claims verified.",
     });
     expect(JSON.parse(archives.get(result.archiveKey)!)).toMatchObject({
       version: 1,
@@ -170,10 +194,23 @@ describe("investigateInSandbox", () => {
       outcome: "investigate",
       confidence: 0.8,
       briefPath: "output/brief.md",
-      articlePath: "output/article.md",
+      articlePath: "output/article.json",
+      reviewPath: "output/review.md",
       evidence: [],
     });
-    files.set("/workspace/output/article.md", "  ");
+    files.set(
+      "/workspace/output/article.json",
+      JSON.stringify({
+        title: "Event headline",
+        dek: "A concise summary.",
+        category: "Public safety",
+        body: "  ",
+        sources: [
+          { label: "Public record", href: "https://example.com/record" },
+        ],
+        figure: null,
+      }),
+    );
 
     await expect(
       investigateInSandbox({
@@ -183,7 +220,7 @@ describe("investigateInSandbox", () => {
         deepseekApiKey: "test-key",
         environment: "test",
       }),
-    ).rejects.toThrow("article");
+    ).rejects.toThrow("body");
   });
 
   it("redacts the provider key from run failures", async () => {

@@ -1,9 +1,12 @@
 import { useState } from "react";
-import { articles, type Article } from "@/features/articles/articles";
+import type { ArticleSummary } from "@public-patterns/contracts/article";
+import {
+  formatPublicationDate,
+  useArticles,
+} from "@/features/articles/api";
 import { SiteBrand } from "@/features/site/SiteBrand";
 import "./home.css";
 
-const categories = ["All", "Public safety", "Housing", "Health"] as const;
 const sortOptions = {
   newest: "Newest",
   significance: "Significance",
@@ -21,10 +24,10 @@ function SearchIcon() {
   );
 }
 
-function ArticleMeta({ article }: { article: Article }) {
+function ArticleMeta({ article }: { article: ArticleSummary }) {
   return (
     <div className="home-meta">
-      <span>{article.publishedAt}</span>
+      <span>{formatPublicationDate(article.publishedAt)}</span>
       <span>{article.readingMinutes} min read</span>
     </div>
   );
@@ -34,7 +37,7 @@ function StoryCard({
   article,
   compact = false,
 }: {
-  article: Article;
+  article: ArticleSummary;
   compact?: boolean;
 }) {
   return (
@@ -42,7 +45,11 @@ function StoryCard({
       className={`home-story-card${compact ? " compact" : ""}`}
       href={`/article/${article.slug}`}
     >
-      <img src={article.hero.src} alt="" />
+      {article.hero ? (
+        <img src={article.hero.src} alt="" />
+      ) : (
+        <div className="home-story-placeholder" aria-hidden="true" />
+      )}
       <div className="home-story-copy">
         <p className="home-category">{article.category}</p>
         <h3>{article.title}</h3>
@@ -58,7 +65,7 @@ function StoryCard({
   );
 }
 
-function matches(article: Article, category: string, query: string) {
+function matches(article: ArticleSummary, category: string, query: string) {
   if (category !== "All" && article.category !== category) {
     return false;
   }
@@ -72,7 +79,6 @@ function matches(article: Article, category: string, query: string) {
     article.category,
     article.title,
     article.dek,
-    ...article.sections.flatMap((section) => section.paragraphs),
   ]
     .join(" ")
     .toLocaleLowerCase();
@@ -80,7 +86,7 @@ function matches(article: Article, category: string, query: string) {
   return words.every((word) => text.includes(word));
 }
 
-function sortArticles(items: readonly Article[], sort: Sort) {
+function sortArticles(items: readonly ArticleSummary[], sort: Sort) {
   return [...items].sort((a, b) => {
     if (sort === "shortest") {
       return a.readingMinutes - b.readingMinutes;
@@ -95,9 +101,14 @@ function sortArticles(items: readonly Article[], sort: Sort) {
 }
 
 export function HomePage() {
-  const [category, setCategory] = useState<(typeof categories)[number]>("All");
+  const { data: articles = [], error, isPending } = useArticles();
+  const [category, setCategory] = useState("All");
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<Sort>("newest");
+  const categories = [
+    "All",
+    ...new Set(articles.map((article) => article.category)),
+  ];
 
   const visibleArticles = sortArticles(
     articles.filter((article) => matches(article, category, query)),
@@ -123,7 +134,11 @@ export function HomePage() {
         {lead && (
           <section className="home-featured">
             <a className="home-lead" href={`/article/${lead.slug}`}>
-              <img src={lead.hero.src} alt={lead.hero.alt} />
+              {lead.hero ? (
+                <img src={lead.hero.src} alt={lead.hero.alt} />
+              ) : (
+                <div className="home-lead-placeholder" aria-hidden="true" />
+              )}
               <div>
                 <p className="home-category">{lead.category}</p>
                 <h1>{lead.title}</h1>
@@ -139,7 +154,7 @@ export function HomePage() {
 
             <aside className="home-ranked" aria-labelledby="ranked-title">
               <div className="home-ranked-heading">
-                <p id="ranked-title">Most significant this week</p>
+                <p id="ranked-title">Highest ranked</p>
                 <a href="#ranking">How ranking works</a>
               </div>
               <ol>
@@ -229,7 +244,17 @@ export function HomePage() {
             )}
           </section>
 
-          {visibleArticles.length > 0 ? (
+          {isPending ? (
+            <section className="home-empty">
+              <p className="home-category">Loading</p>
+              <h2>Loading investigations…</h2>
+            </section>
+          ) : error ? (
+            <section className="home-empty">
+              <p className="home-category">Unavailable</p>
+              <h2>Investigations could not be loaded.</h2>
+            </section>
+          ) : visibleArticles.length > 0 ? (
             <div className="home-story-grid" key={`${category}-${sort}`}>
               {visibleArticles.map((article, index) => (
                 <StoryCard
@@ -241,14 +266,22 @@ export function HomePage() {
             </div>
           ) : (
             <section className="home-empty">
-              <p className="home-category">No matches</p>
-              <h2>No investigations match that search.</h2>
-              <button
-                type="button"
-                onClick={clearFilters}
-              >
-                Clear search
-              </button>
+              <p className="home-category">
+                {hasFilters ? "No matches" : "No published investigations"}
+              </p>
+              <h2>
+                {hasFilters
+                  ? "No investigations match that search."
+                  : "Reviewed investigations will appear here."}
+              </h2>
+              {hasFilters && (
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                >
+                  Clear search
+                </button>
+              )}
             </section>
           )}
         </section>
@@ -256,9 +289,9 @@ export function HomePage() {
         <section className="home-methodology" id="ranking">
           <p className="home-eyebrow">How ranking works</p>
           <p>
-            Stories rise when a pattern is recent, persistent, unusually large,
-            or supported by distinct public sources. Ranking helps organize the
-            publication; it never replaces editorial review.
+            Each story receives an editorial significance score when it is
+            published. The score organizes the feed; it is not a measure of
+            statistical confidence.
           </p>
         </section>
       </main>

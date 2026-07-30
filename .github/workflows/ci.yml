@@ -82,14 +82,14 @@ jobs:
       - name: Verify Doppler access
         run: doppler secrets --only-names
 
+      - name: Apply D1 migrations
+        run: doppler run -- pnpm db:migrate:production
+
       - name: Deploy investigator Worker
         run: doppler run -- pnpm deploy:investigator
 
       - name: Deploy pipeline Worker
         run: doppler run -- pnpm deploy:pipeline
-
-      - name: Apply D1 migrations
-        run: doppler run -- pnpm db:migrate:production
 
       - name: Deploy web Worker
         run: doppler run -- pnpm deploy:web

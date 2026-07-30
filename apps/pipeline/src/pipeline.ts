@@ -1,5 +1,12 @@
 import { z } from "zod";
+import { publishArticleSchema } from "@public-patterns/contracts/article";
 
+import {
+  ArticlePublicationError,
+  getArticle,
+  listArticles,
+  publishArticle,
+} from "./articles.ts";
 import { burstSources, getBursts } from "./bursts.ts";
 import { seedDevFixtures } from "./devFixtures.ts";
 import type { Env } from "./environment.ts";
@@ -12,6 +19,7 @@ import {
   getInvestigation,
   investigationRequestSchema,
   investigateBurst,
+  listInvestigations,
 } from "./investigations.ts";
 import { sources } from "./observation.ts";
 import { getHistory } from "./observationStore.ts";
@@ -31,6 +39,16 @@ export async function routeRequest(
 
   if (request.method === "GET" && url.pathname === "/health") {
     return json({ ok: true, environment: env.PUBLIC_PATTERNS_ENV });
+  }
+  if (request.method === "GET" && url.pathname === "/articles") {
+    return json({ articles: await listArticles(env.DB) });
+  }
+  if (request.method === "GET" && url.pathname.startsWith("/articles/")) {
+    const slug = url.pathname.slice("/articles/".length);
+    const article = slug ? await getArticle(env.DB, slug) : undefined;
+    return article
+      ? json(article)
+      : json({ error: "article not found" }, 404);
   }
   if (request.method === "POST" && url.pathname.startsWith("/ingest/")) {
     const ingestion = ingestionSchema.safeParse(
@@ -98,6 +116,9 @@ export async function routeRequest(
       return json({ error: "investigation failed" }, 502);
     }
   }
+  if (request.method === "GET" && url.pathname === "/investigations") {
+    return json({ investigations: await listInvestigations(env.DB) });
+  }
   if (request.method === "GET" && url.pathname.startsWith("/investigations/")) {
     const id = url.pathname.slice("/investigations/".length);
     if (!id) {
@@ -107,6 +128,38 @@ export async function routeRequest(
     return investigation
       ? json(investigation)
       : json({ error: "investigation not found" }, 404);
+  }
+  if (
+    request.method === "POST" &&
+    url.pathname.startsWith("/investigations/") &&
+    url.pathname.endsWith("/publish")
+  ) {
+    const investigationId = url.pathname.slice(
+      "/investigations/".length,
+      -"/publish".length,
+    );
+    const publication = publishArticleSchema.safeParse(
+      await request.json().catch(() => undefined),
+    );
+    if (!investigationId || !publication.success) {
+      return json({ error: "invalid publication" }, 400);
+    }
+    try {
+      return json(
+        await publishArticle({
+          db: env.DB,
+          investigationId,
+          publication: publication.data,
+          publishedAt: observedAt,
+        }),
+        201,
+      );
+    } catch (error) {
+      if (error instanceof ArticlePublicationError) {
+        return json({ error: error.message }, error.status);
+      }
+      throw error;
+    }
   }
   if (
     request.method === "POST" &&

@@ -4,6 +4,7 @@ import {
   investigationSubmissionSchema,
   type InvestigationInput,
 } from "@public-patterns/contracts/investigation";
+import { articleDraftSchema } from "@public-patterns/contracts/article";
 import type { Env } from "./environment.ts";
 type InvestigationSandbox = {
   mkdir(path: string, options: { recursive: boolean }): Promise<unknown>;
@@ -130,6 +131,9 @@ export async function investigateInSandbox({
     const articleFile = submission.articlePath
       ? await sandbox.readFile(`/workspace/${submission.articlePath}`)
       : null;
+    const reviewFile = submission.reviewPath
+      ? await sandbox.readFile(`/workspace/${submission.reviewPath}`)
+      : null;
 
     result = investigationResultSchema.parse({
       id: input.id,
@@ -140,7 +144,10 @@ export async function investigateInSandbox({
         evidence: submission.evidence,
       },
       brief: briefFile.content,
-      article: articleFile?.content ?? null,
+      article: articleFile
+        ? articleDraftSchema.parse(JSON.parse(articleFile.content))
+        : null,
+      review: reviewFile?.content ?? null,
     });
   } catch (submissionError) {
     const output = run.stderr || run.stdout;

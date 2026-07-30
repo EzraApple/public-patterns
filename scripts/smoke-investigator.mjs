@@ -137,7 +137,11 @@ try {
     !body.brief.trim() ||
     !["investigate", "watch", "discard"].includes(body.submission?.outcome) ||
     (body.submission?.outcome === "investigate" &&
-      (typeof body.article !== "string" || !body.article.trim()))
+      (!body.article ||
+        typeof body.article.title !== "string" ||
+        !body.article.title.trim() ||
+        typeof body.review !== "string" ||
+        !body.review.trim()))
   ) {
     throw new Error(
       `Unexpected investigator result (${response.status}): ${JSON.stringify(body)}`,
@@ -150,7 +154,9 @@ try {
   console.log(body.brief);
   if (body.article) {
     console.log("\n--- Article ---\n");
-    console.log(body.article);
+    console.log(JSON.stringify(body.article, null, 2));
+    console.log("\n--- Self-review ---\n");
+    console.log(body.review);
   }
   if (options.result) {
     await writeFile(

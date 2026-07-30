@@ -22,7 +22,7 @@ research lives in [`docs/sources/`](./docs/sources/).
 
 ## Status
 
-The repository has a small coming-soon site plus ingestion for 311,
+The repository has a public article feed plus ingestion for 311,
 law-enforcement dispatch, Fire/EMS responses, police incidents, building
 complaints and permits, injury crashes, health inspections, eviction notices,
 and 511 transit alerts. The pipeline stores append-only observations in D1 and
@@ -30,7 +30,9 @@ derives experimental signals on demand. An investigator can analyze one
 candidate inside an ephemeral sandbox and archives its audit bundle in R2.
 Production CI deploys all three Workers, applies D1 migrations, rotates
 ingestion across sources every five minutes, and privately investigates one
-ready signal each morning.
+ready signal each morning. Reviewed investigation drafts can be promoted to
+immutable D1 article revisions; the public site reads those articles through
+its Worker API.
 
 ## Development
 

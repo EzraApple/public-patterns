@@ -40,3 +40,19 @@ describe("internal API", () => {
     expect(fetch).toHaveBeenCalledOnce();
   });
 });
+
+describe("public article API", () => {
+  it("forwards article reads without the lab token", async () => {
+    const fetch = vi.fn(async (request: Request) => {
+      expect(request.url).toBe("https://pipeline/articles/example");
+      return Response.json({ slug: "example" });
+    });
+    const response = await routeRequest(
+      new Request("https://publicpatterns.com/api/articles/example"),
+      environment(fetch),
+    );
+
+    expect(response.ok).toBe(true);
+    expect(fetch).toHaveBeenCalledOnce();
+  });
+});

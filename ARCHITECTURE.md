@@ -77,12 +77,12 @@ flowchart LR
     Pipeline --> Storage
     Pipeline -->|"candidate"| Investigator
     Investigator --> Archive
-    Web --> Storage
+    Web -->|"public article reads"| Pipeline
 ```
 
-Production CI deploys the investigator first, then the pipeline and its D1
-migrations, then the web Worker. Private service bindings connect web to
-pipeline and pipeline to investigator. Only the web Worker has a public route.
+Production CI applies D1 migrations before deploying the investigator,
+pipeline, and web Workers. Private service bindings connect web to pipeline and
+pipeline to investigator. Only the web Worker has a public route.
 
 Within each application, organize code by product feature and keep runtime
 entrypoints thin. Shared packages should appear only after two applications
@@ -149,26 +149,37 @@ CREATE TABLE article_links (
 
 Agents should receive linked article titles, summaries, slugs, and rationales when reading an article. This makes traversal feel like following links between documents while preserving database queryability. Edge types can be added only if real use demonstrates a need.
 
-## Article format
+## Article format and publication
 
-The current direction is restricted MDX: ordinary Markdown plus a small registry of evidence components.
+An investigation may return a structured article draft: Markdown body, explicit
+sources, and at most one validated timeline, comparison, or source-trace
+figure. It cannot execute arbitrary code. Before submission, the agent writes a
+claim-by-claim review and revises the draft; both are retained in the R2 audit
+bundle.
 
-```mdx
-Reports increased 280% over the seasonal baseline.
+Publication is a separate, explicit operation:
 
-<Trend query="311-noise-mission-30d" />
-<Map query="related-events-abc123" />
-<Source dataset="vw6y-z8j6" record="..." />
+```mermaid
+flowchart LR
+    A["Investigation + evidence"] --> B["Agent draft"]
+    B --> C["Agent self-review"]
+    C --> D{"Human promotes?"}
+    D -->|"yes"| E["Immutable D1 article revision"]
+    D -->|"no"| F["Private audit only"]
+    E --> G["Public Worker API"]
+    G --> H["TanStack Query UI"]
 ```
 
-Generated articles may reference registered components and saved queries but may not import or execute arbitrary code. Validation rejects anything outside the supported document grammar.
+The public article is a projection of the reviewed investigation, not a
+separate hand-written fixture. D1 stores searchable article documents and
+revision metadata; R2 retains the larger investigation session and evidence
+archive. Article list responses omit the body and figure to keep feed reads
+small. A permanent slug identifies the article while immutable revisions leave
+room for later corrections without losing prior text.
 
-Evidence queries can be:
-
-- **live**, when the visualization should follow an evolving situation
-- **snapshotted**, when the article must preserve the exact result supporting its prose
-
-Each article should eventually be available as a rendered page, agent-readable Markdown, and structured JSON.
+Saved, reproducible figure data is the default. Live evidence queries remain a
+future option for situations where a visualization must track an evolving
+event.
 
 ## Agent and tool layer
 
@@ -188,9 +199,10 @@ The first agent experiment uses OpenCode 2 with DeepSeek V4 Pro Thinking inside
 one ephemeral Cloudflare Sandbox per investigation. The candidate arrives as
 flexible JSON on disk; the agent can use Python, web research, and baked-in
 analysis skills, then signals completion through a typed `submit_brief` tool.
-The Worker accepts the submitted brief and article, archives the input, redacted
-session output, and result in R2, then destroys the sandbox. D1 keeps the
-searchable investigation record and its R2 object key. Compact eval definitions
+The Worker accepts the submitted brief, structured article draft, and review;
+archives the input, redacted session output, and result in R2; then destroys the
+sandbox. D1 keeps the searchable investigation record and its R2 object key.
+Compact eval definitions
 stay in git; bulky source snapshots and replay evidence belong in R2.
 
 An investigation does not need to uncover a mystery. It may advance when

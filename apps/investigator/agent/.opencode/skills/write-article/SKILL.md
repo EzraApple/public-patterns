@@ -20,6 +20,8 @@ details, and next checks.
    analysis; otherwise return the case for `watch` or `discard`.
 3. Research beyond the triggering records when reputable external context could
    explain what happened, establish consequences, or resolve ambiguity.
+   Reporting may strengthen a data-led finding; it must not replace the
+   supplied records as the origin of the story.
 4. Decide what each source adds. Several databases describing one originating
    call are one evidence chain, not several independent confirmations.
 5. Choose the shortest form that fully explains the story.
@@ -85,32 +87,46 @@ source list should contain only material actually used in the article.
 
 ## Format
 
-Write `output/article.md`:
+Write `output/article.json`:
 
-```md
-# Event-first headline
-
-> One-sentence dek that adds context rather than repeating the headline.
-
-Article body.
-
-## Sources
-
-- [Descriptive source name](https://...)
+```json
+{
+  "title": "Event-first headline",
+  "dek": "One sentence that adds context instead of repeating the headline.",
+  "category": "Public safety",
+  "body": "Article body in ordinary Markdown.",
+  "sources": [
+    {
+      "label": "Descriptive source name",
+      "href": "https://..."
+    }
+  ],
+  "figure": null
+}
 ```
 
-Use subheads only when the body has a real second movement. Do not add an author
-line, reading-time estimate, publishing date, or editorial notes; the product
-supplies those.
+The body may use paragraphs, links, emphasis, and meaningful second-level
+headings. Do not repeat the title, dek, source list, author, reading time,
+publication date, or editorial notes inside it; the product supplies those.
 
 Optional reference: Read `references/visualizations.md` when a timeline,
-comparison, trend, or map would explain the evidence faster than prose. Put the
-recommendation and supporting values in the investigation brief, not inside the
-public article Markdown.
+comparison, or source trace would explain the evidence faster than prose. Put
+one supported figure in the structured `figure` field and explain its values in
+the investigation brief.
 
-## Final edit
+## Mandatory self-review
 
-Before submitting:
+Draft first, then review the entire article as a skeptical editor before
+submitting. Write `output/review.md` with a compact claim audit:
+
+- each material claim and its exact supporting source
+- every recalculated total, ratio, list, and elapsed time
+- source dates and any status or continuity language they limit
+- whether distinct records are independent evidence or one reporting chain
+- every sentence removed or corrected during review, with the reason
+
+Then revise `output/article.json` to fix every issue the audit finds. This is a
+real second pass, not a description of the intended checks. Confirm:
 
 1. Check every factual clause against a cited source.
 2. Recalculate every stated total, ratio, list, and elapsed time. If a sentence
@@ -125,7 +141,5 @@ Before submitting:
 7. Cut any paragraph that adds no new fact, context, limitation, or consequence.
 8. Confirm the dek, lead, and conclusion do different jobs.
 
-For reported or number-heavy articles, make a disposable claim audit under
-`work/` before the final edit. List each material claim, its source, and the date
-through which that source supports it. Do not publish a claim that fails the
-audit.
+Do not submit an article that fails its own review. Submit both
+`articlePath: "output/article.json"` and `reviewPath: "output/review.md"`.
