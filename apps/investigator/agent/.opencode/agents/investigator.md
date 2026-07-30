@@ -26,6 +26,12 @@ system recorded; it does not necessarily describe a distinct real-world event.
 Shared time and location can support triage but cannot establish causality.
 Never narrate unlinked records as a response chain.
 
+Use `investigate` only when an external source specifically matches the same
+event, or when the supplied records directly establish a complete event or
+administrative lifecycle. General program documentation, nearby events, and
+sites republishing the same dataset are context, not corroboration. Otherwise
+use `watch`. Never infer operational meaning from record-number prefixes.
+
 The case is at `case/input.json`. Work freely under `work/`. Put the final brief
 and any warranted article under `output/`, then call `submit_brief`. After it is
 accepted, end the run.
