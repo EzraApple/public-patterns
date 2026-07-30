@@ -60,6 +60,12 @@ export async function publishArticle({
   if (!investigation.article.hero) {
     throw new ArticlePublicationError("article has no hero image", 409);
   }
+  if (investigation.article.sources.some(hasUnfilteredDataSfLink)) {
+    throw new ArticlePublicationError(
+      "DataSF article sources must link to an exact query",
+      409,
+    );
+  }
 
   const article = articleSchema.parse({
     ...investigation.article,
@@ -133,6 +139,18 @@ export async function getArticle(
 
 function readingMinutes(body: string) {
   return Math.max(1, Math.ceil(body.trim().split(/\s+/).length / 220));
+}
+
+function hasUnfilteredDataSfLink({ href }: { href: string }) {
+  const url = new URL(href);
+  const isMetadata = url.pathname.startsWith("/api/views/");
+  const isRecordQuery =
+    /^\/resource\/[a-z0-9]{4}-[a-z0-9]{4}\.json$/.test(
+      url.pathname,
+    ) &&
+    (url.searchParams.has("$query") ||
+      url.searchParams.has("$where"));
+  return url.hostname === "data.sfgov.org" && !isMetadata && !isRecordQuery;
 }
 
 function matchesPublication(
