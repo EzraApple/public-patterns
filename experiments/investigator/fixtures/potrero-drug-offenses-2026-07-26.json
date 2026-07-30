@@ -1,0 +1,39 @@
+{
+  "id": "potrero-drug-offenses-2026-07-26",
+  "evalRole": "ambiguous-single-source-watch",
+  "capturedAt": "2026-07-30",
+  "sourceQueries": [
+    "https://data.sfgov.org/resource/wg3w-h783.json?$select=row_id,incident_datetime,report_datetime,incident_number,cad_number,incident_code,incident_description,resolution,intersection,analysis_neighborhood&$where=incident_date%20between%20%272026-07-26T00%3A00%3A00.000%27%20and%20%272026-07-27T00%3A00%3A00.000%27%20and%20incident_code%3D%2716740%27%20and%20analysis_neighborhood%3D%27Potrero%20Hill%27&$order=incident_datetime,row_id&$limit=100"
+  ],
+  "limitations": [
+    "All target records come from one SFPD reporting dataset.",
+    "The dataset maps locations to nearby intersections to protect privacy.",
+    "The resolution value Cite or Arrest Adult does not distinguish citations from arrests.",
+    "No independent source found during the first production investigation explained or confirmed what generated the batch.",
+    "The previous-day count is an adjacent-day comparison, not a historical baseline."
+  ],
+  "series": [
+    {
+      "source": "police-incidents",
+      "kind": "Drug Offense",
+      "area": "Potrero Hill",
+      "location": "17TH ST \\ CAROLINA ST",
+      "date": "2026-07-26",
+      "rawRows": 40,
+      "uniqueIncidentNumbers": 37,
+      "uniqueCadNumbers": 37,
+      "at1500": 36,
+      "at1625": 1,
+      "incidentDescription": "Controlled Substance, Under the Influence of",
+      "resolution": "Cite or Arrest Adult"
+    },
+    {
+      "source": "police-incidents",
+      "kind": "Drug Offense",
+      "area": "Potrero Hill",
+      "location": "17TH ST \\ CAROLINA ST",
+      "date": "2026-07-25",
+      "uniqueIncidentNumbers": 1
+    }
+  ]
+}

@@ -52,6 +52,11 @@ Confidence measures confidence in this triage choice, not confidence that any
 explanation is true. Keep confidence moderate when evidence is indirect,
 controls are weak, or important source semantics remain unverified.
 
+When one administrative source shows an ambiguous pattern and external
+research does not explain or independently corroborate it, choose `watch`.
+A single source can still warrant `investigate` when its records directly and
+unambiguously establish a complete event or administrative lifecycle.
+
 Deduplication changes the unit of analysis; it does not automatically make the
 underlying event unimportant. Multiple datasets also do not automatically count
 as corroboration: a downstream record that only reformats the same call adds no

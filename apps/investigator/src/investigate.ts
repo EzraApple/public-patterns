@@ -99,7 +99,6 @@ export async function investigateInSandbox({
       cwd: "/workspace",
       env: {
         DEEPSEEK_API_KEY: deepseekApiKey,
-        OPENCODE_ENABLE_EXA: "1",
       },
       timeout: 720_000,
     });

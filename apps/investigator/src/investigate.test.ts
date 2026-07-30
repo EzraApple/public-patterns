@@ -129,7 +129,6 @@ describe("investigateInSandbox", () => {
         cwd: "/workspace",
         env: {
           DEEPSEEK_API_KEY: "test-key",
-          OPENCODE_ENABLE_EXA: "1",
         },
       }),
     );

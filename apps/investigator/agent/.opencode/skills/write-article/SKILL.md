@@ -140,6 +140,13 @@ real second pass, not a description of the intended checks. Confirm:
 6. Replace pipeline-first framing with event-first framing.
 7. Cut any paragraph that adds no new fact, context, limitation, or consequence.
 8. Confirm the dek, lead, and conclusion do different jobs.
+9. Preserve source distinctions in the headline. Compression must not turn
+   “cite or arrest” into “arrest,” a complaint into a finding, or a possible
+   link into a confirmed one.
+10. Remove a comparison when the review finds mismatched units, inflated row
+    counts, or an unsupported baseline.
 
-Do not submit an article that fails its own review. Submit both
-`articlePath: "output/article.json"` and `reviewPath: "output/review.md"`.
+Every material issue found in the review must change the draft or downgrade the
+case from `investigate`. Do not submit an article that fails its own review.
+Submit both `articlePath: "output/article.json"` and
+`reviewPath: "output/review.md"`.
