@@ -44,6 +44,67 @@ export async function getCurrentDispatch({
   return result.results.map(toObservation);
 }
 
+export async function getCurrentDispatchMetadata({
+  db,
+  ranges,
+}: {
+  db: D1Database;
+  ranges: { start: string; end: string }[];
+}) {
+  const timeFilter = ranges
+    .map(() => "(occurred_at >= ? AND occurred_at < ?)")
+    .join(" OR ");
+  const result = await db
+    .prepare(
+      `WITH candidates AS (
+         SELECT DISTINCT id
+         FROM observations
+         WHERE source IN ('dispatch-realtime', 'dispatch-closed')
+           AND (${timeFilter})
+       ),
+       source_current AS (
+         SELECT source, observations.id, occurred_at, updated_at, observed_at,
+                kind, area,
+                row_number() OVER (
+                  PARTITION BY observations.source, observations.id
+                  ORDER BY observations.updated_at DESC,
+                           observations.observed_at DESC,
+                           observations.data_hash DESC
+                ) AS source_position
+         FROM observations
+         JOIN candidates USING (id)
+         WHERE source IN ('dispatch-realtime', 'dispatch-closed')
+       ),
+       dispatch_current AS (
+         SELECT *,
+                row_number() OVER (
+                  PARTITION BY id
+                  ORDER BY
+                    CASE source WHEN 'dispatch-closed' THEN 1 ELSE 0 END DESC
+                ) AS dispatch_position
+         FROM source_current
+         WHERE source_position = 1
+       )
+       SELECT source, id, occurred_at, kind, area
+       FROM dispatch_current
+       WHERE dispatch_position = 1 AND (${timeFilter})
+       ORDER BY occurred_at, id`,
+    )
+    .bind(
+      ...ranges.flatMap(({ start, end }) => [start, end]),
+      ...ranges.flatMap(({ start, end }) => [start, end]),
+    )
+    .all<ObservationMetadataRow>();
+
+  return result.results.map((row) => ({
+    source: row.source,
+    id: row.id,
+    occurredAt: row.occurred_at,
+    kind: row.kind,
+    area: row.area,
+  }));
+}
+
 export async function getDispatchHistory(
   db: D1Database,
   id: string,
@@ -73,6 +134,11 @@ type ObservationRow = {
   area: string | null;
   data_json: string;
 };
+
+type ObservationMetadataRow = Pick<
+  ObservationRow,
+  "source" | "id" | "occurred_at" | "kind" | "area"
+>;
 
 function toObservation(row: ObservationRow): Observation {
   return {

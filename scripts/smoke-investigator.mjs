@@ -135,7 +135,9 @@ try {
     !response.ok ||
     typeof body.brief !== "string" ||
     !body.brief.trim() ||
-    !["investigate", "watch", "discard"].includes(body.submission?.outcome)
+    !["investigate", "watch", "discard"].includes(body.submission?.outcome) ||
+    (body.submission?.outcome === "investigate" &&
+      (typeof body.article !== "string" || !body.article.trim()))
   ) {
     throw new Error(
       `Unexpected investigator result (${response.status}): ${JSON.stringify(body)}`,
@@ -146,6 +148,10 @@ try {
     `Investigator returned ${body.submission.outcome} at ${body.submission.confidence} confidence.\n`,
   );
   console.log(body.brief);
+  if (body.article) {
+    console.log("\n--- Article ---\n");
+    console.log(body.article);
+  }
   if (options.result) {
     await writeFile(
       path.resolve(repository, options.result),

@@ -1,11 +1,13 @@
 import type { Observation } from "./observation.ts";
 import { shiftDay } from "./ingestion.ts";
-import { getCurrentDispatch } from "./features/dispatch/read.ts";
+import {
+  getCurrentDispatchMetadata,
+} from "./features/dispatch/read.ts";
 import {
   getInspectionRepresentatives,
 } from "./features/healthInspections/read.ts";
 import {
-  getCurrent,
+  getCurrentMetadata,
   getIngestionCursor,
 } from "./observationStore.ts";
 
@@ -44,6 +46,11 @@ export type BurstResult = {
   bursts: Burst[];
 };
 
+type DetectionObservation = Pick<
+  Observation,
+  "source" | "id" | "occurredAt" | "kind" | "area"
+>;
+
 export async function getBursts(
   db: D1Database,
   source: BurstSource,
@@ -74,13 +81,14 @@ export async function getBursts(
     return { source, day, ready: false, bursts: [] };
   }
 
-  const start = shiftDay(day, -28);
-  const end = shiftDay(day, 1);
+  const days = [
+    day,
+    ...[1, 2, 3, 4].map((week) => shiftDay(day, -7 * week)),
+  ];
   const observations = await getDetectorObservations({
     db,
     source,
-    start,
-    end,
+    days,
   });
   return {
     source,
@@ -93,30 +101,41 @@ export async function getBursts(
 export async function getDetectorObservations({
   db,
   source,
-  start,
-  end,
+  days,
 }: {
   db: D1Database;
   source: BurstSource;
-  start: string;
-  end: string;
-}): Promise<Observation[]> {
+  days: string[];
+}): Promise<DetectionObservation[]> {
+  const ranges = days.map((value) => ({
+    start: `${value}T00:00:00`,
+    end: `${shiftDay(value, 1)}T00:00:00`,
+  }));
   if (source === "dispatch") {
-    return getCurrentDispatch({ db, start, end });
+    return getCurrentDispatchMetadata({ db, ranges });
   }
   if (source === "health-inspections") {
-    return getInspectionRepresentatives({ db, start, end });
+    return (
+      await Promise.all(
+        ranges.map(({ start, end }) =>
+          getInspectionRepresentatives({ db, start, end }),
+        ),
+      )
+    ).flat();
   }
-  return getCurrent({ db, source, start, end });
+  return getCurrentMetadata({ db, source, ranges });
 }
 
 export function findBursts(
-  observations: Observation[],
+  observations: DetectionObservation[],
   day: string,
 ): Burst[] {
   const baselineDays = [1, 2, 3, 4].map((week) => shiftDay(day, -7 * week));
   const relevantDays = new Set([day, ...baselineDays]);
-  const groups = new Map<string, Map<string, Observation[]>>();
+  const groups = new Map<
+    string,
+    Map<string, DetectionObservation[]>
+  >();
 
   for (const observation of observations) {
     const observationDay = observation.occurredAt.slice(0, 10);

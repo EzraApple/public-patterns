@@ -7,6 +7,9 @@ import { z } from "zod";
 const WORKSPACE = "/workspace";
 const OUTPUT_DIRECTORY = `${WORKSPACE}/output`;
 const SUBMISSION_PATH = `${OUTPUT_DIRECTORY}/submission.json`;
+const outputPath = z
+  .string()
+  .describe("Workspace-relative path under output/.");
 
 async function requireOutputFile(relativePath: string): Promise<string> {
   const absolutePath = path.resolve(WORKSPACE, relativePath);
@@ -26,20 +29,36 @@ export default Plugin.define({
       tools.add({
         name: "submit_brief",
         description: "Submit the completed investigation brief.",
-        input: z.object({
-          outcome: z.enum(["investigate", "watch", "discard"]),
-          confidence: z
-            .number()
-            .min(0)
-            .max(1)
-            .describe("Confidence in the triage outcome, not a causal story."),
-          briefPath: z
-            .string()
-            .describe("Workspace-relative path under output/."),
-          evidence: z
-            .array(z.string())
-            .describe("Source record IDs or URLs supporting the brief."),
-        }),
+        input: z
+          .object({
+            outcome: z.enum(["investigate", "watch", "discard"]),
+            confidence: z
+              .number()
+              .min(0)
+              .max(1)
+              .describe("Confidence in the triage outcome, not a causal story."),
+            briefPath: outputPath,
+            articlePath: outputPath
+              .optional()
+              .describe(
+                "Publishable article path. Required for investigate outcomes.",
+              ),
+            evidence: z
+              .array(z.string())
+              .describe("Source record IDs or URLs supporting the brief."),
+          })
+          .superRefine((submission, context) => {
+            if (
+              submission.outcome === "investigate" &&
+              !submission.articlePath
+            ) {
+              context.addIssue({
+                code: "custom",
+                path: ["articlePath"],
+                message: "Investigate outcomes require an article.",
+              });
+            }
+          }),
         output: z.object({ accepted: z.boolean() }),
         options: {
           codemode: false,
@@ -47,9 +66,12 @@ export default Plugin.define({
         },
         execute: async (submission) => {
           const briefPath = await requireOutputFile(submission.briefPath);
+          const articlePath = submission.articlePath
+            ? await requireOutputFile(submission.articlePath)
+            : undefined;
           await writeFile(
             SUBMISSION_PATH,
-            JSON.stringify({ ...submission, briefPath }, null, 2),
+            JSON.stringify({ ...submission, briefPath, articlePath }, null, 2),
           );
           return {
             output: { accepted: true },

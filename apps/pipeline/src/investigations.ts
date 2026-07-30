@@ -6,7 +6,6 @@ import {
   type BurstSource,
   burstSources,
   getBursts,
-  getDetectorObservations,
 } from "./bursts.ts";
 import { getCurrentDispatch } from "./features/dispatch/read.ts";
 import { getInspectionEvidence } from "./features/healthInspections/read.ts";
@@ -37,6 +36,72 @@ export class InvestigationUnavailableError extends Error {
   }
 }
 
+export async function investigateDailyBursts({
+  db,
+  investigator,
+  day,
+  createdAt,
+}: {
+  db: D1Database;
+  investigator: Fetcher;
+  day: string;
+  createdAt: string;
+}) {
+  const detected = await Promise.all(
+    burstSources.map((source) => getBursts(db, source, day)),
+  );
+  const candidates = detected
+    .flatMap(({ source, ready, bursts }) =>
+      ready
+        ? bursts.map((burst) => ({
+            source,
+            burst,
+            excess: burst.observed - burst.expected,
+          }))
+        : [],
+    )
+    .sort(
+      (left, right) =>
+        right.excess - left.excess || right.burst.ratio - left.burst.ratio,
+    );
+
+  let selected:
+    | { input: InvestigationRequest; burst: Burst }
+    | undefined;
+  for (const { source, burst } of candidates) {
+    const input = {
+      source,
+      day,
+      kind: burst.kind,
+      area: burst.area,
+    };
+    if (await hasInvestigation(db, input)) {
+      continue;
+    }
+    selected = { input, burst };
+    break;
+  }
+
+  if (!selected) {
+    return { input: null, result: null, error: null };
+  }
+  try {
+    return {
+      input: selected.input,
+      result: await startInvestigation({
+        db,
+        investigator,
+        input: selected.input,
+        burst: selected.burst,
+        createdAt,
+      }),
+      error: null,
+    };
+  } catch (error) {
+    return { input: selected.input, result: null, error };
+  }
+}
+
 export async function investigateBurst({
   db,
   investigator,
@@ -64,6 +129,28 @@ export async function investigateBurst({
     throw new InvestigationUnavailableError("burst not found", 404);
   }
 
+  return startInvestigation({
+    db,
+    investigator,
+    input,
+    burst,
+    createdAt,
+  });
+}
+
+async function startInvestigation({
+  db,
+  investigator,
+  input,
+  burst,
+  createdAt,
+}: {
+  db: D1Database;
+  investigator: Fetcher;
+  input: InvestigationRequest;
+  burst: Burst;
+  createdAt: string;
+}) {
   const observations = await getBurstObservations(db, input.source, burst);
   const contextStart = `${shiftDay(input.day, -1)}T00:00:00`;
   const contextEnd = `${shiftDay(input.day, 2)}T00:00:00`;
@@ -124,6 +211,21 @@ export async function investigateBurst({
   return result;
 }
 
+async function hasInvestigation(
+  db: D1Database,
+  input: InvestigationRequest,
+) {
+  const row = await db
+    .prepare(
+      `SELECT 1 FROM investigations
+       WHERE source = ? AND day = ? AND kind = ? AND area IS ?
+       LIMIT 1`,
+    )
+    .bind(input.source, input.day, input.kind, input.area)
+    .first();
+  return row !== null;
+}
+
 export async function getInvestigation(
   db: D1Database,
   id: string,
@@ -133,7 +235,7 @@ export async function getInvestigation(
     .bind(id)
     .first<{ result_json: string }>();
   return row
-    ? investigationResultSchema.parse(JSON.parse(row.result_json))
+    ? investigationResultSchema.safeParse(JSON.parse(row.result_json)).data
     : undefined;
 }
 
@@ -156,12 +258,10 @@ async function getBurstObservations(
       ids,
     );
   }
-  const observations = await getDetectorObservations({
-    db,
-    source,
-    start,
-    end,
-  });
+  const observations =
+    source === "dispatch"
+      ? await getCurrentDispatch({ db, start, end })
+      : await getCurrent({ db, source, start, end });
   return observations.filter((observation) => ids.has(observation.id));
 }
 

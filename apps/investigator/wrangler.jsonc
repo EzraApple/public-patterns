@@ -12,6 +12,13 @@
   "secrets": {
     "required": ["DEEPSEEK_API_KEY"]
   },
+  "r2_buckets": [
+    {
+      "binding": "ARCHIVE",
+      "bucket_name": "public-patterns-archive",
+      "preview_bucket_name": "public-patterns-archive-dev"
+    }
+  ],
   "containers": [
     {
       "class_name": "Sandbox",

@@ -85,6 +85,56 @@ export async function getCurrent({
   return result.results.map(toObservation);
 }
 
+export async function getCurrentMetadata({
+  db,
+  source,
+  ranges,
+}: {
+  db: D1Database;
+  source: Source;
+  ranges: { start: string; end: string }[];
+}) {
+  const timeFilter = ranges
+    .map(() => "(occurred_at >= ? AND occurred_at < ?)")
+    .join(" OR ");
+  const result = await db
+    .prepare(
+      `WITH candidates AS (
+         SELECT DISTINCT source, id
+         FROM observations
+         WHERE source = ? AND (${timeFilter})
+       ),
+       ranked AS (
+         SELECT observations.source, observations.id, occurred_at,
+                updated_at, observed_at, kind, area,
+                row_number() OVER (
+                  PARTITION BY observations.source, observations.id
+                  ORDER BY updated_at DESC, observed_at DESC, data_hash DESC
+                ) AS position
+         FROM observations
+         JOIN candidates USING (source, id)
+       )
+       SELECT source, id, occurred_at, kind, area
+       FROM ranked
+       WHERE position = 1 AND (${timeFilter})
+       ORDER BY occurred_at, id`,
+    )
+    .bind(
+      source,
+      ...ranges.flatMap(({ start, end }) => [start, end]),
+      ...ranges.flatMap(({ start, end }) => [start, end]),
+    )
+    .all<ObservationMetadataRow>();
+
+  return result.results.map((row) => ({
+    source: row.source,
+    id: row.id,
+    occurredAt: row.occurred_at,
+    kind: row.kind,
+    area: row.area,
+  }));
+}
+
 export async function getHistory({
   db,
   source,
@@ -152,6 +202,11 @@ type ObservationRow = {
   area: string | null;
   data_json: string;
 };
+
+type ObservationMetadataRow = Pick<
+  ObservationRow,
+  "source" | "id" | "occurred_at" | "kind" | "area"
+>;
 
 type ObservationWrite = Omit<Observation, "data"> & {
   dataJson: string;

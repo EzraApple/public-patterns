@@ -27,8 +27,10 @@ law-enforcement dispatch, Fire/EMS responses, police incidents, building
 complaints and permits, injury crashes, health inspections, eviction notices,
 and 511 transit alerts. The pipeline stores append-only observations in D1 and
 derives experimental signals on demand. An investigator can analyze one
-candidate inside an ephemeral sandbox. Production CI deploys all three Workers,
-applies D1 migrations, and rotates ingestion across sources every five minutes.
+candidate inside an ephemeral sandbox and archives its audit bundle in R2.
+Production CI deploys all three Workers, applies D1 migrations, rotates
+ingestion across sources every five minutes, and privately investigates one
+ready signal each morning.
 
 ## Development
 
@@ -36,7 +38,7 @@ This is a pnpm workspace with three Cloudflare Worker applications:
 
 - `apps/web` — the site and public API
 - `apps/pipeline` — local ingestion, reconciliation, and anomaly detection
-- `apps/investigator` — local sandboxed agent investigations
+- `apps/investigator` — sandboxed agent investigations and R2 run archives
 
 ```sh
 pnpm install

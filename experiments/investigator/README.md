@@ -20,8 +20,9 @@ pnpm eval:investigator -- --run marina-fire-2025-10-15
 The runner passes only source rows or aggregate series, comparison windows,
 source queries, evidence URLs, and limitations to the agent. Labels, notes,
 roles, expectations, `independentEvidence`, and `absentEvidence` remain outside
-the sandbox for human scoring. Generated briefs use a temporary directory and
-are not committed.
+the sandbox for human scoring. `investigate` results include a publishable
+article for human editorial review. Generated briefs and articles use a
+temporary directory and are not committed.
 
 These are online research evals: the fixture is frozen, but the agent may
 re-fetch its queries and evidence URLs. Live sources can drift, so every result
