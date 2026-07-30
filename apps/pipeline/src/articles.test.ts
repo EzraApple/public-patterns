@@ -115,6 +115,44 @@ describe("publishArticle", () => {
     ).rejects.toThrow("article has no hero image");
   });
 
+  it("rejects an unfiltered DataSF citation", async () => {
+    const db = {
+      prepare: (sql: string) => ({
+        bind: () => ({
+          first: async () => {
+            if (sql.startsWith("SELECT result_json FROM investigations")) {
+              return {
+                result_json: JSON.stringify(
+                  result("investigation-1", {
+                    ...draft,
+                    sources: [
+                      {
+                        label: "DataSF record",
+                        href: "https://data.sfgov.org/",
+                      },
+                    ],
+                  }),
+                ),
+              };
+            }
+            return null;
+          },
+        }),
+      }),
+    };
+
+    await expect(
+      publishArticle({
+        db: db as unknown as D1Database,
+        investigationId: "investigation-1",
+        publication: { slug: "fixture-article", significance: 80 },
+        publishedAt: "2026-07-29T00:00:00.000Z",
+      }),
+    ).rejects.toThrow(
+      "DataSF article sources must link to an exact query",
+    );
+  });
+
   it("creates the next immutable revision for an existing slug", async () => {
     const existing: Article = {
       ...draft,

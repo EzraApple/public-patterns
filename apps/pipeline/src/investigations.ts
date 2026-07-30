@@ -7,6 +7,7 @@ import {
   burstSources,
   getBursts,
 } from "./bursts.ts";
+import { getSourceUrl } from "./features/dataSfSources/sourceUrl.ts";
 import { getCurrentDispatch } from "./features/dispatch/read.ts";
 import { getInspectionEvidence } from "./features/healthInspections/read.ts";
 import { calendarDaySchema, shiftDay } from "./ingestion.ts";
@@ -242,11 +243,13 @@ async function startInvestigation({
   );
   const caseData = {
     signal,
-    observations,
-    nearbyObservations: context.filter(
-      (observation) =>
-        !selected.has(`${observation.source}:${observation.id}`),
-    ),
+    observations: observations.map(withSourceUrl),
+    nearbyObservations: context
+      .filter(
+        (observation) =>
+          !selected.has(`${observation.source}:${observation.id}`),
+      )
+      .map(withSourceUrl),
   };
   const id = crypto.randomUUID();
   const response = await investigator.fetch(
@@ -272,6 +275,11 @@ async function startInvestigation({
     result,
   });
   return result;
+}
+
+function withSourceUrl(observation: Observation) {
+  const sourceUrl = getSourceUrl(observation);
+  return sourceUrl ? { ...observation, sourceUrl } : observation;
 }
 
 async function hasInvestigation(

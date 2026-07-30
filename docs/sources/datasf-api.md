@@ -29,6 +29,11 @@ https://data.sfgov.org/resource/vw6y-z8j6.json
 
 URL-encode parameters in real requests.
 
+Public article citations should link to a bounded `/resource/xxxx-xxxx.json`
+query containing `$where` or `$query`, so a reader can inspect the exact rows
+behind the claim. A portal homepage or unfiltered dataset page is discovery
+metadata, not evidence.
+
 ## Query behavior
 
 - Socrata returns 1,000 rows by default. It documents a 50,000-row maximum for

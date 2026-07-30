@@ -90,6 +90,8 @@ source list should contain only material actually used in the article.
 Open every final source URL and make its label describe that exact destination.
 For DataSF, preserve the dataset title and identifier shown by the source or
 metadata; never relabel one dataset as another agency record or nearby dataset.
+Use each observation's exact `sourceUrl` when citing DataSF records. A DataSF
+homepage or unfiltered dataset page is not a citation.
 
 ## Format
 
