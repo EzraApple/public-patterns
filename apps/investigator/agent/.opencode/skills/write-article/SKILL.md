@@ -56,6 +56,9 @@ Extra descriptive details from reporting do not alone justify a longer form.
   September 30,” not “remains open,” unless a current source confirms it.
 - One later inspection, filing, or status does not establish that a condition
   held continuously between observations.
+- Two known locations and an elapsed time do not establish the path, mechanism,
+  or conditions between them. State the bounded comparison without inventing
+  how something moved or changed.
 
 ## Voice
 
@@ -157,6 +160,8 @@ real second pass, not a description of the intended checks. Confirm:
     counts, or an unsupported baseline.
 11. Open every source URL and verify that its label names the publisher,
     dataset, record, or article at that destination.
+12. Remove any path, cause, or mechanism inferred only from endpoints, elapsed
+    time, nearby geography, or general knowledge.
 
 Every material issue found in the review must change the draft or downgrade the
 case from `investigate`. Do not submit an article that fails its own review.
