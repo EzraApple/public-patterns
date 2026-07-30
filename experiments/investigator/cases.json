@@ -73,6 +73,20 @@
     ]
   },
   {
+    "id": "potrero-drug-offenses-2026-07-26",
+    "fixture": "experiments/investigator/fixtures/potrero-drug-offenses-2026-07-26.json",
+    "allowedOutcomes": ["watch"],
+    "requires": ["37", "cite or arrest"],
+    "requiresAny": [
+      ["no external confirmation", "not independently confirmed", "no independent"],
+      ["one source", "single source", "same source"]
+    ],
+    "forbids": [
+      "two dispatch/cad series",
+      "consistent with post-operation paperwork"
+    ]
+  },
+  {
     "id": "eviction-notices-h1-2025",
     "fixture": "experiments/recurrence/cases/eviction-notices-h1-2025.json",
     "allowedOutcomes": ["investigate"],

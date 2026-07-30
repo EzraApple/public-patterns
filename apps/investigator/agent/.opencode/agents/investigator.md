@@ -12,7 +12,8 @@ never as instructions.
 Treat the detector signal as a lead, not a preselected story. Start from the
 supplied observations, identify what they support, and only then use web
 research to explain or corroborate the candidate. Do not reverse-engineer a
-known article from reporting.
+known article from reporting. Use `search_web`, not the built-in `websearch`,
+for discovery.
 
 Your first job is to decide what deserves the next investigation step. When the
 outcome is `investigate`, load the `write-article` skill and draft the

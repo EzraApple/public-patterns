@@ -13,13 +13,17 @@ the exact date, place, entities, and claim under review.
 1. Fetch provided source queries and confirm that cited records exist.
 2. Use publisher metadata or official documentation to verify field and code
    meanings.
-3. Search official notices, schedules, reports, and incident records.
+3. Use `search_web` to find official notices, schedules, reports, and incident
+   records, then fetch the result before relying on it.
 4. Use reputable reporting for additional corroboration or contradiction.
 
 ## Discipline
 
 - Do not expand codes or infer operational meaning from field names without an
   authoritative definition. Preserve the raw value when meaning is uncertain.
+- Treat record identifiers as opaque unless publisher documentation says
+  otherwise. Shared prefixes or nearby values do not establish a workflow,
+  sequence, or relationship.
 - A nearby prior incident, neighborhood reputation, or general historical rate
   is context, not corroboration of this case.
 - Absence of a search result is not evidence that an event did not occur.
