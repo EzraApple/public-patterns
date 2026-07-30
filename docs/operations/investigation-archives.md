@@ -9,6 +9,11 @@ The daily trial considers the previous calendar day, chooses one strong ready
 burst, and skips successful investigations already indexed in D1. Generated
 articles remain private review candidates.
 
+For manual diagnosis, `POST /api/internal/investigations/replay` accepts a
+source, day, kind, and area. It loads that exact slice from D1 and sends the raw
+observations plus nearby cross-source context through the normal investigator.
+It does not accept injected evidence or bypass publication review.
+
 Compact eval definitions and expected behavior stay in git so changes remain
 reviewable. Large source snapshots, replay inputs, and saved run artifacts
 belong in R2 and can be referenced by an eval fixture.

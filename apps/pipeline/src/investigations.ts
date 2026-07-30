@@ -10,7 +10,7 @@ import {
 import { getCurrentDispatch } from "./features/dispatch/read.ts";
 import { getInspectionEvidence } from "./features/healthInspections/read.ts";
 import { calendarDaySchema, shiftDay } from "./ingestion.ts";
-import type { Observation } from "./observation.ts";
+import { sources, type Observation } from "./observation.ts";
 import {
   getCurrent,
   getCurrentByArea,
@@ -26,6 +26,12 @@ export const investigationRequestSchema = z.object({
 export type InvestigationRequest = z.infer<
   typeof investigationRequestSchema
 >;
+
+export const replayRequestSchema = investigationRequestSchema.extend({
+  source: z.enum([...sources, "dispatch"]),
+});
+
+export type ReplayRequest = z.infer<typeof replayRequestSchema>;
 
 export class InvestigationUnavailableError extends Error {
   constructor(
@@ -92,7 +98,16 @@ export async function investigateDailyBursts({
         db,
         investigator,
         input: selected.input,
-        burst: selected.burst,
+        signal: {
+          detector: "weekday-burst",
+          source: selected.input.source,
+          ...selected.burst,
+        },
+        observations: await getBurstObservations(
+          db,
+          selected.input.source,
+          selected.burst,
+        ),
         createdAt,
       }),
       error: null,
@@ -129,11 +144,59 @@ export async function investigateBurst({
     throw new InvestigationUnavailableError("burst not found", 404);
   }
 
+  const observations = await getBurstObservations(db, input.source, burst);
   return startInvestigation({
     db,
     investigator,
     input,
-    burst,
+    signal: {
+      detector: "weekday-burst",
+      source: input.source,
+      ...burst,
+    },
+    observations,
+    createdAt,
+  });
+}
+
+export async function replayObservations({
+  db,
+  investigator,
+  input,
+  createdAt,
+}: {
+  db: D1Database;
+  investigator: Fetcher;
+  input: ReplayRequest;
+  createdAt: string;
+}) {
+  const start = `${input.day}T00:00:00`;
+  const end = `${shiftDay(input.day, 1)}T00:00:00`;
+  const current =
+    input.source === "dispatch"
+      ? await getCurrentDispatch({ db, start, end })
+      : await getCurrent({ db, source: input.source, start, end });
+  const observations = current.filter(
+    ({ kind, area }) => kind === input.kind && area === input.area,
+  );
+  if (observations.length === 0) {
+    throw new InvestigationUnavailableError("observations not found", 404);
+  }
+
+  return startInvestigation({
+    db,
+    investigator,
+    input,
+    signal: {
+      detector: "manual-replay",
+      source: input.source,
+      day: input.day,
+      kind: input.kind,
+      area: input.area,
+      observed: observations.length,
+      observationIds: observations.map(({ id }) => id),
+    },
+    observations,
     createdAt,
   });
 }
@@ -142,16 +205,17 @@ async function startInvestigation({
   db,
   investigator,
   input,
-  burst,
+  signal,
+  observations,
   createdAt,
 }: {
   db: D1Database;
   investigator: Fetcher;
-  input: InvestigationRequest;
-  burst: Burst;
+  input: ReplayRequest;
+  signal: Record<string, unknown>;
+  observations: Observation[];
   createdAt: string;
 }) {
-  const observations = await getBurstObservations(db, input.source, burst);
   const contextStart = `${shiftDay(input.day, -1)}T00:00:00`;
   const contextEnd = `${shiftDay(input.day, 2)}T00:00:00`;
   let context: Observation[] = [];
@@ -177,11 +241,7 @@ async function startInvestigation({
     observations.map((observation) => `${observation.source}:${observation.id}`),
   );
   const caseData = {
-    signal: {
-      detector: "weekday-burst",
-      source: input.source,
-      ...burst,
-    },
+    signal,
     observations,
     nearbyObservations: context.filter(
       (observation) =>
@@ -327,7 +387,7 @@ async function saveInvestigation({
 }: {
   db: D1Database;
   id: string;
-  input: InvestigationRequest;
+  input: ReplayRequest;
   createdAt: string;
   caseData: Record<string, unknown>;
   result: z.infer<typeof investigationResultSchema>;

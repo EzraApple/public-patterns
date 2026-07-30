@@ -34,3 +34,8 @@ name essential positive claims; forbidden phrases should be wording that a
 correct brief would not reasonably quote to deny. Review failures and reasoning
 before changing prompts because a failure may reflect source drift or an
 unresolved product decision rather than a model defect.
+
+Every concrete production miss becomes the smallest reproducible eval at the
+stage that failed: detection, evidence gathering, investigation, review, or
+publication. Keep compact expectations in git and bulky source evidence in R2.
+Use a varied case set to justify general changes; do not tune around one miss.
