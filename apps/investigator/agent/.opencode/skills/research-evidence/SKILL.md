@@ -35,3 +35,5 @@ the exact date, place, entities, and claim under review.
 - Keep source identity exact: a label must describe the URL it accompanies.
   For DataSF links, verify the dataset title and identifier from metadata
   instead of inferring them from the agency or record contents.
+- Do not convert two locations, timestamps, or statuses into an unsupported
+  route, continuous condition, or causal mechanism.
