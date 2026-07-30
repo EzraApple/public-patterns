@@ -266,14 +266,38 @@ try {
     throw new Error(`Investigation was not saved: ${JSON.stringify(saved)}`);
   }
 
+  const observationReplayResponse = await fetch(
+    `${origin}/investigations/replay`,
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        source: "311",
+        day: "2026-07-23",
+        kind: "Noise Report",
+        area: "Mission",
+      }),
+    },
+  );
+  const replay = await observationReplayResponse.json();
+  if (
+    observationReplayResponse.status !== 201 ||
+    replay.submission?.outcome !== "investigate" ||
+    replay.submission?.evidence?.[0] !== "nearby:22"
+  ) {
+    throw new Error(`Observation replay failed: ${JSON.stringify(replay)}`);
+  }
+
   const investigationListResponse = await fetch(`${origin}/investigations`);
   const investigationList = await investigationListResponse.json();
+  const listedInvestigation = investigationList.investigations?.find(
+    ({ id }) => id === investigation.id,
+  );
   if (
     !investigationListResponse.ok ||
-    investigationList.investigations?.[0]?.id !== investigation.id ||
-    investigationList.investigations[0]?.articleTitle !== "Fixture article" ||
-    investigationList.investigations[0]?.publishedSlug !== null ||
-    "brief" in investigationList.investigations[0]
+    listedInvestigation?.articleTitle !== "Fixture article" ||
+    listedInvestigation?.publishedSlug !== null ||
+    "brief" in listedInvestigation
   ) {
     throw new Error(
       `Investigation list failed: ${JSON.stringify(investigationList)}`,

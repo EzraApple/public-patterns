@@ -20,6 +20,8 @@ import {
   investigationRequestSchema,
   investigateBurst,
   listInvestigations,
+  replayObservations,
+  replayRequestSchema,
 } from "./investigations.ts";
 import { sources } from "./observation.ts";
 import { getHistory } from "./observationStore.ts";
@@ -113,6 +115,34 @@ export async function routeRequest(
         return json({ error: error.message }, error.status);
       }
       console.error("Investigation failed", error);
+      return json({ error: "investigation failed" }, 502);
+    }
+  }
+  if (
+    request.method === "POST" &&
+    url.pathname === "/investigations/replay"
+  ) {
+    const input = replayRequestSchema.safeParse(
+      await request.json().catch(() => undefined),
+    );
+    if (!input.success) {
+      return json({ error: "invalid replay" }, 400);
+    }
+    try {
+      return json(
+        await replayObservations({
+          db: env.DB,
+          investigator: env.INVESTIGATOR,
+          input: input.data,
+          createdAt: observedAt,
+        }),
+        201,
+      );
+    } catch (error) {
+      if (error instanceof InvestigationUnavailableError) {
+        return json({ error: error.message }, error.status);
+      }
+      console.error("Investigation replay failed", error);
       return json({ error: "investigation failed" }, 502);
     }
   }
