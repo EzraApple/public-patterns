@@ -74,6 +74,18 @@ try {
     throw new Error("Local site did not return the application shell.");
   }
 
+  const missingMediaResponse = await fetch(
+    `${origin}/media/articles/missing.webp`,
+  );
+  if (
+    missingMediaResponse.status !== 404 ||
+    missingMediaResponse.headers.get("content-type")?.includes("text/html")
+  ) {
+    throw new Error(
+      "Article media did not route through the web Worker.",
+    );
+  }
+
   console.log(`Local dev smoke test passed at ${origin}`);
 } finally {
   server.kill("SIGTERM");
