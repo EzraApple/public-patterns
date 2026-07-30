@@ -9,12 +9,17 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.home-footer {
   width: min(100% - 3rem, 84rem);
   margin: auto;
 }
 
 .home-masthead {
-  padding: 1.35rem 0 1.1rem;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 1.35rem clamp(1rem, 3vw, 2rem) 1.1rem;
   border-bottom: 1px solid rgba(23, 61, 85, 0.18);
 }
 
@@ -545,7 +550,6 @@
 }
 
 @media (max-width: 720px) {
-  .home-masthead,
   .home-footer,
   .home-main {
     width: min(100% - 1.5rem, 84rem);
