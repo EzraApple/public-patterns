@@ -28,14 +28,17 @@ function createSandbox(
     ],
     ["/workspace/output/review.md", "# Claim review\n\nAll claims verified."],
   ]);
-  const archives = new Map<string, string>();
+  const archives = new Map<string, string | Uint8Array>();
   const archive = {
     put: vi.fn(
       async (
         key: string,
-        value: string,
+        value: string | Uint8Array,
         _options: {
-          httpMetadata: { contentType: string };
+          httpMetadata: {
+            cacheControl?: string;
+            contentType: string;
+          };
           customMetadata: Record<string, string>;
         },
       ) => {
@@ -63,9 +66,13 @@ function createSandbox(
           stderr: "",
         };
       }),
-      readFile: vi.fn(async (path: string) => ({
-        content: files.get(path) ?? "",
-      })),
+      readFile: vi.fn(async (path: string) => {
+        const content = files.get(path);
+        if (content === undefined) {
+          throw new Error(`File not found: ${path}`);
+        }
+        return { content };
+      }),
     },
   };
 }
@@ -110,10 +117,11 @@ describe("investigateInSandbox", () => {
           { label: "Public record", href: "https://example.com/record" },
         ],
         figure: null,
+        hero: null,
       },
       review: "# Claim review\n\nAll claims verified.",
     });
-    expect(JSON.parse(archives.get(result.archiveKey)!)).toMatchObject({
+    expect(JSON.parse(String(archives.get(result.archiveKey)))).toMatchObject({
       version: 1,
       environment: "test",
       status: "completed",
@@ -188,6 +196,81 @@ describe("investigateInSandbox", () => {
     ).rejects.toThrow("article");
   });
 
+  it("uploads a generated article image to the public media prefix", async () => {
+    const submission = {
+      outcome: "investigate",
+      confidence: 0.8,
+      briefPath: "output/brief.md",
+      articlePath: "output/article.json",
+      reviewPath: "output/review.md",
+      evidence: ["observation:123"],
+    };
+    const { archive, archives, files, sandbox } = createSandbox(submission);
+    const hero = {
+      src: "/media/articles/case-image.webp",
+      alt: "Fog over the San Francisco coastline.",
+      caption:
+        "AI-generated contextual illustration; it does not depict the reported event.",
+    };
+    files.set(
+      "/workspace/output/article.json",
+      JSON.stringify({
+        title: "Event headline",
+        dek: "A concise summary.",
+        category: "Public safety",
+        body: "The supported account.",
+        sources: [
+          { label: "Public record", href: "https://example.com/record" },
+        ],
+        figure: null,
+        hero,
+      }),
+    );
+    files.set(
+      "/workspace/output/hero.json",
+      JSON.stringify({
+        hero,
+        model: "gpt-image-2",
+        prompt: "A foggy contextual coastline.",
+      }),
+    );
+    files.set(
+      "/workspace/output/hero.webp",
+      btoa("fake-webp"),
+    );
+
+    const result = await investigateInSandbox({
+      archive,
+      sandbox,
+      input: { id: "case-image", case: { observations: [123] } },
+      deepseekApiKey: "deepseek-key",
+      openAiApiKey: "openai-key",
+      environment: "test",
+    });
+
+    expect(result.article?.hero).toEqual(hero);
+    expect(archives.get("article-media/case-image.webp")).toEqual(
+      new TextEncoder().encode("fake-webp"),
+    );
+    expect(
+      JSON.parse(String(archives.get(result.archiveKey))).generatedImage,
+    ).toMatchObject({
+      key: "article-media/case-image.webp",
+      model: "gpt-image-2",
+    });
+    expect(sandbox.exec).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        env: {
+          DEEPSEEK_API_KEY: "deepseek-key",
+          OPENAI_API_KEY: "openai-key",
+          PUBLIC_PATTERNS_IMAGE_SRC:
+            "/media/articles/case-image.webp",
+        },
+      }),
+    );
+  });
+
   it("rejects blank submitted articles", async () => {
     const { archive, files, sandbox } = createSandbox({
       outcome: "investigate",
@@ -241,8 +324,84 @@ describe("investigateInSandbox", () => {
     );
     expect((error as Error).message).not.toContain("secret-test-key");
     const archivedFailure = [...archives.values()][0]!;
-    expect(archivedFailure).toContain("provider rejected [redacted]");
-    expect(archivedFailure).not.toContain("secret-test-key");
+    expect(String(archivedFailure)).toContain(
+      "provider rejected [redacted]",
+    );
+    expect(String(archivedFailure)).not.toContain("secret-test-key");
+  });
+
+  it("archives actionable DeepSeek quota diagnostics", async () => {
+    const { archive, archives, sandbox } = createSandbox({});
+    sandbox.exec.mockResolvedValue({
+      success: false,
+      exitCode: 1,
+      stdout: "",
+      stderr:
+        'DeepSeek request failed {"status":402,"code":"insufficient_balance","request_id":"deepseek-request-1"}',
+    });
+
+    const error = await investigateInSandbox({
+      archive,
+      sandbox,
+      input: { id: "case-quota", case: {} },
+      deepseekApiKey: "deepseek-key",
+      environment: "test",
+    }).catch((caught: unknown) => caught);
+
+    expect(error).toBeInstanceOf(Error);
+    expect((error as Error).message).toContain("Refill credits");
+    const archivedFailure = JSON.parse(
+      String([...archives.values()][0]),
+    );
+    expect(archivedFailure.providerFailure).toMatchObject({
+      provider: "DeepSeek",
+      kind: "quota",
+      requestId: "deepseek-request-1",
+      retryable: false,
+      status: 402,
+    });
+  });
+
+  it("archives a non-blocking OpenAI image failure", async () => {
+    const submission = {
+      outcome: "investigate",
+      confidence: 0.8,
+      briefPath: "output/brief.md",
+      articlePath: "output/article.json",
+      reviewPath: "output/review.md",
+      evidence: ["observation:123"],
+    };
+    const { archive, archives, files, sandbox } = createSandbox(submission);
+    files.set(
+      "/workspace/output/hero-error.json",
+      JSON.stringify({
+        provider: "OpenAI",
+        operation: "image generation",
+        kind: "quota",
+        retryable: false,
+        action: "Refill credits, then retry.",
+        status: 429,
+        providerCode: "insufficient_quota",
+        requestId: "image-request-1",
+      }),
+    );
+
+    const result = await investigateInSandbox({
+      archive,
+      sandbox,
+      input: { id: "case-image-failure", case: {} },
+      deepseekApiKey: "deepseek-key",
+      openAiApiKey: "openai-key",
+      environment: "test",
+    });
+
+    expect(result.article?.hero).toBeNull();
+    expect(
+      JSON.parse(String(archives.get(result.archiveKey))).imageFailure,
+    ).toMatchObject({
+      kind: "quota",
+      requestId: "image-request-1",
+    });
   });
 });
 
@@ -254,5 +413,11 @@ describe("investigationInputSchema", () => {
           .success,
       ).toBe(false);
     }
+  });
+
+  it("rejects ids that cannot become article media paths", () => {
+    expect(
+      investigationInputSchema.safeParse({ id: "../case", case: {} }).success,
+    ).toBe(false);
   });
 });

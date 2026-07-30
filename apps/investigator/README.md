@@ -2,7 +2,7 @@
 
 This Worker runs one investigation per ephemeral Cloudflare Sandbox.
 The container includes OpenCode 2, DeepSeek V4 Pro Thinking, Python, analysis
-and article-writing skills, and a `submit_brief` tool.
+and article-writing skills, and bounded submission and image-generation tools.
 
 ```sh
 doppler run -- pnpm dev:investigator
@@ -16,8 +16,8 @@ pnpm dev:investigator:smoke
 
 The smoke command starts and stops the Worker, sends an evidence-only historical
 fixture, and prints the submitted brief and any article. It requires Docker and
-the repo-scoped Doppler `dev` config, takes a few minutes, and makes a paid
-DeepSeek request.
+the repo-scoped Doppler `dev` config, takes a few minutes, and makes paid model
+requests when the agent generates an article image.
 
 Send a candidate as flexible JSON:
 
@@ -29,18 +29,18 @@ curl -X POST http://127.0.0.1:8788/investigations \
 
 The agent reads `case/input.json`, works under `work/`, and writes its internal
 brief under `output/`. An `investigate` outcome also requires a publishable
-article. The submission tool validates both paths and ends the OpenCode session.
-The Worker archives the input, redacted session output, brief, and optional
-article in R2 before destroying the sandbox. Its response includes the archive
-key, which the pipeline preserves in D1.
+article. After review, the agent may generate one contextual, non-evidentiary
+hero through OpenAI. The Worker moves that image from the sandbox into R2,
+archives its prompt with the investigation, and destroys the sandbox. Its
+response includes the archive key, which the pipeline preserves in D1.
 
 Eval callers must pass only the evidence under test and source links. Expected
 results, fixture notes, and detector settings stay outside the agent payload.
 
 The production Worker has no public route and is reachable through the
-pipeline's service binding. The prototype passes a limited DeepSeek key into
-each sandbox; replace that with a short-lived model proxy before untrusted or
-unattended use.
+pipeline's service binding. The prototype passes limited DeepSeek and OpenAI
+keys into each sandbox; replace them with short-lived model proxies before
+untrusted or unattended use.
 
 The local container limit is one, so run one investigation at a time.
 
@@ -48,3 +48,7 @@ Production uses `public-patterns-archive`; local and preview runs use
 `public-patterns-archive-dev`. See
 [`docs/operations/investigation-archives.md`](../../docs/operations/investigation-archives.md)
 for the audit workflow.
+
+Provider, billing, and credential failures are sanitized into structured Worker
+logs and R2 archive fields. See
+[`docs/operations/api-failures.md`](../../docs/operations/api-failures.md).

@@ -5,4 +5,5 @@ export type Env = {
   Sandbox: DurableObjectNamespace<Sandbox>;
   PUBLIC_PATTERNS_ENV: string;
   DEEPSEEK_API_KEY?: string;
+  OPENAI_API_KEY?: string;
 };

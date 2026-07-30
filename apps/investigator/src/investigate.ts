@@ -1,15 +1,29 @@
+import { articleDraftSchema } from "@public-patterns/contracts/article";
 import {
   type InvestigationResult,
   investigationResultSchema,
   investigationSubmissionSchema,
   type InvestigationInput,
 } from "@public-patterns/contracts/investigation";
-import { articleDraftSchema } from "@public-patterns/contracts/article";
+import {
+  type ArticleImageFailure,
+  type ArticleImageArchive,
+  type ArticleImageSandbox,
+  articleImageSrc,
+  readArticleImageFailure,
+  saveArticleImage,
+  type StoredArticleImage,
+} from "./article-image.ts";
 import type { Env } from "./environment.ts";
-type InvestigationSandbox = {
+import {
+  deepSeekFailureFromOutput,
+  missingDeepSeekKey,
+  type ProviderFailureDiagnostic,
+} from "./providerFailure.ts";
+
+type InvestigationSandbox = ArticleImageSandbox & {
   mkdir(path: string, options: { recursive: boolean }): Promise<unknown>;
   writeFile(path: string, content: string): Promise<unknown>;
-  readFile(path: string): Promise<{ content: string }>;
   exec(
     command: string,
     options: {
@@ -25,16 +39,7 @@ type InvestigationSandbox = {
   }>;
 };
 
-type InvestigationArchive = {
-  put(
-    key: string,
-    value: string,
-    options: {
-      httpMetadata: { contentType: string };
-      customMetadata: Record<string, string>;
-    },
-  ): Promise<unknown>;
-};
+type InvestigationArchive = ArticleImageArchive;
 
 const AGENT_COMMAND =
   'opencode2 run --standalone --auto --agent investigator --format json "Investigate the case in case/input.json. Submit the internal brief and, when warranted, a publishable article."';
@@ -45,7 +50,7 @@ export async function investigateCase(
   input: InvestigationInput,
 ): Promise<InvestigationResult> {
   if (!env.DEEPSEEK_API_KEY) {
-    throw new Error("DEEPSEEK_API_KEY is required");
+    throw missingDeepSeekKey();
   }
 
   const { getSandbox } = await import("@cloudflare/sandbox");
@@ -61,6 +66,7 @@ export async function investigateCase(
       sandbox,
       input,
       deepseekApiKey: env.DEEPSEEK_API_KEY,
+      openAiApiKey: env.OPENAI_API_KEY,
       environment: env.PUBLIC_PATTERNS_ENV,
     });
   } finally {
@@ -75,12 +81,14 @@ export async function investigateInSandbox({
   sandbox,
   input,
   deepseekApiKey,
+  openAiApiKey,
   environment,
 }: {
   archive: InvestigationArchive;
   sandbox: InvestigationSandbox;
   input: InvestigationInput;
   deepseekApiKey: string;
+  openAiApiKey?: string;
   environment: string;
 }) {
   await Promise.all(
@@ -94,15 +102,23 @@ export async function investigateInSandbox({
   );
 
   let run: Awaited<ReturnType<InvestigationSandbox["exec"]>>;
+  let didExecutionThrow = false;
   try {
     run = await sandbox.exec(AGENT_COMMAND, {
       cwd: "/workspace",
       env: {
         DEEPSEEK_API_KEY: deepseekApiKey,
+        ...(openAiApiKey
+          ? {
+              OPENAI_API_KEY: openAiApiKey,
+              PUBLIC_PATTERNS_IMAGE_SRC: articleImageSrc(input.id),
+            }
+          : {}),
       },
       timeout: 720_000,
     });
   } catch (error) {
+    didExecutionThrow = true;
     run = {
       success: false,
       exitCode: -1,
@@ -117,6 +133,8 @@ export async function investigateInSandbox({
     `${crypto.randomUUID()}.json`;
 
   let result: InvestigationResult;
+  let generatedImage: StoredArticleImage | undefined;
+  let imageFailure: ArticleImageFailure | undefined;
   try {
     const submissionFile = await sandbox.readFile(
       "/workspace/output/submission.json",
@@ -134,6 +152,18 @@ export async function investigateInSandbox({
       ? await sandbox.readFile(`/workspace/${submission.reviewPath}`)
       : null;
 
+    const article = articleFile
+      ? articleDraftSchema.parse(JSON.parse(articleFile.content))
+      : null;
+    imageFailure = await readArticleImageFailure(sandbox);
+    generatedImage = await saveArticleImage({
+      archive,
+      article,
+      environment,
+      investigationId: input.id,
+      sandbox,
+    });
+
     result = investigationResultSchema.parse({
       id: input.id,
       archiveKey,
@@ -143,25 +173,29 @@ export async function investigateInSandbox({
         evidence: submission.evidence,
       },
       brief: briefFile.content,
-      article: articleFile
-        ? articleDraftSchema.parse(JSON.parse(articleFile.content))
-        : null,
+      article,
       review: reviewFile?.content ?? null,
     });
   } catch (submissionError) {
     const output = run.stderr || run.stdout;
-    const detail = deepseekApiKey
-      ? output.replaceAll(deepseekApiKey, "[redacted]")
-      : output;
+    const detail = redact(output, [deepseekApiKey, openAiApiKey]);
     const reason =
       submissionError instanceof Error
         ? submissionError.message
         : String(submissionError);
-    const failure = !run.success
-      ? new Error(
-          `OpenCode exited ${run.exitCode}: ${detail.slice(-2_000)}; submission unavailable: ${reason}`,
-        )
-      : new Error(`OpenCode completed without a valid submission: ${reason}`);
+    const providerFailure =
+      !run.success && !didExecutionThrow
+        ? deepSeekFailureFromOutput(detail)
+        : undefined;
+    const failure =
+      providerFailure ??
+      (!run.success
+        ? new Error(
+            `OpenCode exited ${run.exitCode}: ${detail.slice(-2_000)}; submission unavailable: ${reason}`,
+          )
+        : new Error(
+            `OpenCode completed without a valid submission: ${reason}`,
+          ));
     await archiveInvestigation({
       archive,
       archiveKey,
@@ -170,6 +204,9 @@ export async function investigateInSandbox({
       input,
       run,
       deepseekApiKey,
+      openAiApiKey,
+      imageFailure,
+      providerFailure: providerFailure?.diagnostic,
       failure,
     }).catch((archiveError) =>
       console.error("Failed to archive investigation failure", archiveError),
@@ -184,6 +221,9 @@ export async function investigateInSandbox({
     input,
     run,
     deepseekApiKey,
+    openAiApiKey,
+    generatedImage,
+    imageFailure,
     result,
   });
   return result;
@@ -197,6 +237,10 @@ async function archiveInvestigation({
   input,
   run,
   deepseekApiKey,
+  openAiApiKey,
+  generatedImage,
+  imageFailure,
+  providerFailure,
   result,
   failure,
 }: {
@@ -207,6 +251,10 @@ async function archiveInvestigation({
   input: InvestigationInput;
   run: Awaited<ReturnType<InvestigationSandbox["exec"]>>;
   deepseekApiKey: string;
+  openAiApiKey?: string;
+  generatedImage?: StoredArticleImage;
+  imageFailure?: ArticleImageFailure;
+  providerFailure?: ProviderFailureDiagnostic;
   result?: InvestigationResult;
   failure?: Error;
 }) {
@@ -223,9 +271,12 @@ async function archiveInvestigation({
         session: {
           success: run.success,
           exitCode: run.exitCode,
-          stdout: limit(redact(run.stdout, deepseekApiKey)),
-          stderr: limit(redact(run.stderr, deepseekApiKey)),
+          stdout: limit(redact(run.stdout, [deepseekApiKey, openAiApiKey])),
+          stderr: limit(redact(run.stderr, [deepseekApiKey, openAiApiKey])),
         },
+        ...(generatedImage ? { generatedImage } : {}),
+        ...(imageFailure ? { imageFailure } : {}),
+        ...(providerFailure ? { providerFailure } : {}),
         ...(result ? { result } : { error: failure?.message ?? "unknown error" }),
       },
       null,
@@ -238,8 +289,14 @@ async function archiveInvestigation({
   );
 }
 
-function redact(value: string, secret: string) {
-  return secret ? value.replaceAll(secret, "[redacted]") : value;
+function redact(value: string, secrets: (string | undefined)[]) {
+  let redacted = value;
+  for (const secret of secrets) {
+    if (secret) {
+      redacted = redacted.replaceAll(secret, "[redacted]");
+    }
+  }
+  return redacted;
 }
 
 function limit(value: string) {

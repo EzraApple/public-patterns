@@ -50,4 +50,21 @@ describe("pipeline routes", () => {
 
     expect(response.status).toBe(400);
   });
+
+  it("returns the recovery action for a missing transit key", async () => {
+    const response = await routeRequest(
+      new Request("http://pipeline.test/ingest/transit-alerts", {
+        method: "POST",
+      }),
+      {} as Env,
+    );
+
+    expect(response.status).toBe(503);
+    expect(await response.json()).toMatchObject({
+      api: {
+        kind: "configuration",
+        action: expect.stringContaining("TRANSIT_511_API_KEY"),
+      },
+    });
+  });
 });

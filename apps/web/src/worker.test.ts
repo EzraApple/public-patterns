@@ -5,6 +5,9 @@ import { routeRequest } from "./worker";
 function environment(fetch = vi.fn()) {
   return {
     LAB_TOKEN: "test-token",
+    MEDIA: {
+      get: vi.fn(),
+    },
     PIPELINE: { fetch },
     PUBLIC_PATTERNS_ENV: "production" as const,
   };
@@ -19,6 +22,19 @@ describe("internal API", () => {
     );
 
     expect(response.status).toBe(401);
+    expect(env.PIPELINE.fetch).not.toHaveBeenCalled();
+  });
+
+  it("fails closed when the lab token is not configured", async () => {
+    const env = { ...environment(), LAB_TOKEN: "" };
+    const response = await routeRequest(
+      new Request("https://publicpatterns.com/api/internal/health", {
+        headers: { authorization: "Bearer undefined" },
+      }),
+      env,
+    );
+
+    expect(response.status).toBe(503);
     expect(env.PIPELINE.fetch).not.toHaveBeenCalled();
   });
 
@@ -54,5 +70,33 @@ describe("public article API", () => {
 
     expect(response.ok).toBe(true);
     expect(fetch).toHaveBeenCalledOnce();
+  });
+});
+
+describe("article images", () => {
+  it("serves only article media from R2 with immutable caching", async () => {
+    const get = vi.fn(async () => ({
+      body: "image-bytes",
+      httpEtag: '"etag"',
+      writeHttpMetadata(headers: Headers) {
+        headers.set("content-type", "image/webp");
+      },
+    }));
+    const env = {
+      ...environment(),
+      MEDIA: { get },
+    };
+
+    const response = await routeRequest(
+      new Request(
+        "https://publicpatterns.com/media/articles/case-123.webp",
+      ),
+      env,
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe("image/webp");
+    expect(response.headers.get("cache-control")).toContain("immutable");
+    expect(get).toHaveBeenCalledWith("article-media/case-123.webp");
   });
 });

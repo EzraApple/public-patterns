@@ -3,6 +3,12 @@ import { z } from "zod";
 // Keep in sync with packages/contracts/src/article.ts.
 const nonBlankString = z.string().refine((value) => value.trim().length > 0);
 
+export const articleHeroSchema = z.object({
+  src: z.string().regex(/^\/media\/articles\/[a-z0-9-]+\.webp$/),
+  alt: nonBlankString,
+  caption: nonBlankString,
+});
+
 const figureSchema = z.object({
   title: nonBlankString,
   caption: nonBlankString,
@@ -58,4 +64,5 @@ export const articleDraftSchema = z.object({
     }),
   ).min(1),
   figure: figureSchema.nullable().default(null),
+  hero: articleHeroSchema.nullable().default(null),
 });

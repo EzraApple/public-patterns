@@ -2,7 +2,7 @@ import { z } from "zod";
 import { articleDraftSchema } from "./article.ts";
 
 export const investigationInputSchema = z.object({
-  id: z.string().min(1),
+  id: z.string().regex(/^[a-z0-9-]+$/),
   case: z.record(z.string(), z.unknown()),
 });
 

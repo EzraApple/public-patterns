@@ -29,6 +29,10 @@ derive a current view ordered by update and observation time. Dispatch reads
 combine its two feeds explicitly: a closed call wins over its realtime version.
 Malformed rows retain their dataset and source JSON; exact replays are ignored.
 
+DataSF and 511 failures include a sanitized provider category, status, request
+ID, retryability, and operator action. See
+[`docs/operations/api-failures.md`](../../docs/operations/api-failures.md).
+
 Apply the migration and start the Worker:
 
 ```sh

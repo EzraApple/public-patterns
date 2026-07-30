@@ -10,7 +10,7 @@
     "SANDBOX_TRANSPORT": "rpc"
   },
   "secrets": {
-    "required": ["DEEPSEEK_API_KEY"]
+    "required": ["DEEPSEEK_API_KEY", "OPENAI_API_KEY"]
   },
   "r2_buckets": [
     {

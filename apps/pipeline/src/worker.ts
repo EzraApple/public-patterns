@@ -4,6 +4,7 @@ import { shiftDay } from "./ingestion.ts";
 import { investigateDailyBursts } from "./investigations.ts";
 import { sources } from "./observation.ts";
 import { routeRequest, type Env } from "./pipeline.ts";
+import { apiFailureDiagnostic } from "./sources/apiFailure.ts";
 
 const dailyInvestigationCron = "30 15 * * *";
 
@@ -42,10 +43,32 @@ export default {
       sources[Math.floor(controller.scheduledTime / 300_000) % sources.length]!;
     if (source === "transit-alerts") {
       if (env.TRANSIT_511_API_KEY) {
-        await ingestTransitAlerts(env, createdAt);
+        await ingestScheduled(source, () =>
+          ingestTransitAlerts(env, createdAt),
+        );
       }
       return;
     }
-    await ingestDataSfSource(env, createdAt, source);
+    await ingestScheduled(source, () =>
+      ingestDataSfSource(env, createdAt, source),
+    );
   },
 } satisfies ExportedHandler<Env>;
+
+async function ingestScheduled(
+  source: string,
+  ingest: () => Promise<unknown>,
+) {
+  try {
+    await ingest();
+  } catch (error) {
+    const api = apiFailureDiagnostic(error);
+    console.error("Scheduled ingestion failed", {
+      event: "source.ingestion.failed",
+      source,
+      ...(api ? { api } : {}),
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+}

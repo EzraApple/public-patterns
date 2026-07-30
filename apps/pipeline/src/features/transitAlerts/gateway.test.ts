@@ -3,6 +3,12 @@ import { describe, expect, it, vi } from "vitest";
 import { createTransitAlertGateway } from "./gateway.ts";
 
 describe("511 transit alert gateway", () => {
+  it("explains how to configure a missing key", () => {
+    expect(() =>
+      createTransitAlertGateway({ fetch: vi.fn(), apiKey: "" }),
+    ).toThrow("Set TRANSIT_511_API_KEY in Doppler");
+  });
+
   it("requests the SFMTA JSON snapshot and preserves unknown fields", async () => {
     const fetch = vi
       .fn<typeof globalThis.fetch>()
@@ -78,6 +84,36 @@ describe("511 transit alert gateway", () => {
     expect(sleep).toHaveBeenNthCalledWith(1, 1_000);
     expect(sleep).toHaveBeenNthCalledWith(2, 2_000);
     dateNow.mockRestore();
+  });
+
+  it("reports an actionable invalid-key failure", async () => {
+    const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValue(
+      Response.json(
+        { error: { code: "invalid_key", message: "Invalid key" } },
+        {
+          status: 401,
+          headers: { "x-request-id": "transit-request-1" },
+        },
+      ),
+    );
+    const gateway = createTransitAlertGateway({
+      fetch,
+      apiKey: "secret-key",
+      maxAttempts: 1,
+    });
+
+    const error = await gateway.getSnapshot().catch((caught) => caught);
+
+    expect(error).toMatchObject({
+      diagnostic: {
+        kind: "authentication",
+        requestId: "transit-request-1",
+      },
+    });
+    expect((error as Error).message).toContain(
+      "Verify or rotate TRANSIT_511_API_KEY",
+    );
+    expect((error as Error).message).not.toContain("secret-key");
   });
 });
 

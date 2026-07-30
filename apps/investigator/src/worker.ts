@@ -2,6 +2,7 @@ import { investigationInputSchema } from "@public-patterns/contracts/investigati
 
 import type { Env } from "./environment.ts";
 import { investigateCase } from "./investigate.ts";
+import { providerFailureDiagnostic } from "./providerFailure.ts";
 
 export { Sandbox } from "@cloudflare/sandbox";
 
@@ -26,10 +27,19 @@ export default {
       try {
         return Response.json(await investigateCase(env, input.data));
       } catch (error) {
-        console.error("Investigation failed", error);
+        const providerFailure = providerFailureDiagnostic(error);
+        console.error("Investigation failed", {
+          event: "investigation.failed",
+          investigationId: input.data.id,
+          ...(providerFailure ? { provider: providerFailure } : {}),
+          error: error instanceof Error ? error.message : String(error),
+        });
         return Response.json(
-          { error: "investigation failed" },
-          { status: 500 },
+          {
+            error: "investigation failed",
+            ...(providerFailure ? { provider: providerFailure } : {}),
+          },
+          { status: providerFailure ? 502 : 500 },
         );
       }
     }

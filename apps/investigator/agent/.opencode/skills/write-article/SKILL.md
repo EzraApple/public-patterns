@@ -114,6 +114,13 @@ comparison, or source trace would explain the evidence faster than prose. Put
 one supported figure in the structured `figure` field and explain its values in
 the investigation brief.
 
+After the article passes self-review, read `references/images.md` and call
+`generate_image` once. A neighborhood, shoreline, streetscape, or broader SF
+setting is enough; do not omit the hero merely because reconstructing the
+incident would be inappropriate. Submit `"hero": null` only when the tool fails
+or no honest place-based context exists. The image is presentation, not
+evidence.
+
 ## Mandatory self-review
 
 Draft first, then review the entire article as a skeptical editor before
