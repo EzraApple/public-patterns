@@ -8,9 +8,9 @@
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  width: min(100% - 3rem, 74rem);
-  margin: auto;
-  padding: 1.35rem 0 1.15rem;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 1.35rem clamp(1rem, 3vw, 2rem) 1.15rem;
   border-bottom: 1px solid rgba(23, 61, 85, 0.18);
   color: #60737d;
   font-size: 0.72rem;
@@ -496,7 +496,6 @@
 }
 
 @media (max-width: 600px) {
-  .article-masthead,
   .article-header,
   .article-hero,
   .article-layout,

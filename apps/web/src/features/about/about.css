@@ -12,12 +12,17 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.about-footer {
   width: min(100% - 3rem, 74rem);
   margin: auto;
 }
 
 .about-masthead {
-  padding: 1.35rem 0 1.1rem;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 1.35rem clamp(1rem, 3vw, 2rem) 1.1rem;
   border-bottom: 1px solid rgba(23, 61, 85, 0.24);
 }
 
@@ -252,7 +257,6 @@
 }
 
 @media (max-width: 620px) {
-  .about-masthead,
   .about-footer,
   .about-hero,
   .about-flow,
