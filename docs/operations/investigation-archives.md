@@ -14,6 +14,10 @@ source, day, kind, and area. It loads that exact slice from D1 and sends the raw
 observations plus nearby cross-source context through the normal investigator.
 It does not accept injected evidence or bypass publication review.
 
+Keep investigator capacity above one instance. Cloudflare may retain the prior
+container briefly during a deploy; a single-instance ceiling can reject the
+first post-deploy investigation before the agent starts.
+
 Compact eval definitions and expected behavior stay in git so changes remain
 reviewable. Large source snapshots, replay inputs, and saved run artifacts
 belong in R2 and can be referenced by an eval fixture.
