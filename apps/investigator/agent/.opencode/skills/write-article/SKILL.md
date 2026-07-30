@@ -84,6 +84,9 @@ or disagreement between those databases is itself important. Never cite this
 repository, fixture notes, working files, or search-result snippets.
 Keep internal checks and unused queries in the investigation brief; the public
 source list should contain only material actually used in the article.
+Open every final source URL and make its label describe that exact destination.
+For DataSF, preserve the dataset title and identifier shown by the source or
+metadata; never relabel one dataset as another agency record or nearby dataset.
 
 ## Format
 
@@ -152,6 +155,8 @@ real second pass, not a description of the intended checks. Confirm:
    link into a confirmed one.
 10. Remove a comparison when the review finds mismatched units, inflated row
     counts, or an unsupported baseline.
+11. Open every source URL and verify that its label names the publisher,
+    dataset, record, or article at that destination.
 
 Every material issue found in the review must change the draft or downgrade the
 case from `investigate`. Do not submit an article that fails its own review.

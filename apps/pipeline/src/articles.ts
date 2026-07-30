@@ -43,9 +43,6 @@ export async function publishArticle({
   }
 
   const existing = await getArticle(db, publication.slug);
-  if (existing) {
-    throw new ArticlePublicationError("article slug already exists", 409);
-  }
 
   const investigation = await getInvestigation(db, investigationId);
   if (!investigation) {
@@ -60,13 +57,16 @@ export async function publishArticle({
       409,
     );
   }
+  if (!investigation.article.hero) {
+    throw new ArticlePublicationError("article has no hero image", 409);
+  }
 
   const article = articleSchema.parse({
     ...investigation.article,
     ...publication,
     investigationId,
     publishedAt,
-    revision: 1,
+    revision: (existing?.revision ?? 0) + 1,
     readingMinutes: readingMinutes(investigation.article.body),
   });
   const inserted = await db

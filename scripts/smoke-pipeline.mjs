@@ -42,7 +42,12 @@ await writeFile(
               href: "https://example.com/fixture"
             }
           ],
-          figure: null
+          figure: null,
+          hero: {
+            src: "/media/articles/" + input.id + ".webp",
+            alt: "A foggy San Francisco street.",
+            caption: "AI-generated contextual illustration."
+          }
         },
         review: "# Fixture review"
       });
@@ -321,7 +326,8 @@ try {
     publicationResponse.status !== 201 ||
     published.slug !== "fixture-article" ||
     published.investigationId !== investigation.id ||
-    published.body !== "Fixture article body."
+    published.body !== "Fixture article body." ||
+    published.hero?.src !== `/media/articles/${investigation.id}.webp`
   ) {
     throw new Error(`Article publication failed: ${JSON.stringify(published)}`);
   }
@@ -332,6 +338,7 @@ try {
     !articleListResponse.ok ||
     articleList.articles?.length !== 1 ||
     articleList.articles[0]?.slug !== "fixture-article" ||
+    !articleList.articles[0]?.hero ||
     "body" in articleList.articles[0]
   ) {
     throw new Error(`Article list failed: ${JSON.stringify(articleList)}`);
@@ -339,7 +346,11 @@ try {
 
   const articleResponse = await fetch(`${origin}/articles/fixture-article`);
   const article = await articleResponse.json();
-  if (!articleResponse.ok || article.body !== "Fixture article body.") {
+  if (
+    !articleResponse.ok ||
+    article.body !== "Fixture article body." ||
+    !article.hero
+  ) {
     throw new Error(`Article read failed: ${JSON.stringify(article)}`);
   }
 
@@ -390,7 +401,7 @@ try {
     }),
   });
   const secondInvestigation = await secondInvestigationResponse.json();
-  const stolenSlugResponse = await fetch(
+  const revisionResponse = await fetch(
     `${origin}/investigations/${secondInvestigation.id}/publish`,
     {
       method: "POST",
@@ -402,9 +413,15 @@ try {
       }),
     },
   );
-  if (!secondInvestigationResponse.ok || stolenSlugResponse.status !== 409) {
+  const revision = await revisionResponse.json();
+  if (
+    !secondInvestigationResponse.ok ||
+    revisionResponse.status !== 201 ||
+    revision.revision !== 2 ||
+    revision.investigationId !== secondInvestigation.id
+  ) {
     throw new Error(
-      `Cross-investigation slug conflict returned ${stolenSlugResponse.status}`,
+      `Article revision failed: ${JSON.stringify(revision)}`,
     );
   }
 
