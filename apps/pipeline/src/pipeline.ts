@@ -25,6 +25,7 @@ import {
 } from "./investigations.ts";
 import { sources } from "./observation.ts";
 import { getHistory } from "./observationStore.ts";
+import { apiFailureDiagnostic } from "./sources/apiFailure.ts";
 
 export type { Env } from "./environment.ts";
 
@@ -59,17 +60,33 @@ export async function routeRequest(
     if (!ingestion.success) {
       return json({ error: "unknown ingestion source" }, 404);
     }
-    if (
-      ingestion.data === "transit-alerts" &&
-      !env.TRANSIT_511_API_KEY
-    ) {
-      return json({ error: "transit source is not configured" }, 503);
+    try {
+      const result =
+        ingestion.data === "transit-alerts"
+          ? await ingestTransitAlerts(env, observedAt)
+          : await ingestDataSfSource(env, observedAt, ingestion.data);
+      return json(result);
+    } catch (error) {
+      const diagnostic = apiFailureDiagnostic(error);
+      console.error("Ingestion failed", {
+        event: "source.ingestion.failed",
+        source: ingestion.data,
+        observedAt,
+        ...(diagnostic ? { api: diagnostic } : {}),
+        error: error instanceof Error ? error.message : String(error),
+      });
+      let status = 500;
+      if (diagnostic) {
+        status = diagnostic.kind === "configuration" ? 503 : 502;
+      }
+      return json(
+        {
+          error: "source ingestion failed",
+          ...(diagnostic ? { api: diagnostic } : {}),
+        },
+        status,
+      );
     }
-    const result =
-      ingestion.data === "transit-alerts"
-        ? await ingestTransitAlerts(env, observedAt)
-        : await ingestDataSfSource(env, observedAt, ingestion.data);
-    return json(result);
   }
   if (request.method === "GET" && url.pathname === "/observations") {
     const source = observationSourceSchema.safeParse(

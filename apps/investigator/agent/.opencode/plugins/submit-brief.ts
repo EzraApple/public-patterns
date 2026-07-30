@@ -3,7 +3,10 @@ import path from "node:path";
 
 import { Plugin } from "@opencode-ai/plugin";
 import { z } from "zod";
-import { articleDraftSchema } from "../article-schema.ts";
+import {
+  articleDraftSchema,
+  articleHeroSchema,
+} from "../article-schema.ts";
 
 const WORKSPACE = "/workspace";
 const OUTPUT_DIRECTORY = `${WORKSPACE}/output`;
@@ -80,11 +83,26 @@ export default Plugin.define({
             ? await requireOutputFile(submission.reviewPath)
             : undefined;
           if (articlePath) {
-            articleDraftSchema.parse(
+            const article = articleDraftSchema.parse(
               JSON.parse(
                 await readFile(path.resolve(WORKSPACE, articlePath), "utf8"),
               ),
             );
+            if (article.hero) {
+              const generated = z
+                .object({ hero: articleHeroSchema })
+                .parse(
+                  JSON.parse(
+                    await readFile(`${OUTPUT_DIRECTORY}/hero.json`, "utf8"),
+                  ),
+                );
+              if (JSON.stringify(generated.hero) !== JSON.stringify(article.hero)) {
+                throw new Error(
+                  "The article hero must match the generated image metadata.",
+                );
+              }
+              await requireOutputFile("output/hero.webp");
+            }
           }
           if (
             reviewPath &&

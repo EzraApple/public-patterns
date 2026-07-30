@@ -157,6 +157,13 @@ figure. It cannot execute arbitrary code. Before submission, the agent writes a
 claim-by-claim review and revises the draft; both are retained in the R2 audit
 bundle.
 
+After review, the agent may generate one understated, place-based hero. The
+image is contextual presentation rather than evidence: it must not reconstruct
+an incident or imply that pictured people or properties appear in the records.
+The sandbox receives a fixed low-cost OpenAI image tool, while the investigator
+Worker validates and moves the resulting WebP into R2. The public Worker serves
+only the article-media prefix; investigation archives remain private.
+
 Publication is a separate, explicit operation:
 
 ```mermaid
@@ -221,6 +228,12 @@ ephemeral sandbox; move that credential behind a short-lived proxy before this
 automatic trial expands or investigations accept untrusted inputs. Workflows,
 persistent sessions, and MCP remain deferred until an investigation
 demonstrates the need.
+
+External API gateways classify authentication, exhausted credits, rate limits,
+timeouts, provider outages, and network failures without logging credentials.
+Structured diagnostics include the provider request ID and a concrete operator
+action. Blocking model failures and non-blocking image failures remain in the
+private investigation archive for later audits.
 
 ## Initial sources and detectors
 

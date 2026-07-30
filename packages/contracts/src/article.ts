@@ -58,7 +58,7 @@ export const articleFigureSchema = z.object({
 });
 
 export const articleHeroSchema = z.object({
-  src: z.string().regex(/^\/(?![\\/])/),
+  src: z.string().regex(/^\/media\/articles\/[a-z0-9-]+\.webp$/),
   alt: nonBlankString,
   caption: nonBlankString,
 });
@@ -70,6 +70,7 @@ export const articleDraftSchema = z.object({
   body: nonBlankString,
   sources: z.array(articleSourceSchema).min(1),
   figure: articleFigureSchema.nullable().default(null),
+  hero: articleHeroSchema.nullable().default(null),
 });
 
 export type ArticleDraft = z.infer<typeof articleDraftSchema>;
@@ -81,7 +82,6 @@ export const articleSchema = articleDraftSchema.extend({
   revision: z.number().int().positive(),
   significance: z.number().min(0).max(100),
   readingMinutes: z.number().int().positive(),
-  hero: articleHeroSchema.nullable(),
 });
 
 export type Article = z.infer<typeof articleSchema>;
@@ -96,7 +96,6 @@ export type ArticleSummary = z.infer<typeof articleSummarySchema>;
 export const publishArticleSchema = z.object({
   slug: articleSchema.shape.slug,
   significance: articleSchema.shape.significance,
-  hero: articleHeroSchema.nullable().default(null),
 });
 
 export type PublishArticle = z.infer<typeof publishArticleSchema>;

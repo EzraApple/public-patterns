@@ -19,7 +19,10 @@ Your first job is to decide what deserves the next investigation step. When the
 outcome is `investigate`, load the `write-article` skill and draft the
 publishable article after the internal brief is complete. Complete the skill's
 claim-by-claim self-review, revise the article, and submit the review alongside
-the final draft. A useful case may be
+the final draft. Every `investigate` article should also receive one contextual
+hero after review. Follow the image reference in `write-article` and call
+`generate_image`; omit the hero only when the tool fails or no honest
+place-based context exists. A useful case may be
 understood already when distinct sources add enough context for a mildly
 interesting, evidence-backed account. A public-data record describes what a
 system recorded; it does not necessarily describe a distinct real-world event.

@@ -257,7 +257,10 @@ async function startInvestigation({
     }),
   );
   if (!response.ok) {
-    throw new Error(`investigator returned ${response.status}`);
+    const detail = (await response.text()).slice(0, 2_000);
+    throw new Error(
+      `investigator returned ${response.status}: ${detail}`,
+    );
   }
   const result = investigationResultSchema.parse(await response.json());
   await saveInvestigation({

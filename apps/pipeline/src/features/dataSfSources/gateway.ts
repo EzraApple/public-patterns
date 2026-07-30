@@ -2,6 +2,10 @@ import { z } from "zod";
 
 import type { Batch, Observation } from "@/observation.ts";
 import {
+  apiNetworkError,
+  apiResponseError,
+} from "@/sources/apiFailure.ts";
+import {
   fetchDataSf,
   invalidSourceRow,
   parseDataSfUpperWatermark,
@@ -53,6 +57,41 @@ export function createDataSfGateway({
 }): DataSfGateway {
   const headers = appToken ? { "X-App-Token": appToken } : undefined;
 
+  async function request(
+    source: DataSfSourceName,
+    operation: string,
+    url: URL,
+  ) {
+    let response: Response;
+    try {
+      response = await fetchDataSf({
+        fetch,
+        url,
+        headers,
+        sleep,
+        maxAttempts: maxRequestAttempts,
+      });
+    } catch (error) {
+      throw apiNetworkError({
+        provider: "DataSF",
+        operation: `${source} ${operation}`,
+        error,
+        secrets: [appToken],
+      });
+    }
+    if (!response.ok) {
+      throw await apiResponseError({
+        provider: "DataSF",
+        operation: `${source} ${operation}`,
+        response,
+        credentialName: "SOCRATA_APP_TOKEN",
+        hasCredential: Boolean(appToken),
+        secrets: [appToken],
+      });
+    }
+    return response;
+  }
+
   return {
     async getUpperWatermark(source, since, notAfter) {
       const config = getDataSfSourceConfig(source);
@@ -69,26 +108,16 @@ export function createDataSfGateway({
           `${cursorField} >= '${escapeSoql(since)}' AND ` +
           `${cursorField} <= '${escapeSoql(notAfter)}'`,
       );
-      const response = await fetchDataSf({
-        fetch,
-        url,
-        headers,
-        sleep,
-        maxAttempts: maxRequestAttempts,
-      });
-      if (!response.ok) {
-        throw new Error(
-          `DataSF ${source} request failed: ${response.status}`,
-        );
-      }
+      const response = await request(source, "watermark request", url);
       return parseDataSfUpperWatermark(await response.json());
     },
 
     async getBatch({ source, since, until, after, limit, observedAt }) {
       const config = getDataSfSourceConfig(source);
-      const response = await fetchDataSf({
-        fetch,
-        url: buildDataSfUrl({
+      const response = await request(
+        source,
+        "batch request",
+        buildDataSfUrl({
           origin,
           source,
           since,
@@ -96,15 +125,7 @@ export function createDataSfGateway({
           after,
           limit: limit + 1,
         }),
-        headers,
-        sleep,
-        maxAttempts: maxRequestAttempts,
-      });
-      if (!response.ok) {
-        throw new Error(
-          `DataSF ${source} request failed: ${response.status}`,
-        );
-      }
+      );
 
       const sourceRows = z.array(z.unknown()).parse(await response.json());
       const batchRows = sourceRows.slice(0, limit);

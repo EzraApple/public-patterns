@@ -73,7 +73,6 @@ describe("publishArticle", () => {
         publication: {
           slug: article.slug,
           significance: article.significance,
-          hero: article.hero,
         },
         publishedAt: article.publishedAt,
       }),

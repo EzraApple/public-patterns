@@ -139,17 +139,9 @@ function matchesPublication(
   article: Article,
   publication: PublishArticle,
 ) {
-  const sameHero =
-    article.hero === publication.hero ||
-    (article.hero !== null &&
-      publication.hero !== null &&
-      article.hero.src === publication.hero.src &&
-      article.hero.alt === publication.hero.alt &&
-      article.hero.caption === publication.hero.caption);
   return (
     article.slug === publication.slug &&
-    article.significance === publication.significance &&
-    sameHero
+    article.significance === publication.significance
   );
 }
 

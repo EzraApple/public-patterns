@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 const deployments = {
   investigator: {
     directory: "apps/investigator",
-    required: ["DEEPSEEK_API_KEY"],
+    required: ["DEEPSEEK_API_KEY", "OPENAI_API_KEY"],
   },
   pipeline: {
     directory: "apps/pipeline",
@@ -37,7 +37,9 @@ const required = Object.fromEntries(
   (deployment.required ?? []).map((key) => {
     const value = process.env[key];
     if (!value) {
-      throw new Error(`${key} is required`);
+      throw new Error(
+        `${key} is required for ${name}. Set it in the active Doppler config before deploying.`,
+      );
     }
     return [key, value];
   }),

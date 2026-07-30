@@ -17,6 +17,8 @@ working recommendations, and unresolved questions.
   credential boundaries
 - [`operations/investigation-archives.md`](./operations/investigation-archives.md)
   — D1 index and R2 session audit workflow
+- [`operations/api-failures.md`](./operations/api-failures.md) — provider
+  diagnostics, billing failures, and credential recovery
 
 Likely future sections should be added only when they have real content:
 

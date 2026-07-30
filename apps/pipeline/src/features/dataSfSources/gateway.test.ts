@@ -56,6 +56,39 @@ describe("configured DataSF sources gateway", () => {
     },
   );
 
+  it("reports an actionable Socrata token failure", async () => {
+    const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValue(
+      Response.json(
+        {
+          code: "authentication_required",
+          message: "Token app-token was rejected",
+        },
+        { status: 401 },
+      ),
+    );
+    const gateway = createDataSfGateway({
+      fetch,
+      appToken: "app-token",
+      maxRequestAttempts: 1,
+    });
+
+    const error = await gateway
+      .getUpperWatermark(
+        "311",
+        "2026-07-24T09:00:00",
+        "2026-07-24T14:00:00",
+      )
+      .catch((caught) => caught);
+
+    expect(error).toMatchObject({
+      diagnostic: { kind: "authentication" },
+    });
+    expect((error as Error).message).toContain(
+      "Verify or rotate SOCRATA_APP_TOKEN",
+    );
+    expect((error as Error).message).not.toContain("app-token");
+  });
+
   it.each([
     ["dispatch-realtime", "call_last_updated_at"],
     ["dispatch-closed", "data_updated_at"],

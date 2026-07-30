@@ -1,5 +1,10 @@
 import type { SourceError } from "@/observation.ts";
 import {
+  apiConfigurationError,
+  apiNetworkError,
+  apiResponseError,
+} from "@/sources/apiFailure.ts";
+import {
   fetchWithRetry,
   type RequestSleep,
 } from "@/sources/request.ts";
@@ -41,7 +46,11 @@ export function createTransitAlertGateway({
   maxResponseBytes?: number;
 }): TransitAlertGateway {
   if (!apiKey) {
-    throw new Error("511 transit API key is required");
+    throw apiConfigurationError({
+      provider: "511",
+      operation: "transit alerts request",
+      credentialName: "TRANSIT_511_API_KEY",
+    });
   }
   assertPositiveInteger(maxResponseBytes, "maxResponseBytes");
 
@@ -52,18 +61,35 @@ export function createTransitAlertGateway({
       url.searchParams.set("agency", "SF");
       url.searchParams.set("format", "json");
 
-      const response = await fetchWithRetry({
-        fetch,
-        url,
-        sleep,
-        maxAttempts,
-        requestTimeoutMilliseconds,
-        initialRetryDelayMilliseconds:
-          INITIAL_RETRY_DELAY_MILLISECONDS,
-        label: "511 transit",
-      });
+      let response: Response;
+      try {
+        response = await fetchWithRetry({
+          fetch,
+          url,
+          sleep,
+          maxAttempts,
+          requestTimeoutMilliseconds,
+          initialRetryDelayMilliseconds:
+            INITIAL_RETRY_DELAY_MILLISECONDS,
+          label: "511 transit",
+        });
+      } catch (error) {
+        throw apiNetworkError({
+          provider: "511",
+          operation: "transit alerts request",
+          error,
+          secrets: [apiKey],
+        });
+      }
       if (!response.ok) {
-        throw new Error(`511 transit request failed: ${response.status}`);
+        throw await apiResponseError({
+          provider: "511",
+          operation: "transit alerts request",
+          response,
+          credentialName: "TRANSIT_511_API_KEY",
+          hasCredential: true,
+          secrets: [apiKey],
+        });
       }
 
       const body = await response.text();
