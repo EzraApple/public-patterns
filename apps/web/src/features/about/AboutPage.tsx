@@ -24,11 +24,11 @@ const runtimeStages = [
       "Select the strongest new candidate and give its evidence and nearby records to a sandboxed agent.",
   },
   {
-    id: "04 / archive",
+    id: "04 / publish",
     runtime: "typed result",
-    title: "Archive",
+    title: "Publish",
     detail:
-      "Validate the outcome, brief, evidence, and optional article; index the result in D1 and archive the run in R2.",
+      "Validate and archive every result; publish complete investigate outcomes to the public feed.",
   },
 ] as const;
 
@@ -84,6 +84,7 @@ const methods = [
     details: [
       "At 15:30 UTC each day, the pipeline autonomously selects one ready candidate. Its signal, source observations, and nearby records are written into a temporary Cloudflare Sandbox where an OpenCode-based agent can use Python, query public records, and research the web.",
       "The agent submits a typed investigate, watch, or discard outcome with confidence, evidence, a brief, and an article when warranted. The Worker validates and archives the result before destroying the sandbox. The run is autonomous.",
+      "A complete investigate result publishes automatically. Watch, discard, and failed publication outcomes remain in the audit trail without appearing in the public feed.",
     ],
     status: "production / autonomous daily run",
   },

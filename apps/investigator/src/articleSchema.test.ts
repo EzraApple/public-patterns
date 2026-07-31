@@ -19,6 +19,7 @@ describe("agent article schema", () => {
       title: "Event headline",
       dek: "A concise summary.",
       category: "Public safety",
+      significance: 50,
       body: "The supported account.",
       sources: [{ label: "Public record", href: "https://example.com/record" }],
       figure: null,

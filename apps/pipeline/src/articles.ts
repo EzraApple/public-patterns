@@ -137,6 +137,29 @@ export async function getArticle(
     : undefined;
 }
 
+export async function deleteArticle(
+  db: D1Database,
+  slug: string,
+): Promise<boolean> {
+  const result = await db
+    .prepare("DELETE FROM article_revisions WHERE slug = ?")
+    .bind(slug)
+    .run();
+  return result.meta.changes > 0;
+}
+
+export function getArticleSlug(title: string, day: string) {
+  const stem = title
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 80)
+    .replace(/-$/g, "");
+  return `${stem || "investigation"}-${day}`;
+}
+
 function readingMinutes(body: string) {
   return Math.max(1, Math.ceil(body.trim().split(/\s+/).length / 220));
 }
@@ -157,10 +180,7 @@ function matchesPublication(
   article: Article,
   publication: PublishArticle,
 ) {
-  return (
-    article.slug === publication.slug &&
-    article.significance === publication.significance
-  );
+  return article.slug === publication.slug;
 }
 
 async function getArticleByInvestigation(

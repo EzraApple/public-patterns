@@ -29,10 +29,10 @@ and 511 transit alerts. The pipeline stores append-only observations in D1 and
 derives experimental signals on demand. An investigator can analyze one
 candidate inside an ephemeral sandbox and archives its audit bundle in R2.
 Production CI deploys all three Workers, applies D1 migrations, rotates
-ingestion across sources every five minutes, and privately investigates one
-ready signal each morning. Reviewed investigation drafts can be promoted to
-immutable D1 article revisions; the public site reads those articles through
-its Worker API.
+ingestion across sources every five minutes, and investigates one ready signal
+each morning. Valid `investigate` outcomes publish automatically as immutable
+D1 article revisions; the public site reads those articles through its Worker
+API.
 
 ## Development
 
@@ -78,6 +78,10 @@ investigation. Retrieve its bearer token from the production Doppler config:
 ```sh
 doppler secrets get LAB_TOKEN --plain --config prd
 ```
+
+An authenticated `DELETE /api/internal/articles/:slug` request removes every
+public revision for a slug while preserving its investigation and R2 audit
+archive.
 
 The 511 adapter deploys but remains disabled until
 `TRANSIT_511_API_KEY` is added to the production Worker.

@@ -173,7 +173,7 @@ Publication is a separate, explicit operation:
 flowchart LR
     A["Investigation + evidence"] --> B["Agent draft"]
     B --> C["Agent self-review"]
-    C --> D{"Human promotes?"}
+    C --> D{"Validated investigate outcome?"}
     D -->|"yes"| E["Immutable D1 article revision"]
     D -->|"no"| F["Private audit only"]
     E --> G["Public Worker API"]
@@ -190,6 +190,11 @@ room for later corrections without losing prior text.
 Saved, reproducible figure data is the default. Live evidence queries remain a
 future option for situations where a visualization must track an evolving
 event.
+
+During the initial unattended trial, a valid `investigate` result publishes
+automatically with an agent-assigned editorial significance score. An
+authenticated internal delete operation can remove a bad article from the
+public feed without deleting its D1 investigation or R2 audit archive.
 
 ## Agent and tool layer
 
@@ -225,11 +230,12 @@ sources or a useful visualization; richer presentation is optional.
 The investigator is a separate Worker because Containers, model spend, and
 failure isolation differ materially from ingestion. The private workbench is
 available for manual runs. During the initial tuning trial, one morning job
-selects one previously uninvestigated burst; its article remains private until
-reviewed. The current prototype passes a limited DeepSeek key into each
-ephemeral sandbox; move that credential behind a short-lived proxy before this
-automatic trial expands or investigations accept untrusted inputs. Workflows,
-persistent sessions, and MCP remain deferred until an investigation
+selects one previously uninvestigated burst and publishes a valid
+`investigate` article. `watch`, `discard`, and failed publication outcomes stay
+private for audit. The current prototype passes a limited DeepSeek key into
+each ephemeral sandbox; move that credential behind a short-lived proxy before
+this automatic trial expands or investigations accept untrusted inputs.
+Workflows, persistent sessions, and MCP remain deferred until an investigation
 demonstrates the need.
 
 External API gateways classify authentication, exhausted credits, rate limits,

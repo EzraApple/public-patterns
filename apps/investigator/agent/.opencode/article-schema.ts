@@ -56,6 +56,7 @@ export const articleDraftSchema = z.object({
   title: nonBlankString,
   dek: nonBlankString,
   category: nonBlankString,
+  significance: z.number().min(0).max(100).default(50),
   body: nonBlankString,
   sources: z.array(
     z.object({

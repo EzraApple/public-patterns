@@ -3,6 +3,7 @@ import { publishArticleSchema } from "@public-patterns/contracts/article";
 
 import {
   ArticlePublicationError,
+  deleteArticle,
   getArticle,
   listArticles,
   publishArticle,
@@ -51,6 +52,17 @@ export async function routeRequest(
     const article = slug ? await getArticle(env.DB, slug) : undefined;
     return article
       ? json(article)
+      : json({ error: "article not found" }, 404);
+  }
+  if (request.method === "DELETE" && url.pathname.startsWith("/articles/")) {
+    const slug = publishArticleSchema.shape.slug.safeParse(
+      url.pathname.slice("/articles/".length),
+    );
+    if (!slug.success) {
+      return json({ error: "article not found" }, 404);
+    }
+    return (await deleteArticle(env.DB, slug.data))
+      ? new Response(null, { status: 204 })
       : json({ error: "article not found" }, 404);
   }
   if (request.method === "POST" && url.pathname.startsWith("/ingest/")) {

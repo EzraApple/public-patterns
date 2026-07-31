@@ -1,3 +1,4 @@
+import { getArticleSlug, publishArticle } from "./articles.ts";
 import { ingestDataSfSource } from "./features/dataSfSources/ingest.ts";
 import { ingestTransitAlerts } from "./features/transitAlerts/ingest.ts";
 import { shiftDay } from "./ingestion.ts";
@@ -27,10 +28,37 @@ export default {
         if (error) {
           console.error("Daily investigation failed", { day, input, error });
         } else {
+          let publishedSlug: string | null = null;
+          if (
+            result?.submission.outcome === "investigate" &&
+            result.article
+          ) {
+            try {
+              const article = await publishArticle({
+                db: env.DB,
+                investigationId: result.id,
+                publication: {
+                  slug: getArticleSlug(result.article.title, day),
+                },
+                publishedAt: createdAt,
+              });
+              publishedSlug = article.slug;
+            } catch (publicationError) {
+              console.error("Daily publication failed", {
+                day,
+                investigationId: result.id,
+                error:
+                  publicationError instanceof Error
+                    ? publicationError.message
+                    : String(publicationError),
+              });
+            }
+          }
           console.log("Daily investigation completed", {
             day,
             input,
             investigationId: result?.id ?? null,
+            publishedSlug,
           });
         }
       } catch (error) {

@@ -67,6 +67,7 @@ export const articleDraftSchema = z.object({
   title: nonBlankString,
   dek: nonBlankString,
   category: nonBlankString,
+  significance: z.number().min(0).max(100).default(50),
   body: nonBlankString,
   sources: z.array(articleSourceSchema).min(1),
   figure: articleFigureSchema.nullable().default(null),
@@ -80,7 +81,6 @@ export const articleSchema = articleDraftSchema.extend({
   investigationId: z.string().min(1),
   publishedAt: z.iso.datetime(),
   revision: z.number().int().positive(),
-  significance: z.number().min(0).max(100),
   readingMinutes: z.number().int().positive(),
 });
 
@@ -95,7 +95,6 @@ export type ArticleSummary = z.infer<typeof articleSummarySchema>;
 
 export const publishArticleSchema = z.object({
   slug: articleSchema.shape.slug,
-  significance: articleSchema.shape.significance,
 });
 
 export type PublishArticle = z.infer<typeof publishArticleSchema>;

@@ -4,7 +4,7 @@ import type {
 } from "@public-patterns/contracts/article";
 import { describe, expect, it } from "vitest";
 
-import { publishArticle } from "./articles.ts";
+import { getArticleSlug, publishArticle } from "./articles.ts";
 
 describe("publishArticle", () => {
   const hero = {
@@ -17,6 +17,7 @@ describe("publishArticle", () => {
     title: "Fixture article",
     dek: "A fixture summary.",
     category: "Public safety",
+    significance: 65,
     body: "Fixture body.",
     sources: [
       { label: "Fixture record", href: "https://example.com/fixture" },
@@ -80,7 +81,6 @@ describe("publishArticle", () => {
         investigationId: "investigation-1",
         publication: {
           slug: article.slug,
-          significance: article.significance,
         },
         publishedAt: article.publishedAt,
       }),
@@ -109,7 +109,7 @@ describe("publishArticle", () => {
       publishArticle({
         db: db as unknown as D1Database,
         investigationId: "investigation-1",
-        publication: { slug: "fixture-article", significance: 80 },
+        publication: { slug: "fixture-article" },
         publishedAt: "2026-07-29T00:00:00.000Z",
       }),
     ).rejects.toThrow("article has no hero image");
@@ -145,7 +145,7 @@ describe("publishArticle", () => {
       publishArticle({
         db: db as unknown as D1Database,
         investigationId: "investigation-1",
-        publication: { slug: "fixture-article", significance: 80 },
+        publication: { slug: "fixture-article" },
         publishedAt: "2026-07-29T00:00:00.000Z",
       }),
     ).rejects.toThrow(
@@ -204,16 +204,27 @@ describe("publishArticle", () => {
       publishArticle({
         db: db as unknown as D1Database,
         investigationId: "investigation-2",
-        publication: { slug: "fixture-article", significance: 80 },
+        publication: { slug: "fixture-article" },
         publishedAt: "2026-07-29T00:00:00.000Z",
       }),
     ).resolves.toMatchObject({
       slug: "fixture-article",
       investigationId: "investigation-2",
       revision: 2,
-      significance: 80,
+      significance: 65,
       hero: revisedHero,
       title: "Revised fixture article",
     });
+  });
+});
+
+describe("getArticleSlug", () => {
+  it("creates a readable date-scoped slug", () => {
+    expect(
+      getArticleSlug(
+        "Body Found Near Golden Gate Bridge!",
+        "2026-07-25",
+      ),
+    ).toBe("body-found-near-golden-gate-bridge-2026-07-25");
   });
 });
