@@ -2,7 +2,7 @@
 
 **Status:** experimental
 
-**Last verified:** 2026-07-24 01:00 PDT
+**Last verified:** 2026-07-31 05:30 PDT
 
 ## Identity
 
@@ -124,6 +124,13 @@ validation issues; exact error replays are ignored.
 The closed feed initializes with 35 days for weekday baselines. The realtime
 feed remains short because it is rolling; detector readiness requires that feed
 to be current, while historical coverage comes from the closed archive.
+
+On 2026-07-31, the local store contained 56,935 closed observations and 24,536
+realtime revisions for 9,335 realtime calls. No physical-source call had
+different `occurred_at` values across its stored revisions. Indexed checks for
+newer revisions and closed-feed authority returned 9,118 current calls across
+five requested days in 142 ms; ranking every revision associated with those
+calls exceeded D1's CPU limit.
 
 A live local replay stored 4,441 distinct calls from 2,996 real-time rows and
 3,624 closed rows. Replaying the same cursors preserved the same row count.
