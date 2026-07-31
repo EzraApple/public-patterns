@@ -52,7 +52,8 @@ SELECT count(*) AS rows, min(incident_datetime) AS earliest,
 
 ## Current local ingestion
 
-The adapter initially reads seven event-time days, then scans
+The adapter initially reads 35 event-time days for its first detector
+baseline, then scans
 `incident_datetime` with a two-day overlap and
 `(incident_datetime, row_id)` keyset. It preserves full JSON and changed
 versions.
@@ -62,6 +63,9 @@ same-window replay did not change D1 counts.
 
 Reports corrected, approved, or removed after their incident falls outside the
 two-day overlap are not currently reconciled.
+
+Existing deployments can start the same idempotent rewind through
+`POST /api/internal/backfill/police-incidents`.
 
 ## Retention recommendation
 

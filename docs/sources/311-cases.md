@@ -80,9 +80,10 @@ year. Do not download 8.8M raw cases for the MVP.
 
 ## Current local slice
 
-The shared DataSF adapter keyset-pages 311 on one fixed `data_loaded_at` window
-and `service_request_id`; source configurations choose the event or portal
-field that safely advances their cursor. One run commits at most four
+The shared DataSF adapter initializes with 35 days of `data_loaded_at` history
+for its first detector baseline, then keyset-pages 311 on one fixed window and
+`service_request_id`; source configurations choose the event or portal field
+that safely advances their cursor. One run commits at most four
 500-observation batches with an opaque resume cursor. The
 gateway validates DataSF JSON and emits the shared observation shape; its
 `data` field retains the selected source-specific JSON, including public
@@ -99,6 +100,9 @@ A live local two-day replay returned 34,841 recently loaded rows, including
 older events republished in the current portal batch. This is a dated direct
 observation, not an expected daily volume. It supports retaining the separate
 load-time cursor and keeping the page bound explicit.
+
+Existing deployments can rewind this cursor through the authenticated
+`POST /api/internal/backfill/311` operation. Replays remain idempotent.
 
 The first detector reads current observations and groups `kind` (the 311
 service name) by `area` (analysis neighborhood). It waits for a complete

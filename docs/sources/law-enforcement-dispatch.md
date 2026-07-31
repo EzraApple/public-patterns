@@ -121,6 +121,10 @@ remains queryable. `dispatch` is only the combined read alias, not an ingestion
 coordinator. Malformed source rows retain their physical source, dataset, and
 validation issues; exact error replays are ignored.
 
+The closed feed initializes with 35 days for weekday baselines. The realtime
+feed remains short because it is rolling; detector readiness requires that feed
+to be current, while historical coverage comes from the closed archive.
+
 A live local replay stored 4,441 distinct calls from 2,996 real-time rows and
 3,624 closed rows. Replaying the same cursors preserved the same row count.
 These are dated direct observations.

@@ -13,7 +13,7 @@ import {
 
 export const weekdayBurstDetector = {
   name: "weekday-burst",
-  version: 1,
+  version: 2,
   baselineWeeks: 4,
   minimumObserved: 20,
   minimumExcess: 15,
@@ -71,18 +71,7 @@ export async function getBursts(
     ),
   );
   const baselineStart = `${shiftDay(day, -28)}T00:00:00`;
-  if (
-    cursors.some((value) => {
-      const cursor = value as
-        | { collectingSince?: string; scan?: unknown }
-        | undefined;
-      return (
-        !cursor?.collectingSince ||
-        cursor.collectingSince > baselineStart ||
-        cursor.scan !== undefined
-      );
-    })
-  ) {
+  if (!hasCompleteBaseline(source, cursors, baselineStart)) {
     return { source, day, ready: false, bursts: [] };
   }
 
@@ -101,6 +90,33 @@ export async function getBursts(
     ready: true,
     bursts: findBursts(observations, day),
   };
+}
+
+function hasCompleteBaseline(
+  source: BurstSource,
+  values: unknown[],
+  baselineStart: string,
+): boolean {
+  if (source === "dispatch") {
+    const [realtime, closed] = values;
+    return isReady(realtime) && isReady(closed, baselineStart);
+  }
+  return isReady(values[0], baselineStart);
+}
+
+function isReady(
+  value: unknown,
+  baselineStart?: string,
+): boolean {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  const cursor = value as { collectingSince?: string; scan?: unknown };
+  return (
+    typeof cursor.collectingSince === "string" &&
+    cursor.scan === undefined &&
+    (baselineStart === undefined || cursor.collectingSince <= baselineStart)
+  );
 }
 
 export async function getDetectorObservations({
