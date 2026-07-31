@@ -245,6 +245,12 @@ action. Blocking model failures and image failures remain in the private
 investigation archive for later audits. Image failures do not change the
 investigation outcome, but their drafts cannot be promoted publicly.
 
+Every scheduled attempt leaves a compact D1 run record: the detector version
+and thresholds, per-source readiness and candidate summaries, selected signal,
+agent outcome, publication link, or failure stage. These records make empty
+runs and operational failures visible and provide the queue from which useful
+regressions can be promoted into versioned eval fixtures.
+
 ## Initial sources and detectors
 
 Active MVP slices:

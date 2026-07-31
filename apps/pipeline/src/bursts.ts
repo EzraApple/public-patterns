@@ -11,9 +11,14 @@ import {
   getIngestionCursor,
 } from "./observationStore.ts";
 
-const minimumObserved = 20;
-const minimumExcess = 15;
-const minimumRatio = 2.5;
+export const weekdayBurstDetector = {
+  name: "weekday-burst",
+  version: 1,
+  baselineWeeks: 4,
+  minimumObserved: 20,
+  minimumExcess: 15,
+  minimumRatio: 2.5,
+} as const;
 
 export const burstSources = [
   "311",
@@ -130,7 +135,10 @@ export function findBursts(
   observations: DetectionObservation[],
   day: string,
 ): Burst[] {
-  const baselineDays = [1, 2, 3, 4].map((week) => shiftDay(day, -7 * week));
+  const baselineDays = Array.from(
+    { length: weekdayBurstDetector.baselineWeeks },
+    (_, index) => shiftDay(day, -7 * (index + 1)),
+  );
   const relevantDays = new Set([day, ...baselineDays]);
   const groups = new Map<
     string,
@@ -161,9 +169,9 @@ export function findBursts(
       baselineCounts.length;
     const ratio = current.length / Math.max(expected, 2);
     if (
-      current.length < minimumObserved ||
-      current.length - expected < minimumExcess ||
-      ratio < minimumRatio
+      current.length < weekdayBurstDetector.minimumObserved ||
+      current.length - expected < weekdayBurstDetector.minimumExcess ||
+      ratio < weekdayBurstDetector.minimumRatio
     ) {
       continue;
     }

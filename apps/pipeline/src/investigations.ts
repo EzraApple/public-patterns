@@ -6,6 +6,7 @@ import {
   type BurstSource,
   burstSources,
   getBursts,
+  weekdayBurstDetector,
 } from "./bursts.ts";
 import { getSourceUrl } from "./features/dataSfSources/sourceUrl.ts";
 import { getCurrentDispatch } from "./features/dispatch/read.ts";
@@ -43,6 +44,15 @@ export class InvestigationUnavailableError extends Error {
   }
 }
 
+export type DailyDetectorSnapshot = {
+  detector: typeof weekdayBurstDetector;
+  sources: Array<{
+    source: BurstSource;
+    isReady: boolean;
+    candidates: Array<Omit<Burst, "observationIds">>;
+  }>;
+};
+
 export async function investigateDailyBursts({
   db,
   investigator,
@@ -57,6 +67,14 @@ export async function investigateDailyBursts({
   const detected = await Promise.all(
     burstSources.map((source) => getBursts(db, source, day)),
   );
+  const detectorSnapshot = {
+    detector: weekdayBurstDetector,
+    sources: detected.map(({ source, ready, bursts }) => ({
+      source,
+      isReady: ready,
+      candidates: bursts.map(({ observationIds: _, ...burst }) => burst),
+    })),
+  } satisfies DailyDetectorSnapshot;
   const candidates = detected
     .flatMap(({ source, ready, bursts }) =>
       ready
@@ -90,10 +108,16 @@ export async function investigateDailyBursts({
   }
 
   if (!selected) {
-    return { input: null, result: null, error: null };
+    return {
+      detectorSnapshot,
+      input: null,
+      result: null,
+      error: null,
+    };
   }
   try {
     return {
+      detectorSnapshot,
       input: selected.input,
       result: await startInvestigation({
         db,
@@ -114,7 +138,12 @@ export async function investigateDailyBursts({
       error: null,
     };
   } catch (error) {
-    return { input: selected.input, result: null, error };
+    return {
+      detectorSnapshot,
+      input: selected.input,
+      result: null,
+      error,
+    };
   }
 }
 

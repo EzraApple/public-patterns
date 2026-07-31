@@ -9,6 +9,7 @@ import {
   publishArticle,
 } from "./articles.ts";
 import { burstSources, getBursts } from "./bursts.ts";
+import { listDailyRuns } from "./dailyRuns.ts";
 import { seedDevFixtures } from "./devFixtures.ts";
 import type { Env } from "./environment.ts";
 import { ingestDataSfSource } from "./features/dataSfSources/ingest.ts";
@@ -177,6 +178,9 @@ export async function routeRequest(
   }
   if (request.method === "GET" && url.pathname === "/investigations") {
     return json({ investigations: await listInvestigations(env.DB) });
+  }
+  if (request.method === "GET" && url.pathname === "/daily-runs") {
+    return json({ runs: await listDailyRuns(env.DB) });
   }
   if (request.method === "GET" && url.pathname.startsWith("/investigations/")) {
     const id = url.pathname.slice("/investigations/".length);
