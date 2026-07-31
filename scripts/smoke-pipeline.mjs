@@ -35,6 +35,7 @@ await writeFile(
           title: "Fixture article",
           dek: "A fixture article summary.",
           category: "Public safety",
+          significance: 65,
           body: "Fixture article body.",
           sources: [
             {
@@ -316,7 +317,6 @@ try {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         slug: "fixture-article",
-        significance: 80,
         hero: null,
       }),
     },
@@ -361,7 +361,6 @@ try {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         slug: "fixture-article",
-        significance: 80,
         hero: null,
       }),
     },
@@ -378,8 +377,7 @@ try {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
-        slug: "fixture-article",
-        significance: 81,
+        slug: "different-article",
         hero: null,
       }),
     },
@@ -408,7 +406,6 @@ try {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         slug: "fixture-article",
-        significance: 80,
         hero: null,
       }),
     },
@@ -438,8 +435,39 @@ try {
     );
   }
 
+  const deletionResponse = await fetch(
+    `${origin}/articles/fixture-article`,
+    { method: "DELETE" },
+  );
+  const deletedArticleResponse = await fetch(
+    `${origin}/articles/fixture-article`,
+  );
+  const preservedInvestigationResponse = await fetch(
+    `${origin}/investigations/${investigation.id}`,
+  );
+  if (
+    deletionResponse.status !== 204 ||
+    deletedArticleResponse.status !== 404 ||
+    !preservedInvestigationResponse.ok
+  ) {
+    throw new Error("Article deletion did not preserve its investigation");
+  }
+
+  const scheduledDate = new Date();
+  scheduledDate.setUTCDate(scheduledDate.getUTCDate() - 1);
+  const scheduledDay = scheduledDate.toISOString().slice(0, 10);
+  const scheduledSeedResponse = await fetch(
+    `${origin}/dev/seed?day=${scheduledDay}`,
+    { method: "POST" },
+  );
+  if (!scheduledSeedResponse.ok) {
+    throw new Error(
+      `Scheduled fixture seed failed: ${await scheduledSeedResponse.text()}`,
+    );
+  }
+
   const scheduledResponse = await fetch(
-    `${origin}/__scheduled?cron=30+15+*+*+*&time=${Date.parse("2026-07-24T15:30:00Z")}`,
+    `${origin}/__scheduled?cron=30+15+*+*+*`,
   );
   for (
     let attempt = 0;
@@ -453,10 +481,24 @@ try {
   if (
     !scheduledResponse.ok ||
     !serverOutput.includes("Daily investigation completed") ||
-    serverOutput.includes("Daily investigation failed")
+    serverOutput.includes("Daily investigation failed") ||
+    serverOutput.includes("Daily publication failed")
   ) {
     throw new Error(
       `Daily investigation failed: ${await scheduledResponse.text()}`,
+    );
+  }
+
+  const scheduledArticlesResponse = await fetch(`${origin}/articles`);
+  const scheduledArticles = await scheduledArticlesResponse.json();
+  if (
+    !scheduledArticlesResponse.ok ||
+    scheduledArticles.articles?.length !== 1 ||
+    !scheduledArticles.articles[0]?.slug.endsWith(`-${scheduledDay}`) ||
+    scheduledArticles.articles[0]?.significance !== 65
+  ) {
+    throw new Error(
+      `Daily article was not published: ${JSON.stringify(scheduledArticles)}`,
     );
   }
 

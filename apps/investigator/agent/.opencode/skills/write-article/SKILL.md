@@ -102,6 +102,7 @@ Write `output/article.json`:
   "title": "Event-first headline",
   "dek": "One sentence that adds context instead of repeating the headline.",
   "category": "Public safety",
+  "significance": 50,
   "body": "Article body in ordinary Markdown.",
   "sources": [
     {
@@ -112,6 +113,11 @@ Write `output/article.json`:
   "figure": null
 }
 ```
+
+Set `significance` as an editorial ranking score, not statistical confidence:
+20 is routine and narrowly local, 50 is notably useful to San Francisco
+readers, and 80 is a major citywide event or consequence. Use the lowest score
+the evidence supports.
 
 The body may use paragraphs, links, emphasis, and meaningful second-level
 headings. Do not repeat the title, dek, source list, author, reading time,

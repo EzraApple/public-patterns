@@ -55,6 +55,28 @@ describe("internal API", () => {
     expect(response.ok).toBe(true);
     expect(fetch).toHaveBeenCalledOnce();
   });
+
+  it("forwards authenticated article deletion", async () => {
+    const fetch = vi.fn(async (request: Request) => {
+      expect(request.url).toBe("https://pipeline/articles/example");
+      expect(request.method).toBe("DELETE");
+      expect(request.headers.has("authorization")).toBe(false);
+      return new Response(null, { status: 204 });
+    });
+    const response = await routeRequest(
+      new Request(
+        "https://publicpatterns.com/api/internal/articles/example",
+        {
+          method: "DELETE",
+          headers: { authorization: "Bearer test-token" },
+        },
+      ),
+      environment(fetch),
+    );
+
+    expect(response.status).toBe(204);
+    expect(fetch).toHaveBeenCalledOnce();
+  });
 });
 
 describe("public article API", () => {
