@@ -502,6 +502,23 @@ try {
     );
   }
 
+  const dailyRunsResponse = await fetch(`${origin}/daily-runs`);
+  const dailyRuns = await dailyRunsResponse.json();
+  if (
+    !dailyRunsResponse.ok ||
+    dailyRuns.runs?.length !== 1 ||
+    dailyRuns.runs[0]?.day !== scheduledDay ||
+    dailyRuns.runs[0]?.status !== "published" ||
+    !dailyRuns.runs[0]?.investigationId ||
+    !dailyRuns.runs[0]?.publishedSlug?.endsWith(`-${scheduledDay}`) ||
+    dailyRuns.runs[0]?.detector?.detector?.version !== 1 ||
+    !dailyRuns.runs[0]?.detector?.sources?.some(({ candidates }) =>
+      candidates.some(({ observed }) => observed === 20),
+    )
+  ) {
+    throw new Error(`Daily run was not recorded: ${JSON.stringify(dailyRuns)}`);
+  }
+
   console.log("Pipeline Worker+D1 investigation smoke test passed");
 } catch (error) {
   throw new Error(`${error.message}\n${serverOutput}`);

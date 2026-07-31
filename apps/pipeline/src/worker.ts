@@ -1,8 +1,7 @@
-import { getArticleSlug, publishArticle } from "./articles.ts";
+import { runDailyInvestigation } from "./dailyRuns.ts";
 import { ingestDataSfSource } from "./features/dataSfSources/ingest.ts";
 import { ingestTransitAlerts } from "./features/transitAlerts/ingest.ts";
 import { shiftDay } from "./ingestion.ts";
-import { investigateDailyBursts } from "./investigations.ts";
 import { sources } from "./observation.ts";
 import { routeRequest, type Env } from "./pipeline.ts";
 import { apiFailureDiagnostic } from "./sources/apiFailure.ts";
@@ -19,50 +18,36 @@ export default {
         -1,
       );
       try {
-        const { input, result, error } = await investigateDailyBursts({
+        const run = await runDailyInvestigation({
           db: env.DB,
           investigator: env.INVESTIGATOR,
           day,
-          createdAt,
+          startedAt: createdAt,
         });
-        if (error) {
-          console.error("Daily investigation failed", { day, input, error });
+        const message = run
+          ? "Daily investigation completed"
+          : "Daily investigation skipped";
+        const fields = {
+          event: run
+            ? "daily-investigation.completed"
+            : "daily-investigation.duplicate",
+          day,
+          status: run?.status ?? null,
+          investigationId: run?.investigationId ?? null,
+          publishedSlug: run?.publishedSlug ?? null,
+          failureStage: run?.failureStage ?? null,
+        };
+        if (run?.status === "failed") {
+          console.error(message, fields);
         } else {
-          let publishedSlug: string | null = null;
-          if (
-            result?.submission.outcome === "investigate" &&
-            result.article
-          ) {
-            try {
-              const article = await publishArticle({
-                db: env.DB,
-                investigationId: result.id,
-                publication: {
-                  slug: getArticleSlug(result.article.title, day),
-                },
-                publishedAt: createdAt,
-              });
-              publishedSlug = article.slug;
-            } catch (publicationError) {
-              console.error("Daily publication failed", {
-                day,
-                investigationId: result.id,
-                error:
-                  publicationError instanceof Error
-                    ? publicationError.message
-                    : String(publicationError),
-              });
-            }
-          }
-          console.log("Daily investigation completed", {
-            day,
-            input,
-            investigationId: result?.id ?? null,
-            publishedSlug,
-          });
+          console.log(message, fields);
         }
       } catch (error) {
-        console.error("Daily investigation failed", { day, error });
+        console.error("Daily investigation failed", {
+          event: "daily-investigation.unrecorded-failure",
+          day,
+          error: error instanceof Error ? error.message : String(error),
+        });
       }
       return;
     }
