@@ -453,6 +453,31 @@ try {
     throw new Error("Article deletion did not preserve its investigation");
   }
 
+  const manualRunResponse = await fetch(`${origin}/daily-runs`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ day: "2026-06-01" }),
+  });
+  const manualRun = await manualRunResponse.json();
+  if (
+    manualRunResponse.status !== 201 ||
+    manualRun.status !== "no_candidate" ||
+    manualRun.day !== "2026-06-01"
+  ) {
+    throw new Error(`Manual daily run failed: ${JSON.stringify(manualRun)}`);
+  }
+
+  const duplicateRunResponse = await fetch(`${origin}/daily-runs`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ day: "2026-06-01" }),
+  });
+  if (duplicateRunResponse.status !== 409) {
+    throw new Error(
+      `Duplicate daily run returned ${duplicateRunResponse.status}`,
+    );
+  }
+
   const scheduledDate = new Date();
   scheduledDate.setUTCDate(scheduledDate.getUTCDate() - 1);
   const scheduledDay = scheduledDate.toISOString().slice(0, 10);
@@ -506,7 +531,7 @@ try {
   const dailyRuns = await dailyRunsResponse.json();
   if (
     !dailyRunsResponse.ok ||
-    dailyRuns.runs?.length !== 1 ||
+    dailyRuns.runs?.length !== 2 ||
     dailyRuns.runs[0]?.day !== scheduledDay ||
     dailyRuns.runs[0]?.status !== "published" ||
     !dailyRuns.runs[0]?.investigationId ||

@@ -9,7 +9,7 @@ import {
   publishArticle,
 } from "./articles.ts";
 import { burstSources, getBursts } from "./bursts.ts";
-import { listDailyRuns } from "./dailyRuns.ts";
+import { listDailyRuns, runDailyInvestigation } from "./dailyRuns.ts";
 import { seedDevFixtures } from "./devFixtures.ts";
 import type { Env } from "./environment.ts";
 import { ingestDataSfSource } from "./features/dataSfSources/ingest.ts";
@@ -181,6 +181,23 @@ export async function routeRequest(
   }
   if (request.method === "GET" && url.pathname === "/daily-runs") {
     return json({ runs: await listDailyRuns(env.DB) });
+  }
+  if (request.method === "POST" && url.pathname === "/daily-runs") {
+    const day = z
+      .object({ day: calendarDaySchema })
+      .safeParse(await request.json().catch(() => undefined));
+    if (!day.success) {
+      return json({ error: "valid day is required" }, 400);
+    }
+    const run = await runDailyInvestigation({
+      db: env.DB,
+      investigator: env.INVESTIGATOR,
+      day: day.data.day,
+      startedAt: observedAt,
+    });
+    return run
+      ? json(run, 201)
+      : json({ error: "daily run already exists" }, 409);
   }
   if (request.method === "GET" && url.pathname.startsWith("/investigations/")) {
     const id = url.pathname.slice("/investigations/".length);
