@@ -38,6 +38,20 @@ doppler run --config prd -- sh -c 'curl -fsS \
   https://publicpatterns.com/api/internal/daily-runs'
 ```
 
+Run an unprocessed day through the same operation used by the cron trigger:
+
+```sh
+doppler run --config prd -- sh -c 'curl -fsS \
+  -X POST \
+  -H "Authorization: Bearer $LAB_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '\''{"day":"YYYY-MM-DD"}'\'' \
+  https://publicpatterns.com/api/internal/daily-runs'
+```
+
+The day is idempotent: a second request returns `409` and does not repeat the
+investigation or publication.
+
 ## Find recent investigations
 
 ```sh
