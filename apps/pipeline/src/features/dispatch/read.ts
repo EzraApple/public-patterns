@@ -52,48 +52,35 @@ export async function getCurrentDispatchMetadata({
   ranges: { start: string; end: string }[];
 }) {
   const timeFilter = ranges
-    .map(() => "(occurred_at >= ? AND occurred_at < ?)")
+    .map(() => "(current.occurred_at >= ? AND current.occurred_at < ?)")
     .join(" OR ");
   const result = await db
     .prepare(
-      `WITH candidates AS (
-         SELECT DISTINCT id
-         FROM observations
-         WHERE source IN ('dispatch-realtime', 'dispatch-closed')
-           AND (${timeFilter})
-       ),
-       source_current AS (
-         SELECT source, observations.id, occurred_at, updated_at, observed_at,
-                kind, area,
-                row_number() OVER (
-                  PARTITION BY observations.source, observations.id
-                  ORDER BY observations.updated_at DESC,
-                           observations.observed_at DESC,
-                           observations.data_hash DESC
-                ) AS source_position
-         FROM observations
-         JOIN candidates USING (id)
-         WHERE source IN ('dispatch-realtime', 'dispatch-closed')
-       ),
-       dispatch_current AS (
-         SELECT *,
-                row_number() OVER (
-                  PARTITION BY id
-                  ORDER BY
-                    CASE source WHEN 'dispatch-closed' THEN 1 ELSE 0 END DESC
-                ) AS dispatch_position
-         FROM source_current
-         WHERE source_position = 1
-       )
-       SELECT source, id, occurred_at, kind, area
-       FROM dispatch_current
-       WHERE dispatch_position = 1 AND (${timeFilter})
-       ORDER BY occurred_at, id`,
+      `SELECT current.source, current.id, current.occurred_at,
+              current.kind, current.area
+       FROM observations AS current
+       WHERE current.source IN ('dispatch-realtime', 'dispatch-closed')
+         AND (${timeFilter})
+         AND NOT EXISTS (
+           SELECT 1
+           FROM observations AS newer
+           WHERE newer.source = current.source
+             AND newer.id = current.id
+             AND (newer.updated_at, newer.observed_at, newer.data_hash)
+               > (current.updated_at, current.observed_at, current.data_hash)
+         )
+         AND (
+           current.source = 'dispatch-closed'
+           OR NOT EXISTS (
+             SELECT 1
+             FROM observations AS closed
+             WHERE closed.source = 'dispatch-closed'
+               AND closed.id = current.id
+           )
+         )
+       ORDER BY current.occurred_at, current.id`,
     )
-    .bind(
-      ...ranges.flatMap(({ start, end }) => [start, end]),
-      ...ranges.flatMap(({ start, end }) => [start, end]),
-    )
+    .bind(...ranges.flatMap(({ start, end }) => [start, end]))
     .all<ObservationMetadataRow>();
 
   return result.results.map((row) => ({
