@@ -9,6 +9,8 @@ import {
   optionalSourceStringSchema,
 } from "./schema.ts";
 
+const detectorBaselineMinutes = 35 * 24 * 60;
+
 const definitions = {
   "311": defineSource({
     datasetId: "vw6y-z8j6",
@@ -45,7 +47,7 @@ const definitions = {
       "data_as_of",
       "data_loaded_at",
     ].join(","),
-    initialWindowMinutes: 2 * 24 * 60,
+    initialWindowMinutes: detectorBaselineMinutes,
     overlapMinutes: 2 * 24 * 60,
     schema: case311Schema,
   }),
@@ -79,7 +81,7 @@ const definitions = {
       "dup_cad_number",
       "pd_incident_report",
     ].join(","),
-    initialWindowMinutes: 2 * 24 * 60,
+    initialWindowMinutes: detectorBaselineMinutes,
     overlapMinutes: 2 * 60,
     schema: dispatchClosedSchema,
   }),
@@ -92,7 +94,7 @@ const definitions = {
     kindFields: ["call_type", "call_type_group"],
     defaultKind: "fire or EMS call",
     areaField: "neighborhoods_analysis_boundaries",
-    initialWindowMinutes: 2 * 24 * 60,
+    initialWindowMinutes: detectorBaselineMinutes,
     overlapMinutes: 6 * 60,
   }),
   "police-incidents": defineSource({
@@ -107,7 +109,7 @@ const definitions = {
     ],
     defaultKind: "police incident",
     areaField: "analysis_neighborhood",
-    initialWindowMinutes: 7 * 24 * 60,
+    initialWindowMinutes: detectorBaselineMinutes,
     overlapMinutes: 2 * 24 * 60,
   }),
   "building-complaints": defineSource({

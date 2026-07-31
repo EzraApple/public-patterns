@@ -4,32 +4,16 @@ import type { Env } from "./environment.ts";
 import { routeRequest } from "./pipeline.ts";
 
 describe("pipeline routes", () => {
-  it("waits for both physical dispatch cursors before detecting bursts", async () => {
-    const db = {
-      prepare() {
-        return {
-          bind(source: string) {
-            return {
-              async first() {
-                return source === "dispatch-realtime"
-                  ? {
-                      cursor_json: JSON.stringify({
-                        collectingSince: "2026-06-01T00:00:00",
-                      }),
-                    }
-                  : null;
-              },
-            };
-          },
-        };
-      },
-    } as unknown as D1Database;
-
+  it("waits for closed dispatch history before detecting bursts", async () => {
     const response = await routeRequest(
       new Request(
         "http://pipeline.test/bursts?source=dispatch&day=2026-07-24",
       ),
-      { DB: db } as Env,
+      {
+        DB: dispatchDb({
+          "dispatch-realtime": "2026-06-01T00:00:00",
+        }),
+      } as Env,
     );
 
     expect(await response.json()).toEqual({
@@ -38,6 +22,22 @@ describe("pipeline routes", () => {
       ready: false,
       bursts: [],
     });
+  });
+
+  it("uses closed dispatch history with a current realtime cursor", async () => {
+    const response = await routeRequest(
+      new Request(
+        "http://pipeline.test/bursts?source=dispatch&day=2026-07-24",
+      ),
+      {
+        DB: dispatchDb({
+          "dispatch-realtime": "2026-07-23T00:00:00",
+          "dispatch-closed": "2026-06-01T00:00:00",
+        }),
+      } as Env,
+    );
+
+    expect(await response.json()).toMatchObject({ ready: true, bursts: [] });
   });
 
   it("does not expose transit alerts through the burst detector", async () => {
@@ -68,3 +68,36 @@ describe("pipeline routes", () => {
     });
   });
 });
+
+function dispatchDb(cursors: Record<string, string>): D1Database {
+  return {
+    prepare(sql: string) {
+      if (
+        sql ===
+        "SELECT cursor_json FROM ingestion_cursors WHERE ingestion = ?"
+      ) {
+        return {
+          bind(source: string) {
+            return {
+              async first() {
+                const collectingSince = cursors[source];
+                return collectingSince
+                  ? { cursor_json: JSON.stringify({ collectingSince }) }
+                  : null;
+              },
+            };
+          },
+        };
+      }
+      return {
+        bind() {
+          return {
+            async all() {
+              return { results: [] };
+            },
+          };
+        },
+      };
+    },
+  } as unknown as D1Database;
+}

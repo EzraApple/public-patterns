@@ -536,12 +536,36 @@ try {
     dailyRuns.runs[0]?.status !== "published" ||
     !dailyRuns.runs[0]?.investigationId ||
     !dailyRuns.runs[0]?.publishedSlug?.endsWith(`-${scheduledDay}`) ||
-    dailyRuns.runs[0]?.detector?.detector?.version !== 1 ||
+    dailyRuns.runs[0]?.detector?.detector?.version !== 2 ||
     !dailyRuns.runs[0]?.detector?.sources?.some(({ candidates }) =>
       candidates.some(({ observed }) => observed === 20),
     )
   ) {
     throw new Error(`Daily run was not recorded: ${JSON.stringify(dailyRuns)}`);
+  }
+
+  const backfillResponse = await fetch(`${origin}/backfill/311`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ since: "2025-01-01T00:00:00.000" }),
+  });
+  const backfill = await backfillResponse.json();
+  const repeatedBackfillResponse = await fetch(`${origin}/backfill/311`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ since: "2025-01-01T00:00:00.000" }),
+  });
+  const repeatedBackfill = await repeatedBackfillResponse.json();
+  if (
+    backfillResponse.status !== 202 ||
+    backfill.status !== "started" ||
+    !backfill.cursor?.collectingSince?.startsWith("2024-12-30") ||
+    !repeatedBackfillResponse.ok ||
+    repeatedBackfill.status !== "already_covered"
+  ) {
+    throw new Error(
+      `DataSF backfill failed: ${JSON.stringify({ backfill, repeatedBackfill })}`,
+    );
   }
 
   console.log("Pipeline Worker+D1 investigation smoke test passed");

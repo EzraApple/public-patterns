@@ -46,6 +46,36 @@ const cursorSchema = z
 
 type Cursor = z.infer<typeof cursorSchema>;
 
+export async function startDataSfBackfill({
+  env,
+  observedAt,
+  source,
+  since,
+}: {
+  env: Env;
+  observedAt: string;
+  source: DataSfSourceName;
+  since: string;
+}) {
+  const cursor = getBackfillCursor({
+    stored: await getIngestionCursor(env.DB, source),
+    observedAt,
+    source,
+    since,
+  });
+  if (!cursor) {
+    return { ingestion: source, status: "already_covered" as const };
+  }
+  await saveBatch({
+    db: env.DB,
+    ingestion: source,
+    observations: [],
+    cursor,
+    observedAt,
+  });
+  return { ingestion: source, status: "started" as const, cursor };
+}
+
 export async function ingestDataSfSource(
   env: Env,
   observedAt: string,
@@ -147,6 +177,28 @@ function readCursor(
       config.initialWindowMinutes - config.overlapMinutes,
     ),
   };
+}
+
+export function getBackfillCursor({
+  stored,
+  observedAt,
+  source,
+  since,
+}: {
+  stored: unknown;
+  observedAt: string;
+  source: DataSfSourceName;
+  since: string;
+}): Cursor | null {
+  const cursor = readCursor(stored, observedAt, source);
+  const start = subtractDataSfMinutes(
+    since,
+    getDataSfSourceConfig(source).overlapMinutes,
+  );
+  if (cursor.collectingSince <= start) {
+    return null;
+  }
+  return { collectingSince: start, through: since };
 }
 
 function requireCursor(

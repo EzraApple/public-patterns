@@ -51,7 +51,8 @@ SELECT count(*) AS rows, min(received_dttm) AS earliest,
 
 ## Current local ingestion
 
-The adapter initially reads two portal-load days, then scans
+The adapter initially reads 35 portal-load days for its first detector
+baseline, then scans
 `data_loaded_at` with a six-hour overlap and `(data_loaded_at, rowid)` keyset.
 It preserves the full JSON row and appends changed versions idempotently. Load
 time is used because a 2026-07-27 comparison found 108 newly loaded unit rows
@@ -63,6 +64,9 @@ same-window replay did not change D1 counts.
 This is working local evidence, not proof of complete correction capture.
 Changes whose portal load time falls outside the six-hour overlap can still be
 missed.
+
+Existing deployments can start the same idempotent rewind through
+`POST /api/internal/backfill/fire-ems`.
 
 ## Retention recommendation
 

@@ -12,7 +12,10 @@ import { burstSources, getBursts } from "./bursts.ts";
 import { listDailyRuns, runDailyInvestigation } from "./dailyRuns.ts";
 import { seedDevFixtures } from "./devFixtures.ts";
 import type { Env } from "./environment.ts";
-import { ingestDataSfSource } from "./features/dataSfSources/ingest.ts";
+import {
+  ingestDataSfSource,
+  startDataSfBackfill,
+} from "./features/dataSfSources/ingest.ts";
 import { getDispatchHistory } from "./features/dispatch/read.ts";
 import { ingestTransitAlerts } from "./features/transitAlerts/ingest.ts";
 import { calendarDaySchema } from "./ingestion.ts";
@@ -28,6 +31,7 @@ import {
 import { sources } from "./observation.ts";
 import { getHistory } from "./observationStore.ts";
 import { apiFailureDiagnostic } from "./sources/apiFailure.ts";
+import { socrataTimestampSchema } from "./sources/dataSf.ts";
 
 export type { Env } from "./environment.ts";
 
@@ -100,6 +104,27 @@ export async function routeRequest(
         status,
       );
     }
+  }
+  if (request.method === "POST" && url.pathname.startsWith("/backfill/")) {
+    const source = ingestionSchema.safeParse(
+      url.pathname.slice("/backfill/".length),
+    );
+    const input = z
+      .object({ since: socrataTimestampSchema })
+      .safeParse(await request.json().catch(() => undefined));
+    if (!source.success || source.data === "transit-alerts") {
+      return json({ error: "unknown DataSF source" }, 404);
+    }
+    if (!input.success) {
+      return json({ error: "valid since timestamp is required" }, 400);
+    }
+    const result = await startDataSfBackfill({
+      env,
+      observedAt,
+      source: source.data,
+      since: input.data.since,
+    });
+    return json(result, result.status === "started" ? 202 : 200);
   }
   if (request.method === "GET" && url.pathname === "/observations") {
     const source = observationSourceSchema.safeParse(
