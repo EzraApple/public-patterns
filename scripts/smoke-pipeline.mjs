@@ -98,6 +98,27 @@ await run([
   "--persist-to",
   stateDirectory,
 ]);
+await run([
+  "exec",
+  "wrangler",
+  "d1",
+  "execute",
+  "public-patterns-pipeline",
+  "--local",
+  "--persist-to",
+  stateDirectory,
+  "--command",
+  "INSERT INTO daily_investigation_runs " +
+    "(day, attempt_id, started_at, status) VALUES " +
+    "('2026-05-31', 'abandoned-attempt', " +
+    "'2026-05-31T00:00:00.000Z', 'running'); " +
+    "INSERT INTO daily_investigation_runs " +
+    "(day, started_at, status, failure_stage, retryable) VALUES " +
+    "('2026-05-30', '2026-05-30T00:00:00.000Z', 'failed', " +
+    "'investigation', 0), " +
+    "('2026-05-29', '2026-05-29T00:00:00.000Z', 'failed', " +
+    "'investigation', 1)",
+]);
 
 const server = spawn(
   "pnpm",
@@ -167,6 +188,32 @@ try {
     await new Promise((resolve) => setTimeout(resolve, 250));
   }
 
+  const staleRunResponse = await fetch(`${origin}/daily-runs`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ day: "2026-05-31" }),
+  });
+  const staleRun = await staleRunResponse.json();
+  if (staleRunResponse.status !== 201 || staleRun.status !== "not_ready") {
+    throw new Error(`Stale daily run was not reclaimed: ${JSON.stringify(staleRun)}`);
+  }
+  const blockedRunResponse = await fetch(`${origin}/daily-runs`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ day: "2026-05-30" }),
+  });
+  if (blockedRunResponse.status !== 409) {
+    throw new Error("A nonretryable daily failure was reclaimed");
+  }
+  const retryableRunResponse = await fetch(`${origin}/daily-runs`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ day: "2026-05-29" }),
+  });
+  if (retryableRunResponse.status !== 201) {
+    throw new Error("A retryable daily failure was not reclaimed");
+  }
+
   const invalidDayResponse = await fetch(
     `${origin}/bursts?source=311&day=2026-99-99`,
   );
@@ -179,7 +226,7 @@ try {
     { method: "POST" },
   );
   const seeded = await seedResponse.json();
-  if (!seedResponse.ok || seeded.observations !== 73) {
+  if (!seedResponse.ok || seeded.observations !== 113) {
     throw new Error(`Unexpected seed result: ${JSON.stringify(seeded)}`);
   }
   const replayResponse = await fetch(
@@ -252,7 +299,7 @@ try {
   if (
     investigationResponse.status !== 201 ||
     investigation.submission?.outcome !== "investigate" ||
-    investigation.submission?.evidence?.[0] !== "nearby:22" ||
+    investigation.submission?.evidence?.[0] !== "nearby:62" ||
     investigation.brief !== "# Fixture investigation"
   ) {
     throw new Error(
@@ -289,7 +336,7 @@ try {
   if (
     observationReplayResponse.status !== 201 ||
     replay.submission?.outcome !== "investigate" ||
-    replay.submission?.evidence?.[0] !== "nearby:22"
+    replay.submission?.evidence?.[0] !== "nearby:62"
   ) {
     throw new Error(`Observation replay failed: ${JSON.stringify(replay)}`);
   }
@@ -461,7 +508,7 @@ try {
   const manualRun = await manualRunResponse.json();
   if (
     manualRunResponse.status !== 201 ||
-    manualRun.status !== "no_candidate" ||
+    manualRun.status !== "not_ready" ||
     manualRun.day !== "2026-06-01"
   ) {
     throw new Error(`Manual daily run failed: ${JSON.stringify(manualRun)}`);
@@ -472,7 +519,7 @@ try {
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ day: "2026-06-01" }),
   });
-  if (duplicateRunResponse.status !== 409) {
+  if (duplicateRunResponse.status !== 201) {
     throw new Error(
       `Duplicate daily run returned ${duplicateRunResponse.status}`,
     );
@@ -491,8 +538,20 @@ try {
     );
   }
 
+  const fireBurstsResponse = await fetch(
+    `${origin}/bursts?source=fire-ems&day=${scheduledDay}`,
+  );
+  const fireBursts = await fireBurstsResponse.json();
+  if (
+    !fireBurstsResponse.ok ||
+    fireBursts.bursts?.[0]?.observed !== 20 ||
+    fireBursts.bursts[0]?.observationIds?.length !== 40
+  ) {
+    throw new Error(`Fire call grouping failed: ${JSON.stringify(fireBursts)}`);
+  }
+
   const scheduledResponse = await fetch(
-    `${origin}/__scheduled?cron=30+15+*+*+*`,
+    `${origin}/__scheduled?cron=30+22+*+*+*`,
   );
   for (
     let attempt = 0;
@@ -531,7 +590,14 @@ try {
   const dailyRuns = await dailyRunsResponse.json();
   if (
     !dailyRunsResponse.ok ||
-    dailyRuns.runs?.length !== 2 ||
+    dailyRuns.runs?.length !== 5 ||
+    dailyRuns.attempts?.length !== 6 ||
+    !dailyRuns.attempts.some(
+      (attempt) =>
+        attempt.attemptId === "abandoned-attempt" &&
+        attempt.status === "failed" &&
+        attempt.error === "daily run lease expired",
+    ) ||
     dailyRuns.runs[0]?.day !== scheduledDay ||
     dailyRuns.runs[0]?.status !== "published" ||
     !dailyRuns.runs[0]?.investigationId ||

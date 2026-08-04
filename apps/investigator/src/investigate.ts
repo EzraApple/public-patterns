@@ -39,7 +39,32 @@ type InvestigationSandbox = ArticleImageSandbox & {
   }>;
 };
 
-type InvestigationArchive = ArticleImageArchive;
+type InvestigationArchive = ArticleImageArchive & {
+  get?(key: string): Promise<{ text(): Promise<string> } | null>;
+};
+
+export class InvestigationFailedError extends Error {
+  constructor(
+    readonly archiveKey: string,
+    cause: Error,
+  ) {
+    super(cause.message, { cause });
+    this.name = "InvestigationFailedError";
+  }
+}
+
+export class InvestigationCheckpointError extends Error {
+  constructor(
+    readonly archiveKey: string,
+    cause: unknown,
+  ) {
+    super(
+      "Investigation completed, but its recovery checkpoint could not be saved",
+      { cause },
+    );
+    this.name = "InvestigationCheckpointError";
+  }
+}
 
 const AGENT_COMMAND =
   'opencode2 run --standalone --auto --agent investigator --format json "Investigate the case in case/input.json. Submit the internal brief and, when warranted, a publishable article."';
@@ -91,6 +116,22 @@ export async function investigateInSandbox({
   openAiApiKey?: string;
   environment: string;
 }) {
+  const checkpointKey = `investigations/by-id/${input.id}.json`;
+  const inputHash = await hashInput(input);
+  const recovered = await getArchivedResult(
+    archive,
+    checkpointKey,
+    inputHash,
+  );
+  if (recovered) {
+    return recovered;
+  }
+
+  const archivedAt = new Date().toISOString();
+  const archiveKey =
+    `investigations/${archivedAt.slice(0, 10)}/${input.id}/` +
+    `${crypto.randomUUID()}.json`;
+
   await Promise.all(
     ["case", "work", "output"].map((directory) =>
       sandbox.mkdir(`/workspace/${directory}`, { recursive: true }),
@@ -126,11 +167,6 @@ export async function investigateInSandbox({
       stderr: error instanceof Error ? error.message : String(error),
     };
   }
-
-  const archivedAt = new Date().toISOString();
-  const archiveKey =
-    `investigations/${archivedAt.slice(0, 10)}/${input.id}/` +
-    `${crypto.randomUUID()}.json`;
 
   let result: InvestigationResult;
   let generatedImage: StoredArticleImage | undefined;
@@ -196,22 +232,25 @@ export async function investigateInSandbox({
         : new Error(
             `OpenCode completed without a valid submission: ${reason}`,
           ));
-    await archiveInvestigation({
-      archive,
-      archiveKey,
-      archivedAt,
-      environment,
-      input,
-      run,
-      deepseekApiKey,
-      openAiApiKey,
-      imageFailure,
-      providerFailure: providerFailure?.diagnostic,
-      failure,
-    }).catch((archiveError) =>
-      console.error("Failed to archive investigation failure", archiveError),
-    );
-    throw failure;
+    try {
+      await archiveInvestigation({
+        archive,
+        archiveKey,
+        archivedAt,
+        environment,
+        input,
+        run,
+        deepseekApiKey,
+        openAiApiKey,
+        imageFailure,
+        providerFailure: providerFailure?.diagnostic,
+        failure,
+      });
+    } catch (archiveError) {
+      console.error("Failed to archive investigation failure", archiveError);
+      throw failure;
+    }
+    throw new InvestigationFailedError(archiveKey, failure);
   }
   await archiveInvestigation({
     archive,
@@ -226,7 +265,80 @@ export async function investigateInSandbox({
     imageFailure,
     result,
   });
+  try {
+    await archiveResultCheckpoint({
+      archive,
+      checkpointKey,
+      environment,
+      inputHash,
+      result,
+    });
+  } catch (error) {
+    throw new InvestigationCheckpointError(result.archiveKey, error);
+  }
   return result;
+}
+
+async function archiveResultCheckpoint({
+  archive,
+  checkpointKey,
+  environment,
+  inputHash,
+  result,
+}: {
+  archive: InvestigationArchive;
+  checkpointKey: string;
+  environment: string;
+  inputHash: string;
+  result: InvestigationResult;
+}) {
+  let failure: unknown;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      await archive.put(
+        checkpointKey,
+        JSON.stringify({ status: "completed", inputHash, result }),
+        {
+          httpMetadata: { contentType: "application/json" },
+          customMetadata: { environment, status: "completed" },
+        },
+      );
+      return;
+    } catch (error) {
+      failure = error;
+    }
+  }
+  throw failure;
+}
+
+async function getArchivedResult(
+  archive: InvestigationArchive,
+  archiveKey: string,
+  inputHash: string,
+): Promise<InvestigationResult | undefined> {
+  const object = await archive.get?.(archiveKey);
+  if (!object) {
+    return;
+  }
+  const stored = JSON.parse(await object.text()) as {
+    status?: unknown;
+    inputHash?: unknown;
+    result?: unknown;
+  };
+  if (stored.status === "completed" && stored.inputHash !== inputHash) {
+    throw new Error("Archived investigation input does not match this case");
+  }
+  return stored.status === "completed"
+    ? investigationResultSchema.parse(stored.result)
+    : undefined;
+}
+
+async function hashInput(input: InvestigationInput): Promise<string> {
+  const bytes = new TextEncoder().encode(JSON.stringify(input));
+  const hash = await crypto.subtle.digest("SHA-256", bytes);
+  return [...new Uint8Array(hash)]
+    .map((value) => value.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 async function archiveInvestigation({

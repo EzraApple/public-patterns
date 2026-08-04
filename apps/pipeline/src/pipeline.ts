@@ -9,7 +9,11 @@ import {
   publishArticle,
 } from "./articles.ts";
 import { burstSources, getBursts } from "./bursts.ts";
-import { listDailyRuns, runDailyInvestigation } from "./dailyRuns.ts";
+import {
+  listDailyRunAttempts,
+  listDailyRuns,
+  runDailyInvestigation,
+} from "./dailyRuns.ts";
 import { seedDevFixtures } from "./devFixtures.ts";
 import type { Env } from "./environment.ts";
 import {
@@ -205,7 +209,11 @@ export async function routeRequest(
     return json({ investigations: await listInvestigations(env.DB) });
   }
   if (request.method === "GET" && url.pathname === "/daily-runs") {
-    return json({ runs: await listDailyRuns(env.DB) });
+    const [runs, attempts] = await Promise.all([
+      listDailyRuns(env.DB),
+      listDailyRunAttempts(env.DB),
+    ]);
+    return json({ runs, attempts });
   }
   if (request.method === "POST" && url.pathname === "/daily-runs") {
     const day = z

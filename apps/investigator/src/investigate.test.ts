@@ -1,7 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { investigationInputSchema } from "@public-patterns/contracts/investigation";
-import { investigateInSandbox } from "./investigate.ts";
+import {
+  InvestigationCheckpointError,
+  InvestigationFailedError,
+  investigateInSandbox,
+} from "./investigate.ts";
 
 function createSandbox(
   submission: unknown,
@@ -31,6 +35,12 @@ function createSandbox(
   ]);
   const archives = new Map<string, string | Uint8Array>();
   const archive = {
+    get: vi.fn(async (key: string) => {
+      const value = archives.get(key);
+      return typeof value === "string"
+        ? { text: async () => value }
+        : null;
+    }),
     put: vi.fn(
       async (
         key: string,
@@ -145,6 +155,17 @@ describe("investigateInSandbox", () => {
     expect(files.get("/workspace/case/input.json")).toBe(
       JSON.stringify({ case: { observations: [123] } }, null, 2),
     );
+
+    await expect(
+      investigateInSandbox({
+        archive,
+        sandbox,
+        input: { id: "case-1", case: { observations: [123] } },
+        deepseekApiKey: "test-key",
+        environment: "test",
+      }),
+    ).resolves.toEqual(result);
+    expect(sandbox.exec).toHaveBeenCalledTimes(1);
   });
 
   it("rejects non-canonical submitted paths", async () => {
@@ -323,6 +344,11 @@ describe("investigateInSandbox", () => {
     }).catch((caught: unknown) => caught);
 
     expect(error).toBeInstanceOf(Error);
+    expect(error).toMatchObject({
+      archiveKey: expect.stringMatching(
+        /^investigations\/\d{4}-\d{2}-\d{2}\/case-3\/.+\.json$/,
+      ),
+    });
     expect((error as Error).message).toContain(
       "provider rejected [redacted]",
     );
@@ -332,6 +358,17 @@ describe("investigateInSandbox", () => {
       "provider rejected [redacted]",
     );
     expect(String(archivedFailure)).not.toContain("secret-test-key");
+
+    await investigateInSandbox({
+      archive,
+      sandbox,
+      input: { id: "case-3", case: {} },
+      deepseekApiKey: "secret-test-key",
+      environment: "test",
+    }).catch(() => undefined);
+    expect(
+      [...archives.keys()].filter((key) => key.includes("/case-3/")),
+    ).toHaveLength(2);
   });
 
   it("archives actionable DeepSeek quota diagnostics", async () => {
@@ -364,6 +401,58 @@ describe("investigateInSandbox", () => {
       retryable: false,
       status: 402,
     });
+  });
+
+  it("does not expose an archive key when failure archival fails", async () => {
+    const { archive, sandbox } = createSandbox({}, "agent failed");
+    archive.put.mockRejectedValue(new Error("R2 unavailable"));
+
+    const error = await investigateInSandbox({
+      archive,
+      sandbox,
+      input: { id: "case-no-archive", case: {} },
+      deepseekApiKey: "deepseek-key",
+      environment: "test",
+    }).catch((caught: unknown) => caught);
+
+    expect(error).toBeInstanceOf(Error);
+    expect(error).not.toBeInstanceOf(InvestigationFailedError);
+  });
+
+  it("retries and exposes a retryable completed archive when checkpointing fails", async () => {
+    const { archive, archives, sandbox } = createSandbox({
+      outcome: "watch",
+      confidence: 0.7,
+      briefPath: "output/brief.md",
+      evidence: [],
+    });
+    archive.put.mockImplementation(async (key, value) => {
+      if (key.startsWith("investigations/by-id/")) {
+        throw new Error("checkpoint unavailable");
+      }
+      archives.set(key, value);
+    });
+
+    const error = await investigateInSandbox({
+      archive,
+      sandbox,
+      input: { id: "case-checkpoint", case: {} },
+      deepseekApiKey: "deepseek-key",
+      environment: "test",
+    }).catch((caught: unknown) => caught);
+
+    expect(error).toBeInstanceOf(InvestigationCheckpointError);
+    expect(error).toMatchObject({
+      archiveKey: expect.stringContaining("/case-checkpoint/"),
+    });
+    expect(
+      archive.put.mock.calls.filter(([key]) =>
+        key.startsWith("investigations/by-id/"),
+      ),
+    ).toHaveLength(3);
+    expect(
+      [...archives.keys()].filter((key) => key.includes("/case-checkpoint/")),
+    ).toHaveLength(1);
   });
 
   it("archives a non-blocking OpenAI image failure", async () => {

@@ -2,7 +2,7 @@
 
 **Status:** experimental
 
-**Last verified:** 2026-07-24 01:00 PDT
+**Last verified:** 2026-08-04 11:00 PDT
 
 ## Identity
 
@@ -61,15 +61,15 @@ instead of ingesting `SELECT *`.
 - Open cases mutate: status, notes, responsible agency, classification, and
   closure time may change.
 - `updated_datetime` describes case mutation; `data_loaded_at` describes portal
-  publication. Preserve both.
+  publication. The adapter uses the former for revision identity and the latter
+  only when auditing the upstream feed.
 - Category labels are human-readable operational taxonomy, not necessarily a
   stable ontology.
 
 ## Working ingestion recommendation
 
 1. Poll once after the nightly publication, initially around 06:30–07:00 PT.
-2. Query rows whose `updated_datetime` or `data_loaded_at` falls within a
-   two-day overlap window.
+2. Query rows whose `updated_datetime` falls within a two-day overlap window.
 3. Upsert by `service_request_id`; retain first-opened and latest-known state.
 4. Emit normalized changes only when analysis-relevant fields differ.
 5. Aggregate by requested-time bucket, category/request type, intake source,
@@ -80,14 +80,15 @@ year. Do not download 8.8M raw cases for the MVP.
 
 ## Current local slice
 
-The shared DataSF adapter initializes with 35 days of `data_loaded_at` history
-for its first detector baseline, then keyset-pages 311 on one fixed window and
-`service_request_id`; source configurations choose the event or portal field
-that safely advances their cursor. One run commits at most four
+The shared DataSF adapter initializes with 35 days of `updated_datetime`
+history for its first detector baseline, then keyset-pages 311 on one fixed
+window and `service_request_id`. One run commits at most four
 500-observation batches with an opaque resume cursor. The
 gateway validates DataSF JSON and emits the shared observation shape; its
 `data` field retains the selected source-specific JSON, including public
-location, lifecycle, classification, and media fields.
+location, lifecycle, classification, and media fields. Portal-only
+`data_as_of` and `data_loaded_at` fields are excluded because they do not
+describe a case change.
 
 Observations are append-only. Repeated delivery of the exact same publisher
 version is ignored, while different content remains history even if the
@@ -96,13 +97,17 @@ Consumers derive a current case by choosing the latest observation for its
 source ID. Malformed source rows are retained separately with validation
 issues, and exact error replays are ignored.
 
-A live local two-day replay returned 34,841 recently loaded rows, including
-older events republished in the current portal batch. This is a dated direct
-observation, not an expected daily volume. It supports retaining the separate
-load-time cursor and keeping the page bound explicit.
+On 2026-08-04, 38,305 rows had been loaded since 2026-08-01, while only 9,537
+had an `updated_datetime` in that period. Every loaded row had an update time.
+This dated observation showed that load-time paging reprocessed unchanged
+cases and could not keep pace with nightly publication; it motivated the
+semantic cursor above.
 
 Existing deployments can rewind this cursor through the authenticated
 `POST /api/internal/backfill/311` operation. Replays remain idempotent.
+After the semantic scan catches up, each completed 311 poll deletes up to 5,000
+legacy load-clock rows. The bounded cleanup avoids a large production D1 write
+while removing the obsolete revisions over subsequent polls.
 
 The first detector reads current observations and groups `kind` (the 311
 service name) by `area` (analysis neighborhood). It waits for a complete

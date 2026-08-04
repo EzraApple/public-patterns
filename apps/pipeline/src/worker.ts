@@ -6,13 +6,16 @@ import { sources } from "./observation.ts";
 import { routeRequest, type Env } from "./pipeline.ts";
 import { apiFailureDiagnostic } from "./sources/apiFailure.ts";
 
-const dailyInvestigationCron = "30 15 * * *";
+const dailyInvestigationCrons = new Set([
+  "30 22 * * *",
+  "30 23 * * *",
+]);
 
 export default {
   fetch: routeRequest,
   async scheduled(controller, env) {
     const createdAt = new Date().toISOString();
-    if (controller.cron === dailyInvestigationCron) {
+    if (dailyInvestigationCrons.has(controller.cron)) {
       const day = shiftDay(
         new Date(controller.scheduledTime).toISOString().slice(0, 10),
         -1,
@@ -59,6 +62,12 @@ export default {
         await ingestScheduled(source, () =>
           ingestTransitAlerts(env, createdAt),
         );
+      } else {
+        console.warn("Scheduled ingestion skipped", {
+          event: "source.ingestion.missing-credential",
+          source,
+          credential: "TRANSIT_511_API_KEY",
+        });
       }
       return;
     }

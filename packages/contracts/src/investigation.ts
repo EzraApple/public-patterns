@@ -8,6 +8,16 @@ export const investigationInputSchema = z.object({
 
 export type InvestigationInput = z.infer<typeof investigationInputSchema>;
 
+export const investigationFailureResponseSchema = z.object({
+  error: z.string().min(1),
+  archiveKey: z.string().min(1).optional(),
+  retryable: z.boolean().optional(),
+  provider: z
+    .object({ retryable: z.boolean() })
+    .passthrough()
+    .optional(),
+});
+
 const outputPathSchema = z
   .string()
   .refine(isOutputPath, "must be a file under output/");

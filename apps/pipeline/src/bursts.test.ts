@@ -37,6 +37,23 @@ describe("findBursts", () => {
       ),
     ).toEqual([]);
   });
+
+  it("counts Fire/EMS calls once while retaining every unit row as evidence", () => {
+    const day = "2026-07-23";
+    const observations = [
+      ...[1, 2, 3, 4].flatMap((week) =>
+        createObservations(shiftDay(day, -7 * week), 2),
+      ),
+      ...createObservations(day, 20).flatMap((observation) => [
+        { ...observation, id: `${observation.id}-E01`, groupId: observation.id },
+        { ...observation, id: `${observation.id}-M01`, groupId: observation.id },
+      ]),
+    ];
+
+    const [burst] = findBursts(observations, day);
+    expect(burst).toMatchObject({ observed: 20 });
+    expect(burst?.observationIds).toHaveLength(40);
+  });
 });
 
 function createObservations(day: string, count: number): Observation[] {

@@ -20,11 +20,13 @@ export async function seedDevFixtures({
   ];
   const closedDispatch = dispatchObservation("closed", day, observedAt);
   const dispatchCluster = createDispatchCluster(day, observedAt);
+  const fireCalls = createFireCalls(day, observedAt);
   await saveBatch({
     db,
     ingestion: "311",
     observations,
     cursor: {
+      cursorField: "updated_datetime",
       collectingSince: `${baselineDays.at(-1)}T00:00:00`,
       through: observedAt.slice(0, -1),
     },
@@ -65,7 +67,39 @@ export async function seedDevFixtures({
     },
     observedAt,
   });
-  return { observations: observations.length + 3 + dispatchCluster.length };
+  await saveBatch({
+    db,
+    ingestion: "fire-ems",
+    observations: fireCalls,
+    cursor: {
+      collectingSince: `${baselineDays.at(-1)}T00:00:00`,
+      through: observedAt.slice(0, -1),
+    },
+    observedAt,
+  });
+  for (const source of [
+    "police-incidents",
+    "building-complaints",
+    "traffic-crashes",
+    "health-inspections",
+    "building-permits",
+    "eviction-notices",
+  ] as const) {
+    await saveBatch({
+      db,
+      ingestion: source,
+      observations: [],
+      cursor: {
+        collectingSince: `${baselineDays.at(-1)}T00:00:00`,
+        through: observedAt.slice(0, -1),
+      },
+      observedAt,
+    });
+  }
+  return {
+    observations:
+      observations.length + 3 + dispatchCluster.length + fireCalls.length,
+  };
 }
 
 function create311Observations(
@@ -116,6 +150,22 @@ function createDispatchCluster(
     clusterObservation("realtime", "boundary", day, observedAt),
     clusterObservation("closed", "boundary", shiftDay(day, 1), observedAt),
   ];
+}
+
+function createFireCalls(day: string, observedAt: string): Observation[] {
+  return Array.from({ length: 20 }, (_, index) => `call-${index}`).flatMap(
+    (callNumber) =>
+      ["E01", "M01"].map((unit) => ({
+        source: "fire-ems" as const,
+        id: `${callNumber}-${unit}`,
+        occurredAt: `${day}T10:00:00`,
+        updatedAt: `${day}T11:00:00`,
+        observedAt,
+        kind: "Medical Incident",
+        area: "Mission",
+        data: { call_number: callNumber, unit },
+      })),
+  );
 }
 
 function clusterObservation(

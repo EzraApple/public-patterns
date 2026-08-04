@@ -8,8 +8,7 @@ export type ProviderFailureDiagnostic = {
     | "rate_limit"
     | "timeout"
     | "provider"
-    | "network"
-    | "unknown";
+    | "network";
   retryable: boolean;
   action: string;
   status?: number;
@@ -42,20 +41,23 @@ export function missingDeepSeekKey(): ProviderFailureError {
 export function deepSeekFailureFromOutput(
   output: string,
 ): ProviderFailureError | undefined {
-  const status = parseNumber(
-    output,
+  const terminalOutput = output.slice(-4_000);
+  const status = parseLastNumber(
+    terminalOutput,
     /(?:HTTP|["']?status["']?)\s*[:=]?\s*(\d{3})\b/i,
   );
-  const providerCode = parseString(
-    output,
+  const providerCode = parseLastString(
+    terminalOutput,
     /["']?(?:code|type)["']?\s*[:=]\s*["']([^"'\s,}]+)["']/i,
   );
-  const requestId = parseString(
-    output,
+  const requestId = parseLastString(
+    terminalOutput,
     /["']?(?:request[_ -]?id|x-request-id)["']?\s*[:=]\s*["']?([a-z0-9._-]+)/i,
   );
-  const normalized = output.toLowerCase();
-  const kind = classifyDeepSeekFailure(status, normalized);
+  const kind = classifyDeepSeekFailure(
+    status,
+    terminalOutput.toLowerCase(),
+  );
   if (!kind) {
     return;
   }
@@ -68,7 +70,7 @@ export function deepSeekFailureFromOutput(
     ...(status ? { status } : {}),
     ...(providerCode ? { providerCode } : {}),
     ...(requestId ? { requestId } : {}),
-    detail: compactDetail(output),
+    detail: compactDetail(terminalOutput),
   });
 }
 
@@ -91,11 +93,7 @@ function classifyDeepSeekFailure(
   ) {
     return "quota";
   }
-  if (
-    status === 401 ||
-    status === 403 ||
-    /invalid api key|authentication failed|unauthorized/.test(normalized)
-  ) {
+  if (status === 401 || status === 403) {
     return "authentication";
   }
   if (status === 429 || /rate[_ -]?limit|too many requests/.test(normalized)) {
@@ -116,16 +114,26 @@ function classifyDeepSeekFailure(
   ) {
     return "provider";
   }
-  if (/econn|network|dns|connection reset|fetch failed/.test(normalized)) {
+  if (
+    /transport|econn|network|dns|connection reset|fetch failed/.test(
+      normalized,
+    )
+  ) {
     return "network";
+  }
+  if (/invalid api key|authentication failed|unauthorized/.test(normalized)) {
+    return "authentication";
   }
 }
 
 export function providerFailureDiagnostic(
   error: unknown,
 ): ProviderFailureDiagnostic | undefined {
-  return error instanceof ProviderFailureError
-    ? error.diagnostic
+  if (error instanceof ProviderFailureError) {
+    return error.diagnostic;
+  }
+  return error instanceof Error && error.cause
+    ? providerFailureDiagnostic(error.cause)
     : undefined;
 }
 
@@ -145,8 +153,6 @@ function actionFor(kind: ProviderFailureDiagnostic["kind"]): string {
       return "Check DeepSeek status and retry after the outage clears.";
     case "network":
       return "Retry; if this persists, check sandbox egress and DeepSeek reachability.";
-    case "unknown":
-      return "Inspect the archived agent output before retrying.";
   }
 }
 
@@ -154,13 +160,14 @@ function compactDetail(output: string): string {
   return output.replace(/\s+/g, " ").trim().slice(-500);
 }
 
-function parseNumber(value: string, pattern: RegExp): number | undefined {
-  const match = pattern.exec(value)?.[1];
+function parseLastNumber(value: string, pattern: RegExp): number | undefined {
+  const match = parseLastString(value, pattern);
   return match ? Number(match) : undefined;
 }
 
-function parseString(value: string, pattern: RegExp): string | undefined {
-  return pattern.exec(value)?.[1];
+function parseLastString(value: string, pattern: RegExp): string | undefined {
+  const matches = [...value.matchAll(new RegExp(pattern, `${pattern.flags}g`))];
+  return matches.at(-1)?.[1];
 }
 
 function formatProviderFailure(

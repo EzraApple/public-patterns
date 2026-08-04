@@ -141,7 +141,7 @@ describe("configured DataSF sources gateway", () => {
     expect(url.searchParams.get("$where")).not.toContain("call_number >");
   });
 
-  it("batches 311 by portal update time and requests its explicit fields", () => {
+  it("batches 311 by case update time and requests its explicit fields", () => {
     const url = buildDataSfUrl({
       source: "311",
       since: "2026-07-20T00:00:00",
@@ -151,9 +151,11 @@ describe("configured DataSF sources gateway", () => {
     });
 
     expect(url.searchParams.get("$order")).toBe(
-      "data_loaded_at ASC,service_request_id ASC",
+      "updated_datetime ASC,service_request_id ASC",
     );
     expect(url.searchParams.get("$select")).toContain("media_url");
+    expect(url.searchParams.get("$select")).not.toContain("data_loaded_at");
+    expect(url.searchParams.get("$select")).not.toContain("data_as_of");
     expect(url.searchParams.get("$select")).not.toBe("*");
   });
 
@@ -167,7 +169,6 @@ describe("configured DataSF sources gateway", () => {
           updated_datetime: "2026-07-23T11:00:00",
           service_name: "Graffiti",
           analysis_neighborhood: "Mission",
-          data_loaded_at: "2026-07-24T06:00:00",
         },
         expected: {
           id: "1",
@@ -344,6 +345,15 @@ describe("configured DataSF sources gateway", () => {
           },
         ],
       });
+      if (testCase.source === "311") {
+        expect(batch.observations[0]?.updatedAt).toBe(
+          testCase.row.updated_datetime,
+        );
+        expect(batch.observations[0]?.data).not.toHaveProperty(
+          "data_loaded_at",
+        );
+        expect(batch.observations[0]?.data).not.toHaveProperty("data_as_of");
+      }
     }
   });
 
