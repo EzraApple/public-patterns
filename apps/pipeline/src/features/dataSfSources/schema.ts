@@ -41,7 +41,7 @@ export const case311Schema = z
   .object({
     service_request_id: z.string().min(1),
     requested_datetime: socrataTimestampSchema,
-    updated_datetime: socrataTimestampSchema.optional(),
+    updated_datetime: socrataTimestampSchema,
     service_name: z.string().min(1),
     service_subtype: z.string().optional(),
     service_details: z.string().optional(),
@@ -54,7 +54,7 @@ export const case311Schema = z
     lat: z.string().optional(),
     long: z.string().optional(),
     data_as_of: socrataTimestampSchema.optional(),
-    data_loaded_at: socrataTimestampSchema,
+    data_loaded_at: socrataTimestampSchema.optional(),
   })
   .passthrough();
 

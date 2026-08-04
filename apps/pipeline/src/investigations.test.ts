@@ -1,6 +1,17 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { listInvestigations } from "./investigations.ts";
+import {
+  listInvestigations,
+  shouldInvestigate,
+} from "./investigations.ts";
+
+describe("daily candidate policy", () => {
+  it("skips routine passing calls without suppressing other dispatch bursts", () => {
+    expect(shouldInvestigate("dispatch", { kind: "PASSING CALL" })).toBe(false);
+    expect(shouldInvestigate("dispatch", { kind: "FIGHT NO WEAPON" })).toBe(true);
+    expect(shouldInvestigate("311", { kind: "Passing call" })).toBe(true);
+  });
+});
 
 describe("listInvestigations", () => {
   it("skips an invalid legacy row without breaking the review queue", async () => {

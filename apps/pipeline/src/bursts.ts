@@ -3,12 +3,13 @@ import { shiftDay } from "./ingestion.ts";
 import {
   getCurrentDispatchMetadata,
 } from "./features/dispatch/read.ts";
+import { getCurrentFireMetadata } from "./features/fireEms/read.ts";
 import {
   getInspectionRepresentatives,
 } from "./features/healthInspections/read.ts";
 import {
   getCurrentMetadata,
-  getIngestionCursor,
+  getIngestionState,
 } from "./observationStore.ts";
 
 export const weekdayBurstDetector = {
@@ -19,6 +20,8 @@ export const weekdayBurstDetector = {
   minimumExcess: 15,
   minimumRatio: 2.5,
 } as const;
+
+const sourceFreshnessMilliseconds = 2 * 60 * 60 * 1_000;
 
 export const burstSources = [
   "311",
@@ -54,12 +57,13 @@ export type BurstResult = {
 type DetectionObservation = Pick<
   Observation,
   "source" | "id" | "occurredAt" | "kind" | "area"
->;
+> & { groupId?: string };
 
 export async function getBursts(
   db: D1Database,
   source: BurstSource,
   day: string,
+  checkedAt = new Date().toISOString(),
 ): Promise<BurstResult> {
   const physicalSources =
     source === "dispatch"
@@ -67,11 +71,11 @@ export async function getBursts(
       : ([source] as const);
   const cursors = await Promise.all(
     physicalSources.map((physicalSource) =>
-      getIngestionCursor(db, physicalSource),
+      getIngestionState(db, physicalSource),
     ),
   );
   const baselineStart = `${shiftDay(day, -28)}T00:00:00`;
-  if (!hasCompleteBaseline(source, cursors, baselineStart)) {
+  if (!hasCompleteBaseline(source, cursors, baselineStart, checkedAt)) {
     return { source, day, ready: false, bursts: [] };
   }
 
@@ -96,25 +100,55 @@ function hasCompleteBaseline(
   source: BurstSource,
   values: unknown[],
   baselineStart: string,
+  checkedAt: string,
 ): boolean {
+  const checkedAfter = new Date(
+    Date.parse(checkedAt) - sourceFreshnessMilliseconds,
+  ).toISOString();
   if (source === "dispatch") {
     const [realtime, closed] = values;
-    return isReady(realtime) && isReady(closed, baselineStart);
+    return (
+      isReady(realtime, { checkedAfter }) &&
+      isReady(closed, { baselineStart, checkedAfter })
+    );
   }
-  return isReady(values[0], baselineStart);
+  return isReady(values[0], {
+    baselineStart,
+    checkedAfter,
+    ...(source === "311" ? { cursorField: "updated_datetime" } : {}),
+  });
 }
 
 function isReady(
   value: unknown,
-  baselineStart?: string,
+  {
+    baselineStart,
+    checkedAfter,
+    cursorField,
+  }: {
+    baselineStart?: string;
+    checkedAfter: string;
+    cursorField?: string;
+  },
 ): boolean {
   if (!value || typeof value !== "object") {
     return false;
   }
-  const cursor = value as { collectingSince?: string; scan?: unknown };
+  const state = value as {
+    cursor?: {
+      collectingSince?: string;
+      cursorField?: string;
+      scan?: unknown;
+    };
+    savedAt?: string;
+  };
+  const cursor = state.cursor;
   return (
-    typeof cursor.collectingSince === "string" &&
+    typeof state.savedAt === "string" &&
+    state.savedAt >= checkedAfter &&
+    typeof cursor?.collectingSince === "string" &&
     cursor.scan === undefined &&
+    (cursorField === undefined || cursor.cursorField === cursorField) &&
     (baselineStart === undefined || cursor.collectingSince <= baselineStart)
   );
 }
@@ -143,6 +177,9 @@ export async function getDetectorObservations({
         ),
       )
     ).flat();
+  }
+  if (source === "fire-ems") {
+    return getCurrentFireMetadata({ db, ranges });
   }
   return getCurrentMetadata({ db, source, ranges });
 }
@@ -178,15 +215,16 @@ export function findBursts(
   for (const byDay of groups.values()) {
     const current = byDay.get(day) ?? [];
     const baselineCounts = baselineDays.map(
-      (baselineDay) => byDay.get(baselineDay)?.length ?? 0,
+      (baselineDay) => countGroups(byDay.get(baselineDay) ?? []),
     );
+    const observed = countGroups(current);
     const expected =
       baselineCounts.reduce((sum, count) => sum + count, 0) /
       baselineCounts.length;
-    const ratio = current.length / Math.max(expected, 2);
+    const ratio = observed / Math.max(expected, 2);
     if (
-      current.length < weekdayBurstDetector.minimumObserved ||
-      current.length - expected < weekdayBurstDetector.minimumExcess ||
+      observed < weekdayBurstDetector.minimumObserved ||
+      observed - expected < weekdayBurstDetector.minimumExcess ||
       ratio < weekdayBurstDetector.minimumRatio
     ) {
       continue;
@@ -196,7 +234,7 @@ export function findBursts(
       day,
       kind: example.kind,
       area: example.area,
-      observed: current.length,
+      observed,
       expected,
       ratio,
       observationIds: current.map(({ id }) => id).sort(),
@@ -208,4 +246,8 @@ export function findBursts(
       JSON.stringify([right.kind, right.area]),
     ),
   );
+}
+
+function countGroups(observations: DetectionObservation[]): number {
+  return new Set(observations.map(({ groupId, id }) => groupId ?? id)).size;
 }

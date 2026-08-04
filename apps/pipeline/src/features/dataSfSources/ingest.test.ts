@@ -16,11 +16,12 @@ describe("DataSF backfill cursor", () => {
         },
         observedAt: "2026-07-31T12:00:00Z",
         source: "311",
-        since: "2026-06-28T00:00:00.000",
+        since: "2026-05-01T00:00:00.000",
       }),
     ).toEqual({
-      collectingSince: "2026-06-26T00:00:00.000",
-      through: "2026-06-28T00:00:00.000",
+      cursorField: "updated_datetime",
+      collectingSince: "2026-04-29T00:00:00.000",
+      through: "2026-05-01T00:00:00.000",
     });
   });
 

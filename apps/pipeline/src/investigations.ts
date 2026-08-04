@@ -1,6 +1,10 @@
-import { investigationResultSchema } from "@public-patterns/contracts/investigation";
+import {
+  investigationFailureResponseSchema,
+  investigationResultSchema,
+} from "@public-patterns/contracts/investigation";
 import { z } from "zod";
 
+import { hashText, serializeJson } from "./canonicalJson.ts";
 import {
   type Burst,
   type BurstSource,
@@ -44,6 +48,15 @@ export class InvestigationUnavailableError extends Error {
   }
 }
 
+export class InvestigatorRequestError extends Error {
+  constructor(
+    message: string,
+    readonly retryable: boolean,
+  ) {
+    super(message);
+  }
+}
+
 export type DailyDetectorSnapshot = {
   detector: typeof weekdayBurstDetector;
   sources: Array<{
@@ -65,7 +78,7 @@ export async function investigateDailyBursts({
   createdAt: string;
 }) {
   const detected = await Promise.all(
-    burstSources.map((source) => getBursts(db, source, day)),
+    burstSources.map((source) => getBursts(db, source, day, createdAt)),
   );
   const detectorSnapshot = {
     detector: weekdayBurstDetector,
@@ -78,11 +91,13 @@ export async function investigateDailyBursts({
   const candidates = detected
     .flatMap(({ source, ready, bursts }) =>
       ready
-        ? bursts.map((burst) => ({
-            source,
-            burst,
-            excess: burst.observed - burst.expected,
-          }))
+        ? bursts
+            .filter((burst) => shouldInvestigate(source, burst))
+            .map((burst) => ({
+              source,
+              burst,
+              excess: burst.observed - burst.expected,
+            }))
         : [],
     )
     .sort(
@@ -123,8 +138,10 @@ export async function investigateDailyBursts({
         db,
         investigator,
         input: selected.input,
+        reuseCompletedResult: true,
         signal: {
           detector: "weekday-burst",
+          detectorVersion: weekdayBurstDetector.version,
           source: selected.input.source,
           ...selected.burst,
         },
@@ -145,6 +162,16 @@ export async function investigateDailyBursts({
       error,
     };
   }
+}
+
+export function shouldInvestigate(
+  source: BurstSource,
+  burst: Pick<Burst, "kind">,
+): boolean {
+  return !(
+    source === "dispatch" &&
+    burst.kind.trim().toUpperCase() === "PASSING CALL"
+  );
 }
 
 export async function investigateBurst({
@@ -238,6 +265,7 @@ async function startInvestigation({
   signal,
   observations,
   createdAt,
+  reuseCompletedResult = false,
 }: {
   db: D1Database;
   investigator: Fetcher;
@@ -245,6 +273,7 @@ async function startInvestigation({
   signal: Record<string, unknown>;
   observations: Observation[];
   createdAt: string;
+  reuseCompletedResult?: boolean;
 }) {
   const contextStart = `${shiftDay(input.day, -1)}T00:00:00`;
   const contextEnd = `${shiftDay(input.day, 2)}T00:00:00`;
@@ -280,18 +309,34 @@ async function startInvestigation({
       )
       .map(withSourceUrl),
   };
-  const id = crypto.randomUUID();
-  const response = await investigator.fetch(
-    new Request("https://investigator/investigations", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ id, case: caseData }),
-    }),
-  );
+  const id = reuseCompletedResult
+    ? `case-${await hashText(serializeJson(caseData))}`
+    : crypto.randomUUID();
+  let response: Response;
+  try {
+    response = await investigator.fetch(
+      new Request("https://investigator/investigations", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id, case: caseData }),
+      }),
+    );
+  } catch (error) {
+    throw new InvestigatorRequestError(
+      `investigator request failed: ${errorMessage(error)}`,
+      true,
+    );
+  }
   if (!response.ok) {
     const detail = (await response.text()).slice(0, 2_000);
-    throw new Error(
+    const failure = investigationFailureResponseSchema.safeParse(
+      parseJson(detail),
+    );
+    throw new InvestigatorRequestError(
       `investigator returned ${response.status}: ${detail}`,
+      failure.success
+        ? (failure.data.retryable ?? failure.data.provider?.retryable ?? false)
+        : false,
     );
   }
   const result = investigationResultSchema.parse(await response.json());
@@ -304,6 +349,18 @@ async function startInvestigation({
     result,
   });
   return result;
+}
+
+function parseJson(value: string): unknown {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return;
+  }
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
 
 function withSourceUrl(observation: Observation) {

@@ -10,12 +10,13 @@ burst, and skips successful investigations already indexed in D1. Complete
 `investigate` outcomes publish automatically; `watch`, `discard`, and failed
 outcomes remain private.
 
-Each scheduled attempt also writes `daily_investigation_runs`, including runs
-with no candidate. The row captures the detector version and thresholds,
-per-source readiness and candidate summaries, the selected signal, terminal
-status, investigation and article links, or a sanitized failure stage. Treat
-interesting misses and failures as an eval inbox: reproduce the case, then add
-only the compact input and expected behavior to git.
+`daily_investigation_runs` holds the current result for each day, including
+days with no candidate. `daily_investigation_attempts` preserves every retry.
+Both capture detector version and thresholds, per-source readiness and
+candidate summaries, the selected signal, terminal status, investigation and
+article links, or a sanitized failure stage. Treat interesting misses and
+failures as an eval inbox: reproduce the case, then add only the compact input
+and expected behavior to git.
 
 For manual diagnosis, `POST /api/internal/investigations/replay` accepts a
 source, day, kind, and area. It loads that exact slice from D1 and sends the raw
@@ -49,8 +50,12 @@ doppler run --config prd -- sh -c 'curl -fsS \
   https://publicpatterns.com/api/internal/daily-runs'
 ```
 
-The day is idempotent: a second request returns `409` and does not repeat the
-investigation or publication.
+Completed days return `409`. A day can be reclaimed when data was not ready,
+detection failed, a retryable investigation failed, or a `running` lease is
+older than 30 minutes. Publication and nonretryable provider failures stay
+locked. Reclaimed work first resumes any saved daily investigation instead of
+selecting a second candidate. Exact case retries reuse a content-derived ID and
+completed R2 checkpoint, so a lost D1 write does not repeat paid model work.
 
 ## Find recent investigations
 
@@ -62,7 +67,9 @@ doppler run --config prd -- wrangler d1 execute public-patterns-pipeline \
 
 ## Download one archive
 
-Copy the `archive_key` returned above:
+Copy the immutable, attempt-specific `archive_key` returned above. The separate
+`investigations/by-id/INVESTIGATION_ID.json` object is only a completed-result
+checkpoint used for retry recovery:
 
 ```sh
 doppler run --config prd -- wrangler r2 object get public-patterns-archive/ARCHIVE_KEY \

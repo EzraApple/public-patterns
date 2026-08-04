@@ -12,6 +12,7 @@ import {
   socrataTimestampSchema,
   subtractDataSfMinutes,
 } from "@/sources/dataSf.ts";
+import { deleteLegacy311Rows } from "./cleanup311.ts";
 import {
   getDataSfSourceConfig,
   type DataSfSourceName,
@@ -31,6 +32,7 @@ const keySchema = z
 
 const cursorSchema = z
   .object({
+    cursorField: z.string().min(1).optional(),
     collectingSince: socrataTimestampSchema,
     through: socrataTimestampSchema,
     scan: z
@@ -128,6 +130,7 @@ export async function ingestDataSfSource(
     });
     cursor = batch.done
       ? {
+          cursorField: cursor.cursorField,
           collectingSince: cursor.collectingSince,
           through: cursor.scan.until,
         }
@@ -148,7 +151,7 @@ export async function ingestDataSfSource(
     errors += batch.errors.length;
   }
 
-  return ingestionResult(
+  const result = ingestionResult(
     source,
     cursor.scan ? "in_progress" : "complete",
     batches,
@@ -156,6 +159,11 @@ export async function ingestDataSfSource(
     errors,
     cursor,
   );
+  const deletedLegacyRows =
+    source === "311" && result.status === "complete"
+      ? await deleteLegacy311Rows(env.DB)
+      : 0;
+  return deletedLegacyRows > 0 ? { ...result, deletedLegacyRows } : result;
 }
 
 function readCursor(
@@ -163,11 +171,15 @@ function readCursor(
   observedAt: string,
   source: DataSfSourceName,
 ): Cursor {
-  if (stored !== undefined) {
-    return cursorSchema.parse(stored);
-  }
   const config = getDataSfSourceConfig(source);
+  if (stored !== undefined) {
+    const cursor = cursorSchema.parse(stored);
+    if (source !== "311" || cursor.cursorField === config.cursorField) {
+      return { ...cursor, cursorField: config.cursorField };
+    }
+  }
   return {
+    cursorField: config.cursorField,
     collectingSince: dataSfTimestampBefore(
       observedAt,
       config.initialWindowMinutes,
@@ -198,7 +210,11 @@ export function getBackfillCursor({
   if (cursor.collectingSince <= start) {
     return null;
   }
-  return { collectingSince: start, through: since };
+  return {
+    cursorField: getDataSfSourceConfig(source).cursorField,
+    collectingSince: start,
+    through: since,
+  };
 }
 
 function requireCursor(

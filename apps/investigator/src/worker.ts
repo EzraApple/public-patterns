@@ -1,7 +1,11 @@
 import { investigationInputSchema } from "@public-patterns/contracts/investigation";
 
 import type { Env } from "./environment.ts";
-import { investigateCase } from "./investigate.ts";
+import {
+  InvestigationCheckpointError,
+  InvestigationFailedError,
+  investigateCase,
+} from "./investigate.ts";
 import { providerFailureDiagnostic } from "./providerFailure.ts";
 
 export { Sandbox } from "@cloudflare/sandbox";
@@ -28,6 +32,11 @@ export default {
         return Response.json(await investigateCase(env, input.data));
       } catch (error) {
         const providerFailure = providerFailureDiagnostic(error);
+        const archiveKey =
+          error instanceof InvestigationFailedError ||
+          error instanceof InvestigationCheckpointError
+            ? error.archiveKey
+            : undefined;
         console.error("Investigation failed", {
           event: "investigation.failed",
           investigationId: input.data.id,
@@ -37,6 +46,10 @@ export default {
         return Response.json(
           {
             error: "investigation failed",
+            ...(archiveKey ? { archiveKey } : {}),
+            ...(error instanceof InvestigationCheckpointError
+              ? { retryable: true }
+              : {}),
             ...(providerFailure ? { provider: providerFailure } : {}),
           },
           { status: providerFailure ? 502 : 500 },

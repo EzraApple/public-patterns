@@ -61,6 +61,9 @@ whose event times were already outside a six-hour event-time overlap.
 A live run on 2026-07-27 accepted 1,084 rows with zero validation errors. A
 same-window replay did not change D1 counts.
 
+The burst detector groups current unit rows by `call_number`, counts each call
+once, and retains every selected unit row as investigation evidence.
+
 This is working local evidence, not proof of complete correction capture.
 Changes whose portal load time falls outside the six-hour overlap can still be
 missed.

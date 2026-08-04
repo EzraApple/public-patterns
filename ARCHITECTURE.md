@@ -241,15 +241,16 @@ demonstrates the need.
 External API gateways classify authentication, exhausted credits, rate limits,
 timeouts, provider outages, and network failures without logging credentials.
 Structured diagnostics include the provider request ID and a concrete operator
-action. Blocking model failures and image failures remain in the private
+action, and only retryable failures are automatically attempted again. Blocking
+model failures and image failures remain in the private
 investigation archive for later audits. Image failures do not change the
 investigation outcome, but their drafts cannot be promoted publicly.
 
-Every scheduled attempt leaves a compact D1 run record: the detector version
-and thresholds, per-source readiness and candidate summaries, selected signal,
-agent outcome, publication link, or failure stage. These records make empty
-runs and operational failures visible and provide the queue from which useful
-regressions can be promoted into versioned eval fixtures.
+Each scheduled day has a compact current-state D1 record, while its attempts
+remain append-only: detector version and thresholds, per-source readiness and
+candidate summaries, selected signal, agent outcome, publication link, or
+failure stage. This keeps retries auditable and provides the queue from which
+useful regressions can be promoted into versioned eval fixtures.
 
 ## Initial sources and detectors
 

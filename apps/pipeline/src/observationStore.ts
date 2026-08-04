@@ -51,6 +51,24 @@ export async function getIngestionCursor(
   return row ? JSON.parse(row.cursor_json) : undefined;
 }
 
+export async function getIngestionState(
+  db: D1Database,
+  ingestion: Source,
+): Promise<{ cursor: unknown; savedAt: string } | undefined> {
+  const row = await db
+    .prepare(
+      `SELECT cursor_json, saved_at
+       FROM ingestion_cursors
+       WHERE ingestion = ?`,
+    )
+    .bind(ingestion)
+    .first<{ cursor_json: string; saved_at: string }>();
+
+  return row
+    ? { cursor: JSON.parse(row.cursor_json), savedAt: row.saved_at }
+    : undefined;
+}
+
 export async function getCurrent({
   db,
   source,
