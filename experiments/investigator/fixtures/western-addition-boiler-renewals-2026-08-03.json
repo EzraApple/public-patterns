@@ -1,0 +1,37 @@
+{
+  "id": "western-addition-boiler-renewals-2026-08-03",
+  "evalRole": "administrative-recurrence-entity-join",
+  "capturedAt": "2026-08-04",
+  "note": "The generic weekday burst is a recurring citywide administrative batch. Following embedded permit IDs and the shared address reveals expired domestic-hot-water permits alongside a recent no-hot-water complaint, but the records do not establish causality.",
+  "sourceQueries": [
+    "https://data.sfgov.org/resource/gm2e-bten.json?$select=complaint_number%2cdate_filed%2cdate_1st_nov_issued%2cparcel_number%2cstreet_number%2cstreet_name%2cstreet_suffix%2ccomplaint_description%2cstatus%2cnov_type%2creceiving_division%2cassigned_division%2canalysis_neighborhood&$where=date_filed+%3e%3d+%272026-08-03T00%3a00%3a00%27+AND+date_filed+%3c+%272026-08-04T00%3a00%3a00%27+AND+analysis_neighborhood%3d%27Western+Addition%27+AND+lower%28complaint_description%29+like+%27%25renew%25boiler%25permit%25%27&$order=complaint_number&$limit=100"
+  ],
+  "series": [
+    {
+      "source": "building-complaints",
+      "dataset": "gm2e-bten",
+      "date": "2026-08-03",
+      "kind": "Complaint",
+      "area": "Western Addition",
+      "observed": 37,
+      "expected": 0,
+      "parcels": [
+        { "parcelNumber": "0751001", "complaints": 20 },
+        { "parcelNumber": "0730044", "complaints": 15 },
+        { "parcelNumber": "1128001", "complaints": 2 }
+      ]
+    }
+  ],
+  "limitations": [
+    "Complaint is the dataset's generic NOV type, not a normalized event category.",
+    "The supplied detector comparison uses four matching weekdays and contains no administrative filing-cycle baseline.",
+    "A complaint record does not establish equipment failure or a causal relationship."
+  ],
+  "independentEvidence": [
+    "https://data.sfgov.org/resource/gm2e-bten.json?$select=date_filed%2ccount%28%2a%29+as+complaints%2ccount%28distinct+parcel_number%29+as+parcels%2ccount%28distinct+analysis_neighborhood%29+as+neighborhoods&$where=date_filed+%3e%3d+%272026-01-01T00%3a00%3a00%27+AND+lower%28complaint_description%29+like+%27%25renew%25boiler%25permit%25%27&$group=date_filed&$order=date_filed",
+    "https://data.sfgov.org/resource/5dp4-gtxk.json?$select=block%2clot%2cexpiration_date%2ccount%28%2a%29+as+boilers&$where=%28%28block%3d%270751%27+AND+lot%3d%27001%27%29+OR+%28block%3d%270730%27+AND+lot%3d%27044%27%29%29+AND+expiration_date%3d%272026-06-12T00%3a00%3a00%27&$group=block%2clot%2cexpiration_date&$order=block",
+    "https://data.sfgov.org/resource/gm2e-bten.json?$select=complaint_number%2cdate_filed%2cdate_1st_nov_issued%2clast_inspection_date%2ccomplaint_description%2cstatus%2cnov_type&$where=parcel_number%3d%270751001%27+AND+street_number%3d%271675%27+AND+date_filed+%3e%3d+%272026-07-01T00%3a00%3a00%27&$order=date_filed%2ccomplaint_number",
+    "https://data.sfgov.org/resource/5dp4-gtxk.json?$select=permit_number%2capplication_date%2cstreet_number%2cstreet_name%2cstatus%2cexpiration_date%2cboiler_serial_number%2cboiler_type%2cmodel&$where=block%3d%270751%27+AND+lot%3d%27001%27+AND+street_number%3d%271675%27+AND+expiration_date+%3e%3d+%272026-01-01T00%3a00%3a00%27&$order=expiration_date%2cpermit_number",
+    "https://www.sf.gov/sites/default/files/2023-01/PTO%20REQUIREMENT%20CHECKLIST.pdf"
+  ]
+}

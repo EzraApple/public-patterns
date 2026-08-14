@@ -174,4 +174,75 @@ test("eval cases reference valid fixtures and outcomes", async () => {
     fixture.series[0].controls.reduce((sum, value) => sum + value, 0),
     385,
   );
+
+  const boilerCase = cases.find(
+    (testCase) =>
+      testCase.id === "western-addition-boiler-renewals-2026-08-03",
+  );
+  const boilerFixture = JSON.parse(
+    await readFile(new URL(`../../${boilerCase.fixture}`, import.meta.url)),
+  );
+  assert.equal(boilerFixture.series[0].observed, 37);
+  assert.equal(
+    boilerFixture.series[0].parcels.reduce(
+      (sum, parcel) => sum + parcel.complaints,
+      0,
+    ),
+    37,
+  );
+  assert.equal(buildCaseInput(boilerFixture).evidenceUrls.length, 0);
+});
+
+test("boiler regression rewards the missing investigation instead of its conclusion", () => {
+  const testCase = cases.find(
+    (candidate) =>
+      candidate.id === "western-addition-boiler-renewals-2026-08-03",
+  );
+  const priorBrief = {
+    submission: { outcome: "watch" },
+    brief:
+      "The 37 complaints may reflect a routine enforcement sweep across three parcels. The supplied weekday baseline is too thin to establish novelty.",
+  };
+  const completeBrief = {
+    submission: { outcome: "watch" },
+    brief:
+      "The 37 complaints were part of a semi-monthly citywide batch of 62. Permit IDs resolve in 5dp4-gtxk to renewals for permits that expired June 12. At 1675 Eddy, a recent complaint reports no hot water. That correlation does not prove the expired paperwork caused the outage.",
+  };
+
+  assert.notDeepEqual(evaluate(testCase, priorBrief), []);
+  assert.deepEqual(evaluate(testCase, completeBrief), []);
+});
+
+test("traffic-stop regressions preserve the editorial threshold", () => {
+  const bayview = cases.find(
+    (candidate) => candidate.id === "bayview-traffic-stops-2026-08-08",
+  );
+  const haight = cases.find(
+    (candidate) => candidate.id === "haight-traffic-stops-2026-08-06",
+  );
+
+  assert.deepEqual(
+    evaluate(bayview, {
+      submission: { outcome: "investigate" },
+      brief:
+        "All 50 stops were officer-initiated; 41 ended in citations. Fifteen clustered at Palou and Selby and nine at Oakdale and Rankin. The count exceeded each of the prior Saturdays, but no press release confirmed a named operation.",
+    }),
+    [],
+  );
+  assert.deepEqual(
+    evaluate(haight, {
+      submission: { outcome: "watch" },
+      brief:
+        "The 23 officer-initiated stops followed 19 the prior day. There was no external confirmation of an operation, and the SFMTA report is a coincidence that does not establish why the stops increased.",
+    }),
+    [],
+  );
+  assert.notDeepEqual(
+    evaluate(haight, {
+      submission: { outcome: "investigate" },
+      brief:
+        "The 23 stops followed 19 the prior day and were caused by the SFMTA report.",
+    }),
+    [],
+  );
 });

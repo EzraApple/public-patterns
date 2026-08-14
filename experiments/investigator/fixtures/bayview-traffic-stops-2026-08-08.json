@@ -1,0 +1,29 @@
+{
+  "id": "bayview-traffic-stops-2026-08-08",
+  "evalRole": "strong-single-source-spatial-positive",
+  "capturedAt": "2026-08-09",
+  "sourceQueries": [
+    "https://data.sfgov.org/resource/2zdj-bwza.json?%24select=cad_number%2Cdispatch_datetime%2Cclose_datetime%2Cintersection_name%2Cdisposition%2Conview_flag%2Cpolice_district%2Canalysis_neighborhood&%24where=call_type_final_desc%3D%27TRAFFIC%20STOP%27%20AND%20analysis_neighborhood%3D%27Bayview%20Hunters%20Point%27%20AND%20dispatch_datetime%3E%3D%272026-08-08T00%3A00%3A00%27%20AND%20dispatch_datetime%3C%272026-08-09T00%3A00%3A00%27&%24order=dispatch_datetime%2Ccad_number&%24limit=100"
+  ],
+  "series": [
+    {
+      "source": "dispatch",
+      "dataset": "2zdj-bwza",
+      "day": "2026-08-08",
+      "kind": "TRAFFIC STOP",
+      "area": "Bayview Hunters Point",
+      "observed": 50,
+      "expected": 5.5,
+      "ratio": 9.0909090909
+    }
+  ],
+  "limitations": [
+    "Calls for Service records describe administrative contacts, not the reason an enforcement detail was organized.",
+    "The on-view flag distinguishes officer-initiated contacts from resident calls but does not identify officers or units.",
+    "Mapped intersections are administrative locations and may not be exact stop coordinates."
+  ],
+  "independentEvidence": [
+    "https://data.sfgov.org/resource/2zdj-bwza.json?%24select=intersection_name%2Ccount%28%2A%29%20as%20stops&%24where=call_type_final_desc%3D%27TRAFFIC%20STOP%27%20AND%20analysis_neighborhood%3D%27Bayview%20Hunters%20Point%27%20AND%20dispatch_datetime%3E%3D%272026-08-08T00%3A00%3A00%27%20AND%20dispatch_datetime%3C%272026-08-09T00%3A00%3A00%27&%24group=intersection_name&%24order=stops%20DESC",
+    "https://data.sfgov.org/resource/2zdj-bwza.json?%24select=date_trunc_ymd%28dispatch_datetime%29%20as%20day%2Ccount%28%2A%29%20as%20stops&%24where=call_type_final_desc%3D%27TRAFFIC%20STOP%27%20AND%20analysis_neighborhood%3D%27Bayview%20Hunters%20Point%27%20AND%20dispatch_datetime%3E%3D%272026-07-11T00%3A00%3A00%27%20AND%20dispatch_datetime%3C%272026-08-09T00%3A00%3A00%27&%24group=date_trunc_ymd%28dispatch_datetime%29&%24order=day"
+  ]
+}

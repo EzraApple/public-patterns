@@ -1,0 +1,36 @@
+{
+  "id": "haight-traffic-stops-2026-08-06",
+  "evalRole": "weakly-explained-temporal-negative",
+  "capturedAt": "2026-08-07",
+  "sourceQueries": [
+    "https://data.sfgov.org/resource/2zdj-bwza.json?%24select=cad_number%2Cdispatch_datetime%2Cclose_datetime%2Cintersection_name%2Cdisposition%2Conview_flag%2Cpolice_district%2Canalysis_neighborhood&%24where=call_type_final_desc%3D%27TRAFFIC%20STOP%27%20AND%20analysis_neighborhood%3D%27Haight%20Ashbury%27%20AND%20dispatch_datetime%3E%3D%272026-08-05T00%3A00%3A00%27%20AND%20dispatch_datetime%3C%272026-08-07T00%3A00%3A00%27&%24order=dispatch_datetime%2Ccad_number&%24limit=100"
+  ],
+  "evidenceUrls": [
+    "https://sf.streetsblog.org/2026/08/05/sfmta-report-shows-higher-number-of-severe-crashes-now-than-when-vision-zero-was-signed-in-2014"
+  ],
+  "series": [
+    {
+      "source": "dispatch",
+      "dataset": "2zdj-bwza",
+      "day": "2026-08-06",
+      "kind": "TRAFFIC STOP",
+      "area": "Haight Ashbury",
+      "observed": 23,
+      "expected": 6.5,
+      "ratio": 3.5384615385
+    },
+    {
+      "source": "dispatch",
+      "dataset": "2zdj-bwza",
+      "day": "2026-08-05",
+      "kind": "TRAFFIC STOP",
+      "area": "Haight Ashbury",
+      "observed": 19
+    }
+  ],
+  "limitations": [
+    "Calls for Service records do not identify a named enforcement operation or its purpose.",
+    "The nearby SFMTA safety report establishes citywide context but does not link itself to these stops.",
+    "Two elevated days do not establish a durable trend."
+  ]
+}

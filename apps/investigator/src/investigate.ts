@@ -46,6 +46,7 @@ type InvestigationArchive = ArticleImageArchive & {
 export class InvestigationFailedError extends Error {
   constructor(
     readonly archiveKey: string,
+    readonly retryable: boolean,
     cause: Error,
   ) {
     super(cause.message, { cause });
@@ -250,7 +251,11 @@ export async function investigateInSandbox({
       console.error("Failed to archive investigation failure", archiveError);
       throw failure;
     }
-    throw new InvestigationFailedError(archiveKey, failure);
+    throw new InvestigationFailedError(
+      archiveKey,
+      didExecutionThrow,
+      failure,
+    );
   }
   await archiveInvestigation({
     archive,

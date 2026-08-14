@@ -2,7 +2,10 @@ import { articleDraftSchema as contractSchema } from "@public-patterns/contracts
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 
-import { articleDraftSchema as agentSchema } from "../agent/.opencode/article-schema.ts";
+import {
+  articleDraftSchema as agentSchema,
+  hasUnfilteredDataSfLink,
+} from "../agent/.opencode/article-schema.ts";
 
 describe("agent article schema", () => {
   it("matches the Worker contract", () => {
@@ -34,5 +37,26 @@ describe("agent article schema", () => {
         }).success,
       ).toBe(false);
     }
+  });
+
+  it("identifies DataSF links that cannot reproduce a claim", () => {
+    expect(
+      hasUnfilteredDataSfLink({
+        href: "https://data.sfgov.org/Public-Safety/Calls/2zdj-bwza",
+      }),
+    ).toBe(true);
+    expect(
+      hasUnfilteredDataSfLink({
+        href: "https://data.sfgov.org/resource/2zdj-bwza.json?$where=cad_number='123'",
+      }),
+    ).toBe(false);
+    expect(
+      hasUnfilteredDataSfLink({
+        href: "https://data.sfgov.org/api/views/2zdj-bwza",
+      }),
+    ).toBe(false);
+    expect(
+      hasUnfilteredDataSfLink({ href: "https://example.com/report" }),
+    ).toBe(false);
   });
 });
