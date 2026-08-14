@@ -72,6 +72,14 @@ older baselines. Snapshot supporting rows for publication.
 - Housing inspection records are selectively represented.
 - Malformed dates make unbounded historical scans unsafe.
 - Parcel and address fields can support useful joins but may change.
+- Generic `nov_type` values can hide scheduled administrative batches. On
+  2026-08-04, boiler-renewal complaints in 2026 appeared on the first and
+  middle business days of each month; the 2026-08-03 batch contained 62
+  citywide records.
+- Boiler permit numbers embedded in complaint descriptions resolve against the
+  related [`5dp4-gtxk`](https://data.sfgov.org/d/5dp4-gtxk) dataset. That join
+  exposes expiration dates and equipment types; multiple units at one property
+  require separate permits and must not be described as separate buildings.
 
 ## Open questions
 

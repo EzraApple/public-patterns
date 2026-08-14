@@ -330,7 +330,7 @@ describe("investigateInSandbox", () => {
     ).rejects.toThrow("body");
   });
 
-  it("redacts the provider key from run failures", async () => {
+  it("marks thrown sandbox failures retryable and redacts secrets", async () => {
     const { archive, archives, sandbox } = createSandbox(
       {},
       "provider rejected secret-test-key",
@@ -348,6 +348,7 @@ describe("investigateInSandbox", () => {
       archiveKey: expect.stringMatching(
         /^investigations\/\d{4}-\d{2}-\d{2}\/case-3\/.+\.json$/,
       ),
+      retryable: true,
     });
     expect((error as Error).message).toContain(
       "provider rejected [redacted]",
@@ -391,6 +392,7 @@ describe("investigateInSandbox", () => {
 
     expect(error).toBeInstanceOf(Error);
     expect((error as Error).message).toContain("Refill credits");
+    expect(error).toMatchObject({ retryable: false });
     const archivedFailure = JSON.parse(
       String([...archives.values()][0]),
     );

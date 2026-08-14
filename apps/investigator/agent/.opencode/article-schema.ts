@@ -9,6 +9,15 @@ export const articleHeroSchema = z.object({
   caption: nonBlankString,
 });
 
+export function hasUnfilteredDataSfLink({ href }: { href: string }) {
+  const url = new URL(href);
+  const isMetadata = url.pathname.startsWith("/api/views/");
+  const isRecordQuery =
+    /^\/resource\/[a-z0-9]{4}-[a-z0-9]{4}\.json$/.test(url.pathname) &&
+    (url.searchParams.has("$query") || url.searchParams.has("$where"));
+  return url.hostname === "data.sfgov.org" && !isMetadata && !isRecordQuery;
+}
+
 const figureSchema = z.object({
   title: nonBlankString,
   caption: nonBlankString,

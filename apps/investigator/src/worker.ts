@@ -49,6 +49,8 @@ export default {
             ...(archiveKey ? { archiveKey } : {}),
             ...(error instanceof InvestigationCheckpointError
               ? { retryable: true }
+              : error instanceof InvestigationFailedError
+                ? { retryable: error.retryable }
               : {}),
             ...(providerFailure ? { provider: providerFailure } : {}),
           },

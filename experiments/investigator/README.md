@@ -39,3 +39,15 @@ Every concrete production miss becomes the smallest reproducible eval at the
 stage that failed: detection, evidence gathering, investigation, review, or
 publication. Keep compact expectations in git and bulky source evidence in R2.
 Use a varied case set to justify general changes; do not tune around one miss.
+
+`western-addition-boiler-renewals-2026-08-03` is an evidence-gathering
+regression. The sandbox receives the original generic complaint burst and must
+discover its administrative cadence, follow embedded permit IDs into the
+related Boiler Permits dataset, and report a same-address maintenance signal
+without asserting causality.
+
+The Bayview and Haight traffic-stop cases form an editorial threshold pair.
+Bayview should advance because its 50 distinct contacts are unusually large,
+citation-heavy, spatially concentrated, and strong against prior Saturdays.
+Haight should not advance because a smaller, diffuse two-day rise has no
+independent link to the nearby SFMTA report.

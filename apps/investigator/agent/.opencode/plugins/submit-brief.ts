@@ -6,6 +6,7 @@ import { z } from "zod";
 import {
   articleDraftSchema,
   articleHeroSchema,
+  hasUnfilteredDataSfLink,
 } from "../article-schema.ts";
 
 const WORKSPACE = "/workspace";
@@ -88,6 +89,14 @@ export default Plugin.define({
                 await readFile(path.resolve(WORKSPACE, articlePath), "utf8"),
               ),
             );
+            const unfilteredDataSfSource = article.sources.find(
+              hasUnfilteredDataSfLink,
+            );
+            if (unfilteredDataSfSource) {
+              throw new Error(
+                `DataSF source "${unfilteredDataSfSource.label}" must link to an exact resource query using $where or $query.`,
+              );
+            }
             if (article.hero) {
               const generated = z
                 .object({ hero: articleHeroSchema })

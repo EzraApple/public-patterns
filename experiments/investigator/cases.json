@@ -89,6 +89,81 @@
     ]
   },
   {
+    "id": "western-addition-boiler-renewals-2026-08-03",
+    "fixture": "experiments/investigator/fixtures/western-addition-boiler-renewals-2026-08-03.json",
+    "allowedOutcomes": ["investigate", "watch"],
+    "requires": ["62", "5dp4-gtxk", "1675 eddy", "hot water"],
+    "requiresAny": [
+      [
+        "twice monthly",
+        "twice-monthly",
+        "semi-monthly",
+        "first and middle",
+        "first and 16th"
+      ],
+      ["june 12", "2026-06-12"],
+      [
+        "does not prove",
+        "cannot establish",
+        "unclear whether",
+        "no evidence that",
+        "correlation"
+      ]
+    ],
+    "requiresNear": [
+      {
+        "anchor": "1675 eddy",
+        "alternatives": ["hot water", "hot-water"]
+      },
+      {
+        "anchor": "5dp4-gtxk",
+        "alternatives": ["expired", "expiration", "renewal"]
+      }
+    ]
+  },
+  {
+    "id": "bayview-traffic-stops-2026-08-08",
+    "fixture": "experiments/investigator/fixtures/bayview-traffic-stops-2026-08-08.json",
+    "allowedOutcomes": ["investigate"],
+    "requires": ["50", "41", "palou", "selby", "oakdale", "rankin"],
+    "requiresAny": [
+      ["officer-initiated", "officer initiated", "on-view", "on view"],
+      ["prior saturday", "preceding saturday", "previous saturday"],
+      [
+        "no official announcement",
+        "no press release",
+        "not independently confirmed",
+        "could not confirm"
+      ]
+    ]
+  },
+  {
+    "id": "haight-traffic-stops-2026-08-06",
+    "fixture": "experiments/investigator/fixtures/haight-traffic-stops-2026-08-06.json",
+    "allowedOutcomes": ["watch", "discard"],
+    "requires": ["23", "19"],
+    "requiresAny": [
+      ["officer-initiated", "officer initiated", "on-view", "on view"],
+      [
+        "no external confirmation",
+        "not independently confirmed",
+        "no official announcement",
+        "no press release"
+      ]
+    ],
+    "requiresNear": [
+      {
+        "anchor": "sfmta",
+        "alternatives": [
+          "coincidence",
+          "does not prove",
+          "does not establish",
+          "no evidence"
+        ]
+      }
+    ]
+  },
+  {
     "id": "eviction-notices-h1-2025",
     "fixture": "experiments/recurrence/cases/eviction-notices-h1-2025.json",
     "allowedOutcomes": ["investigate"],
