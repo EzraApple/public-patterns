@@ -225,7 +225,7 @@ test("traffic-stop regressions preserve the editorial threshold", () => {
     evaluate(bayview, {
       submission: { outcome: "investigate" },
       brief:
-        "All 50 stops were officer-initiated; 41 ended in citations. Fifteen clustered at Palou and Selby and nine at Oakdale and Rankin. The count exceeded each of the prior Saturdays, but no press release confirmed a named operation.",
+        "All 50 stops were officer-initiated; 41 ended in citations. Fifteen clustered at Palou and Selby and nine at Oakdale and Rankin. The count exceeded each of the prior Saturdays, but no SFPD press release confirmed a named operation.",
     }),
     [],
   );
@@ -233,7 +233,7 @@ test("traffic-stop regressions preserve the editorial threshold", () => {
     evaluate(haight, {
       submission: { outcome: "watch" },
       brief:
-        "The 23 officer-initiated stops followed 19 the prior day. There was no external confirmation of an operation, and the SFMTA report is a coincidence that does not establish why the stops increased.",
+        "The 23 officer-initiated stops followed 19 the prior day. There was no external confirmation of an operation. The SFMTA report was released nearby in time, but the timing is only coincident and does not establish why the stops increased.",
     }),
     [],
   );

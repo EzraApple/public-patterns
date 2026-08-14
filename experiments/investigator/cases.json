@@ -132,6 +132,7 @@
       [
         "no official announcement",
         "no press release",
+        "no sfpd press release",
         "not independently confirmed",
         "could not confirm"
       ]
@@ -141,7 +142,7 @@
     "id": "haight-traffic-stops-2026-08-06",
     "fixture": "experiments/investigator/fixtures/haight-traffic-stops-2026-08-06.json",
     "allowedOutcomes": ["watch", "discard"],
-    "requires": ["23", "19"],
+    "requires": ["23", "19", "sfmta"],
     "requiresAny": [
       ["officer-initiated", "officer initiated", "on-view", "on view"],
       [
@@ -149,18 +150,8 @@
         "not independently confirmed",
         "no official announcement",
         "no press release"
-      ]
-    ],
-    "requiresNear": [
-      {
-        "anchor": "sfmta",
-        "alternatives": [
-          "coincidence",
-          "does not prove",
-          "does not establish",
-          "no evidence"
-        ]
-      }
+      ],
+      ["coincidence", "coincident", "does not prove", "does not establish", "no evidence"]
     ]
   },
   {
