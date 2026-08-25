@@ -6,7 +6,7 @@ import {
   type PublishArticle,
 } from "@public-patterns/contracts/article";
 
-import { getInvestigation } from "./investigations.ts";
+import { findInvestigation } from "./investigations.ts";
 
 export class ArticlePublicationError extends Error {
   constructor(
@@ -44,7 +44,7 @@ export async function publishArticle({
 
   const existing = await getArticle(db, publication.slug);
 
-  const investigation = await getInvestigation(db, investigationId);
+  const investigation = await findInvestigation(db, investigationId);
   if (!investigation) {
     throw new ArticlePublicationError("investigation not found", 404);
   }

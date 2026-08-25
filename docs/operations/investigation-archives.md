@@ -19,9 +19,42 @@ failures as an eval inbox: reproduce the case, then add only the compact input
 and expected behavior to git.
 
 For manual diagnosis, `POST /api/internal/investigations/replay` accepts a
-source, day, kind, and area. It loads that exact slice from D1 and sends the raw
-observations plus nearby cross-source context through the normal investigator.
-It does not accept injected evidence or bypass publication review.
+source, day, kind, and area and returns a Workflow job ID with HTTP 202. Poll
+`GET /api/internal/investigation-jobs/JOB_ID`; a completed job points to the
+saved investigation, while a failed job preserves its safe retry, R2 archive,
+and allowlisted provider diagnostics. The Workflow loads the exact slice from D1 and sends
+the raw observations plus nearby cross-source context through the normal
+investigator. It does not accept injected evidence or bypass publication
+review.
+
+Manual investigation jobs first freeze the selected observations and nearby
+context in R2; D1 stores the request fingerprint and archive key. Workflow then
+passes only the job ID into one 15-minute investigation step with one retry
+after 30 seconds. Retries reuse both the frozen case and the Workflow ID,
+allowing the investigator to recover a completed R2 checkpoint instead of
+repeating model work. Workflow state is retained for seven days; the
+investigation and archive remain in D1 and R2.
+
+Every start requires an `Idempotency-Key` of 8-200 characters. Reuse the key
+when retrying the same HTTP request; generate a new key for a deliberate rerun.
+The same key with changed input returns HTTP 409.
+
+Start a replay, copy the returned `id`, then poll it without keeping the start
+request open:
+
+```sh
+doppler run --config prd -- sh -c 'curl -fsS \
+  -X POST \
+  -H "Authorization: Bearer $LAB_TOKEN" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: $IDEMPOTENCY_KEY" \
+  -d '\''{"source":"dispatch","day":"YYYY-MM-DD","kind":"TRAFFIC STOP","area":"AREA"}'\'' \
+  https://publicpatterns.com/api/internal/investigations/replay'
+
+doppler run --config prd -- sh -c 'curl -fsS \
+  -H "Authorization: Bearer $LAB_TOKEN" \
+  https://publicpatterns.com/api/internal/investigation-jobs/JOB_ID'
+```
 
 Keep investigator capacity above one instance. Cloudflare may retain the prior
 container briefly during a deploy; a single-instance ceiling can reject the
@@ -78,6 +111,23 @@ doppler run --config prd -- wrangler r2 object get public-patterns-archive/ARCHI
 
 Use `public-patterns-archive-dev` for preview runs. Archives may contain public
 source records and agent working output; keep both buckets private.
+
+## Diagnose a failed run
+
+Worker logs emit one correlated lifecycle for each investigation ID:
+
+- `investigation.started` when the route accepts the case
+- `investigation.agent.started` after the sandbox and input are ready
+- `investigation.agent.finished` with execution duration, exit code, and
+  whether the Sandbox call threw
+- `investigation.completed` or `investigation.failed` with total duration and
+  the archive key; failures also include safe retry and provider fields
+
+The R2 archive retains the agent start, completion, duration, exit code, and
+Sandbox-throw flag alongside redacted output. This survives Worker log
+retention. A missing `agent.started` event isolates setup; a Sandbox throw
+isolates the control path; an ordinary nonzero exit with a provider diagnostic
+isolates the agent or provider path.
 
 Before the first CI deployment, the `CLOUDFLARE_API_TOKEN` stored in Doppler
 must include account-level R2 object and bucket edit permission.

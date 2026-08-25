@@ -49,13 +49,14 @@ The current stack is deliberately small:
 - **A pipeline Worker** ingests sources and runs cheap detectors.
 - **D1** stores observations, source errors, and ingestion cursors.
 - **An investigator Worker** runs one sandboxed agent per selected candidate.
+- **One investigation Workflow** makes manual and eval runs durable and
+  pollable across long sandbox sessions.
 - **R2** stores investigation audit bundles for review and replay.
 
 Add infrastructure only when a concrete need appears:
 
 - a Cron Trigger when ingestion is deployed
 - a Queue when one request can no longer finish bounded work safely
-- Workflows when an investigation becomes a durable multi-step operation
 - PostHog when there is a real product surface to measure
 - Vectorize only if ordinary metadata and full-text search prove insufficient
 
@@ -235,8 +236,16 @@ selects one previously uninvestigated burst and publishes a valid
 private for audit. The current prototype passes a limited DeepSeek key into
 each ephemeral sandbox; move that credential behind a short-lived proxy before
 this automatic trial expands or investigations accept untrusted inputs.
-Workflows, persistent sessions, and MCP remain deferred until an investigation
-demonstrates the need.
+Manual investigations and eval replays use a Workflow because sandbox sessions
+can outlive an HTTP client. One step resolves and freezes the evidence in R2;
+D1 keeps its job ID, request fingerprint, and archive key. A second step passes
+only the job ID through Workflow state and runs the investigator with one
+bounded transient retry. Both attempts reuse the frozen case and Workflow ID,
+so later ingestion cannot change the case and a completed R2 checkpoint
+prevents duplicate model work. A hashed idempotency key makes repeated start
+requests resolve to the same job, while D1 rejects key reuse with new input.
+Scheduled daily investigations retain their existing D1 attempt ledger.
+Persistent sessions and MCP remain deferred.
 
 External API gateways classify authentication, exhausted credits, rate limits,
 timeouts, provider outages, and network failures without logging credentials.

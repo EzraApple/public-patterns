@@ -1,4 +1,7 @@
-import { investigationInputSchema } from "@public-patterns/contracts/investigation";
+import {
+  investigationInputSchema,
+  publicProviderFailureSchema,
+} from "@public-patterns/contracts/investigation";
 
 import type { Env } from "./environment.ts";
 import {
@@ -28,31 +31,57 @@ export default {
       if (!input.success) {
         return Response.json({ error: "invalid investigation" }, { status: 400 });
       }
+      const startedAt = Date.now();
+      console.info("Investigation started", {
+        event: "investigation.started",
+        investigationId: input.data.id,
+        environment: env.PUBLIC_PATTERNS_ENV,
+      });
       try {
-        return Response.json(await investigateCase(env, input.data));
+        const result = await investigateCase(env, input.data);
+        console.info("Investigation completed", {
+          event: "investigation.completed",
+          investigationId: input.data.id,
+          archiveKey: result.archiveKey,
+          outcome: result.submission.outcome,
+          durationMs: Date.now() - startedAt,
+        });
+        return Response.json(result);
       } catch (error) {
         const providerFailure = providerFailureDiagnostic(error);
+        const publicProviderFailure = providerFailure
+          ? publicProviderFailureSchema.parse(providerFailure)
+          : undefined;
         const archiveKey =
           error instanceof InvestigationFailedError ||
           error instanceof InvestigationCheckpointError
             ? error.archiveKey
             : undefined;
+        let retryable = true;
+        if (error instanceof InvestigationCheckpointError) {
+          retryable = true;
+        } else if (error instanceof InvestigationFailedError) {
+          retryable = error.retryable;
+        }
         console.error("Investigation failed", {
           event: "investigation.failed",
           investigationId: input.data.id,
-          ...(providerFailure ? { provider: providerFailure } : {}),
-          error: error instanceof Error ? error.message : String(error),
+          ...(publicProviderFailure
+            ? { provider: publicProviderFailure }
+            : {}),
+          ...(archiveKey ? { archiveKey } : {}),
+          retryable,
+          durationMs: Date.now() - startedAt,
+          error: "investigation failed",
         });
         return Response.json(
           {
             error: "investigation failed",
             ...(archiveKey ? { archiveKey } : {}),
-            ...(error instanceof InvestigationCheckpointError
-              ? { retryable: true }
-              : error instanceof InvestigationFailedError
-                ? { retryable: error.retryable }
+            retryable,
+            ...(publicProviderFailure
+              ? { provider: publicProviderFailure }
               : {}),
-            ...(providerFailure ? { provider: providerFailure } : {}),
           },
           { status: providerFailure ? 502 : 500 },
         );

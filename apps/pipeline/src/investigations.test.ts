@@ -1,9 +1,46 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  investigateCase,
+  InvestigatorRequestError,
   listInvestigations,
   shouldInvestigate,
 } from "./investigations.ts";
+
+describe("InvestigatorRequestError", () => {
+  it("keeps the durable archive location in its message", () => {
+    const error = new InvestigatorRequestError("Investigator failed", true, {
+      error: "Provider unavailable",
+      archiveKey: "investigations/failure.json",
+    });
+
+    expect(error.message).toBe(
+      "Investigator failed; archive investigations/failure.json",
+    );
+  });
+
+  it("retries an unclassified investigator 500", async () => {
+    const request = investigateCase({
+      db: {} as D1Database,
+      investigator: {
+        fetch: async () =>
+          Response.json({ error: "investigation failed" }, { status: 500 }),
+      },
+      investigationCase: {
+        input: {
+          source: "311",
+          day: "2026-08-24",
+          kind: "Noise Report",
+          area: "Mission",
+        },
+        createdAt: "2026-08-24T12:00:00.000Z",
+        data: {},
+      },
+    });
+
+    await expect(request).rejects.toMatchObject({ retryable: true });
+  });
+});
 
 describe("daily candidate policy", () => {
   it("skips routine passing calls without suppressing other dispatch bursts", () => {

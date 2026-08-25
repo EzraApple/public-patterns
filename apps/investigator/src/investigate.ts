@@ -143,6 +143,13 @@ export async function investigateInSandbox({
     JSON.stringify({ case: input.case }, null, 2),
   );
 
+  const executionStartedAt = new Date().toISOString();
+  const executionStartedMs = Date.now();
+  console.info("Investigation agent started", {
+    event: "investigation.agent.started",
+    investigationId: input.id,
+    preparationDurationMs: executionStartedMs - Date.parse(archivedAt),
+  });
   let run: Awaited<ReturnType<InvestigationSandbox["exec"]>>;
   let didExecutionThrow = false;
   try {
@@ -168,6 +175,20 @@ export async function investigateInSandbox({
       stderr: error instanceof Error ? error.message : String(error),
     };
   }
+  const execution = {
+    startedAt: executionStartedAt,
+    completedAt: new Date().toISOString(),
+    durationMs: Date.now() - executionStartedMs,
+    didExecutionThrow,
+  };
+  console.info("Investigation agent finished", {
+    event: "investigation.agent.finished",
+    investigationId: input.id,
+    durationMs: execution.durationMs,
+    success: run.success,
+    exitCode: run.exitCode,
+    didExecutionThrow: execution.didExecutionThrow,
+  });
 
   let result: InvestigationResult;
   let generatedImage: StoredArticleImage | undefined;
@@ -241,6 +262,7 @@ export async function investigateInSandbox({
         environment,
         input,
         run,
+        execution,
         deepseekApiKey,
         openAiApiKey,
         imageFailure,
@@ -253,7 +275,7 @@ export async function investigateInSandbox({
     }
     throw new InvestigationFailedError(
       archiveKey,
-      didExecutionThrow,
+      providerFailure?.diagnostic.retryable ?? didExecutionThrow,
       failure,
     );
   }
@@ -264,6 +286,7 @@ export async function investigateInSandbox({
     environment,
     input,
     run,
+    execution,
     deepseekApiKey,
     openAiApiKey,
     generatedImage,
@@ -353,6 +376,7 @@ async function archiveInvestigation({
   environment,
   input,
   run,
+  execution,
   deepseekApiKey,
   openAiApiKey,
   generatedImage,
@@ -367,6 +391,12 @@ async function archiveInvestigation({
   environment: string;
   input: InvestigationInput;
   run: Awaited<ReturnType<InvestigationSandbox["exec"]>>;
+  execution: {
+    startedAt: string;
+    completedAt: string;
+    durationMs: number;
+    didExecutionThrow: boolean;
+  };
   deepseekApiKey: string;
   openAiApiKey?: string;
   generatedImage?: StoredArticleImage;
@@ -388,6 +418,7 @@ async function archiveInvestigation({
         session: {
           success: run.success,
           exitCode: run.exitCode,
+          ...execution,
           stdout: limit(redact(run.stdout, [deepseekApiKey, openAiApiKey])),
           stderr: limit(redact(run.stderr, [deepseekApiKey, openAiApiKey])),
         },
