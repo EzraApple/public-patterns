@@ -27,7 +27,9 @@ law-enforcement dispatch, Fire/EMS responses, police incidents, building
 complaints and permits, injury crashes, health inspections, eviction notices,
 and 511 transit alerts. The pipeline stores append-only observations in D1 and
 derives experimental signals on demand. An investigator can analyze one
-candidate inside an ephemeral sandbox and archives its audit bundle in R2.
+candidate inside an ephemeral sandbox; R2 freezes the case and its audit bundle.
+Manual investigations and eval replays run as durable Cloudflare Workflow jobs
+so callers can poll instead of holding a long HTTP connection.
 Production CI deploys all three Workers, applies D1 migrations, rotates
 ingestion across sources every five minutes, and investigates one ready signal
 each morning. Valid `investigate` outcomes publish automatically as immutable

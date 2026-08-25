@@ -6,6 +6,8 @@ import { sources } from "./observation.ts";
 import { routeRequest, type Env } from "./pipeline.ts";
 import { apiFailureDiagnostic } from "./sources/apiFailure.ts";
 
+export { InvestigationWorkflow } from "./investigationWorkflow.ts";
+
 const dailyInvestigationCrons = new Set([
   "30 22 * * *",
   "30 23 * * *",
@@ -39,6 +41,7 @@ export default {
           investigationId: run?.investigationId ?? null,
           publishedSlug: run?.publishedSlug ?? null,
           failureStage: run?.failureStage ?? null,
+          retryable: run?.retryable ?? null,
         };
         if (run?.status === "failed") {
           console.error(message, fields);

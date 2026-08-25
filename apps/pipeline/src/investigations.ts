@@ -39,6 +39,14 @@ export const replayRequestSchema = investigationRequestSchema.extend({
 
 export type ReplayRequest = z.infer<typeof replayRequestSchema>;
 
+export const investigationCaseSchema = z.object({
+  input: replayRequestSchema,
+  createdAt: z.iso.datetime(),
+  data: z.record(z.string(), z.unknown()),
+});
+
+export type InvestigationCase = z.infer<typeof investigationCaseSchema>;
+
 export class InvestigationUnavailableError extends Error {
   constructor(
     message: string,
@@ -52,8 +60,13 @@ export class InvestigatorRequestError extends Error {
   constructor(
     message: string,
     readonly retryable: boolean,
+    readonly failure?: z.infer<typeof investigationFailureResponseSchema>,
   ) {
-    super(message);
+    super(
+      failure?.archiveKey
+        ? `${message}; archive ${failure.archiveKey}`
+        : message,
+    );
   }
 }
 
@@ -134,23 +147,26 @@ export async function investigateDailyBursts({
     return {
       detectorSnapshot,
       input: selected.input,
-      result: await startInvestigation({
+      result: await investigateCase({
         db,
         investigator,
-        input: selected.input,
-        reuseCompletedResult: true,
-        signal: {
-          detector: "weekday-burst",
-          detectorVersion: weekdayBurstDetector.version,
-          source: selected.input.source,
-          ...selected.burst,
-        },
-        observations: await getBurstObservations(
+        investigationCase: await getInvestigationCase({
           db,
-          selected.input.source,
-          selected.burst,
-        ),
-        createdAt,
+          input: selected.input,
+          createdAt,
+          signal: {
+            detector: "weekday-burst",
+            detectorVersion: weekdayBurstDetector.version,
+            source: selected.input.source,
+            ...selected.burst,
+          },
+          observations: await getBurstObservations(
+            db,
+            selected.input.source,
+            selected.burst,
+          ),
+        }),
+        reuseCompletedResult: true,
       }),
       error: null,
     };
@@ -174,14 +190,12 @@ export function shouldInvestigate(
   );
 }
 
-export async function investigateBurst({
+export async function getBurstInvestigationCase({
   db,
-  investigator,
   input,
   createdAt,
 }: {
   db: D1Database;
-  investigator: Fetcher;
   input: InvestigationRequest;
   createdAt: string;
 }) {
@@ -202,9 +216,8 @@ export async function investigateBurst({
   }
 
   const observations = await getBurstObservations(db, input.source, burst);
-  return startInvestigation({
+  return getInvestigationCase({
     db,
-    investigator,
     input,
     signal: {
       detector: "weekday-burst",
@@ -216,14 +229,12 @@ export async function investigateBurst({
   });
 }
 
-export async function replayObservations({
+export async function getReplayInvestigationCase({
   db,
-  investigator,
   input,
   createdAt,
 }: {
   db: D1Database;
-  investigator: Fetcher;
   input: ReplayRequest;
   createdAt: string;
 }) {
@@ -240,9 +251,8 @@ export async function replayObservations({
     throw new InvestigationUnavailableError("observations not found", 404);
   }
 
-  return startInvestigation({
+  return getInvestigationCase({
     db,
-    investigator,
     input,
     signal: {
       detector: "manual-replay",
@@ -258,23 +268,81 @@ export async function replayObservations({
   });
 }
 
-async function startInvestigation({
+export async function investigateCase({
   db,
   investigator,
+  investigationCase,
+  reuseCompletedResult = false,
+  investigationId,
+}: {
+  db: D1Database;
+  investigator: Pick<Fetcher, "fetch">;
+  investigationCase: InvestigationCase;
+  reuseCompletedResult?: boolean;
+  investigationId?: string;
+}) {
+  const { input, createdAt, data } = investigationCase;
+  const caseJson = JSON.stringify(data);
+  const id =
+    investigationId ??
+    (reuseCompletedResult
+      ? `case-${await hashText(serializeJson(data))}`
+      : crypto.randomUUID());
+  let response: Response;
+  try {
+    response = await investigator.fetch(
+      new Request("https://investigator/investigations", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id, case: data }),
+      }),
+    );
+  } catch (error) {
+    throw new InvestigatorRequestError(
+      `investigator request failed: ${errorMessage(error)}`,
+      true,
+    );
+  }
+  if (!response.ok) {
+    const detail = (await response.text()).slice(0, 2_000);
+    const failure = investigationFailureResponseSchema.safeParse(
+      parseJson(detail),
+    );
+    throw new InvestigatorRequestError(
+      `investigator returned ${response.status}`,
+      failure.success
+        ? (failure.data.retryable ??
+          failure.data.provider?.retryable ??
+          response.status >= 500)
+        : response.status >= 500,
+      failure.success ? failure.data : undefined,
+    );
+  }
+  const result = investigationResultSchema.parse(await response.json());
+  await saveInvestigation({
+    db,
+    id,
+    input,
+    createdAt,
+    caseJson,
+    result,
+  });
+  return result;
+}
+
+async function getInvestigationCase({
+  db,
   input,
   signal,
   observations,
   createdAt,
-  reuseCompletedResult = false,
 }: {
   db: D1Database;
-  investigator: Fetcher;
   input: ReplayRequest;
   signal: Record<string, unknown>;
   observations: Observation[];
   createdAt: string;
-  reuseCompletedResult?: boolean;
-}) {
+}): Promise<InvestigationCase> {
   const contextStart = `${shiftDay(input.day, -1)}T00:00:00`;
   const contextEnd = `${shiftDay(input.day, 2)}T00:00:00`;
   let context: Observation[] = [];
@@ -299,56 +367,20 @@ async function startInvestigation({
   const selected = new Set(
     observations.map((observation) => `${observation.source}:${observation.id}`),
   );
-  const caseData = {
-    signal,
-    observations: observations.map(withSourceUrl),
-    nearbyObservations: context
-      .filter(
-        (observation) =>
-          !selected.has(`${observation.source}:${observation.id}`),
-      )
-      .map(withSourceUrl),
-  };
-  const id = reuseCompletedResult
-    ? `case-${await hashText(serializeJson(caseData))}`
-    : crypto.randomUUID();
-  let response: Response;
-  try {
-    response = await investigator.fetch(
-      new Request("https://investigator/investigations", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ id, case: caseData }),
-      }),
-    );
-  } catch (error) {
-    throw new InvestigatorRequestError(
-      `investigator request failed: ${errorMessage(error)}`,
-      true,
-    );
-  }
-  if (!response.ok) {
-    const detail = (await response.text()).slice(0, 2_000);
-    const failure = investigationFailureResponseSchema.safeParse(
-      parseJson(detail),
-    );
-    throw new InvestigatorRequestError(
-      `investigator returned ${response.status}: ${detail}`,
-      failure.success
-        ? (failure.data.retryable ?? failure.data.provider?.retryable ?? false)
-        : false,
-    );
-  }
-  const result = investigationResultSchema.parse(await response.json());
-  await saveInvestigation({
-    db,
-    id,
+  return {
     input,
     createdAt,
-    caseData,
-    result,
-  });
-  return result;
+    data: {
+      signal,
+      observations: observations.map(withSourceUrl),
+      nearbyObservations: context
+        .filter(
+          (observation) =>
+            !selected.has(`${observation.source}:${observation.id}`),
+        )
+        .map(withSourceUrl),
+    },
+  };
 }
 
 function parseJson(value: string): unknown {
@@ -383,7 +415,7 @@ async function hasInvestigation(
   return row !== null;
 }
 
-export async function getInvestigation(
+export async function findInvestigation(
   db: D1Database,
   id: string,
 ) {
@@ -392,7 +424,7 @@ export async function getInvestigation(
     .bind(id)
     .first<{ result_json: string }>();
   return row
-    ? investigationResultSchema.safeParse(JSON.parse(row.result_json)).data
+    ? investigationResultSchema.parse(JSON.parse(row.result_json))
     : undefined;
 }
 
@@ -479,21 +511,23 @@ async function saveInvestigation({
   id,
   input,
   createdAt,
-  caseData,
+  caseJson,
   result,
 }: {
   db: D1Database;
   id: string;
   input: ReplayRequest;
   createdAt: string;
-  caseData: Record<string, unknown>;
+  caseJson: string;
   result: z.infer<typeof investigationResultSchema>;
 }) {
-  await db
+  const resultJson = JSON.stringify(result);
+  const insert = await db
     .prepare(
       `INSERT INTO investigations (
          id, created_at, source, day, kind, area, case_json, result_json
-       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(id) DO NOTHING`,
     )
     .bind(
       id,
@@ -502,8 +536,29 @@ async function saveInvestigation({
       input.day,
       input.kind,
       input.area,
-      JSON.stringify(caseData),
-      JSON.stringify(result),
+      caseJson,
+      resultJson,
     )
     .run();
+  if (insert.meta.changes > 0) {
+    return;
+  }
+  const existing = await db
+    .prepare(
+      "SELECT case_json, result_json FROM investigations WHERE id = ?",
+    )
+    .bind(id)
+    .first<{ case_json: string; result_json: string }>();
+  if (
+    existing?.case_json !== caseJson ||
+    existing.result_json !== resultJson
+  ) {
+    throw new InvestigationConflictError(id);
+  }
+}
+
+export class InvestigationConflictError extends Error {
+  constructor(id: string) {
+    super(`investigation ${id} already has a different result`);
+  }
 }

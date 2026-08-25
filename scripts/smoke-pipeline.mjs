@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -14,12 +15,98 @@ const stateDirectory = await mkdtemp(
 );
 const mockWorkerPath = path.join(stateDirectory, "investigator.mjs");
 const mockConfigPath = path.join(stateDirectory, "wrangler.json");
+const investigatorAttempts = new Map();
+const investigationCases = new Map();
+let pipelineOrigin;
+const attemptServer = createServer(async (request, response) => {
+  try {
+    const chunks = [];
+    for await (const chunk of request) {
+      chunks.push(chunk);
+    }
+    const input = JSON.parse(Buffer.concat(chunks).toString());
+    const attempt = (investigatorAttempts.get(input.id) ?? 0) + 1;
+    investigatorAttempts.set(input.id, attempt);
+    const caseJson = JSON.stringify(input.case);
+    const firstCase = investigationCases.get(input.id);
+    investigationCases.set(input.id, firstCase ?? caseJson);
+    if (
+      input.case.signal.kind === "Initial Call" &&
+      attempt === 1 &&
+      pipelineOrigin
+    ) {
+      const mutation = await fetch(
+        `${pipelineOrigin}/dev/seed?day=2026-07-22`,
+        { method: "POST" },
+      );
+      if (!mutation.ok) {
+        throw new Error("failed to mutate fixture data between retries");
+      }
+    }
+    response.setHeader("content-type", "application/json");
+    response.end(
+      JSON.stringify({
+        attempt,
+        sameCase: firstCase === undefined || firstCase === caseJson,
+      }),
+    );
+  } catch (error) {
+    response.statusCode = 500;
+    response.end(error instanceof Error ? error.message : String(error));
+  }
+});
+await new Promise((resolve) => attemptServer.listen(0, "127.0.0.1", resolve));
+const attemptAddress = attemptServer.address();
+if (!attemptAddress || typeof attemptAddress === "string") {
+  throw new Error("attempt server did not bind a TCP port");
+}
+const attemptUrl = `http://127.0.0.1:${attemptAddress.port}`;
 
 await writeFile(
   mockWorkerPath,
   `export default {
-    async fetch(request) {
+    async fetch(request, env) {
       const input = await request.json();
+      const attemptResponse = await fetch(env.ATTEMPT_URL, {
+        method: "POST",
+        body: JSON.stringify(input)
+      });
+      const attempt = await attemptResponse.json();
+      if (!attempt.sameCase) {
+        return Response.json({
+          error: "investigation case changed between retries",
+          retryable: false
+        }, { status: 409 });
+      }
+      if (input.case.signal.kind === "Initial Call" && attempt.attempt === 1) {
+        return Response.json({
+          error: "fixture provider outage",
+          retryable: true,
+          provider: {
+            provider: "Fixture",
+            operation: "agent investigation",
+            kind: "provider",
+            retryable: true,
+            action: "retry",
+            detail: "private fixture detail"
+          }
+        }, { status: 503 });
+      }
+      if (input.case.signal.kind === "Corrected Final Call") {
+        return Response.json({
+          error: "fixture authentication failure",
+          retryable: false,
+          provider: {
+            provider: "Fixture",
+            operation: "agent investigation",
+            kind: "authentication",
+            retryable: false,
+            action: "rotate credentials",
+            detail: "private terminal output",
+            unexpected: "must not escape"
+          }
+        }, { status: 401 });
+      }
       return Response.json({
         id: input.id,
         archiveKey: "investigations/fixture.json",
@@ -61,6 +148,7 @@ await writeFile(
     name: "public-patterns-investigator",
     main: mockWorkerPath,
     compatibility_date: "2026-07-28",
+    vars: { ATTEMPT_URL: attemptUrl },
   }),
 );
 
@@ -86,6 +174,70 @@ const run = (arguments_) =>
       }
     });
   });
+
+async function startInvestigationJob(
+  origin,
+  path,
+  input,
+  idempotencyKey = crypto.randomUUID(),
+) {
+  const response = await fetch(`${origin}${path}`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "idempotency-key": idempotencyKey,
+    },
+    body: JSON.stringify(input),
+  });
+  const started = await response.json();
+  if (response.status !== 202 || !started.id) {
+    throw new Error(
+      `Investigation job did not start: ${JSON.stringify(started)}`,
+    );
+  }
+  return started;
+}
+
+async function waitForInvestigationJob(origin, id) {
+  for (let attempt = 0; attempt < 600; attempt += 1) {
+    const statusResponse = await fetch(
+      `${origin}/investigation-jobs/${id}`,
+    );
+    const job = await statusResponse.json();
+    if (!statusResponse.ok) {
+      throw new Error(
+        `Investigation job lookup failed: ${JSON.stringify(job)}`,
+      );
+    }
+    if (job.status === "complete" || job.status === "failed") {
+      return job;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  throw new Error(`Investigation job ${id} did not finish`);
+}
+
+async function runInvestigationJob(origin, path, input) {
+  const started = await startInvestigationJob(origin, path, input);
+  const job = await waitForInvestigationJob(origin, started.id);
+  return getInvestigationResult(origin, job);
+}
+
+async function getInvestigationResult(origin, job) {
+  if (job.status === "failed") {
+    throw new Error(`Investigation Workflow failed: ${JSON.stringify(job)}`);
+  }
+  const resultResponse = await fetch(
+    `${origin}/investigations/${job.investigationId}`,
+  );
+  const result = await resultResponse.json();
+  if (!resultResponse.ok) {
+    throw new Error(
+      `Investigation result was not saved: ${JSON.stringify(result)}`,
+    );
+  }
+  return result;
+}
 
 await run([
   "exec",
@@ -176,6 +328,7 @@ try {
       setTimeout(() => reject(new Error("Wrangler startup timed out")), 15_000),
     ),
   ]);
+  pipelineOrigin = origin;
   for (let attempt = 0; attempt < 60; attempt += 1) {
     try {
       const response = await fetch(`${origin}/health`);
@@ -186,6 +339,45 @@ try {
       // Wrangler is still starting.
     }
     await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+
+  const missingJobResponse = await fetch(
+    `${origin}/investigation-jobs/missing-job`,
+  );
+  const oversizedJobResponse = await fetch(
+    `${origin}/investigation-jobs/${"a".repeat(101)}`,
+  );
+  const invalidJobResponse = await fetch(
+    `${origin}/investigation-jobs/invalid%3Aid`,
+  );
+  if (
+    missingJobResponse.status !== 404 ||
+    oversizedJobResponse.status !== 404 ||
+    invalidJobResponse.status !== 404
+  ) {
+    throw new Error("Invalid Workflow IDs did not return 404");
+  }
+  const replayBody = JSON.stringify({
+    source: "311",
+    day: "2026-07-23",
+    kind: "Noise Report",
+    area: "Mission",
+  });
+  const missingKeyResponse = await fetch(`${origin}/investigations/replay`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: replayBody,
+  });
+  const oversizedKeyResponse = await fetch(`${origin}/investigations/replay`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "idempotency-key": "a".repeat(201),
+    },
+    body: replayBody,
+  });
+  if (missingKeyResponse.status !== 400 || oversizedKeyResponse.status !== 400) {
+    throw new Error("Invalid idempotency keys did not return 400");
   }
 
   const staleRunResponse = await fetch(`${origin}/daily-runs`, {
@@ -285,19 +477,47 @@ try {
     );
   }
 
-  const investigationResponse = await fetch(`${origin}/investigations`, {
+  const investigationInput = {
+    source: "311",
+    day: "2026-07-23",
+    kind: "Noise Report",
+    area: "Mission",
+  };
+  const idempotencyKey = crypto.randomUUID();
+  const firstStart = await startInvestigationJob(
+    origin,
+    "/investigations",
+    investigationInput,
+    idempotencyKey,
+  );
+  const repeatedStart = await startInvestigationJob(
+    origin,
+    "/investigations",
+    investigationInput,
+    idempotencyKey,
+  );
+  if (repeatedStart.id !== firstStart.id) {
+    throw new Error("An idempotent retry created a second Workflow");
+  }
+  const conflictingStartResponse = await fetch(`${origin}/investigations`, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: {
+      "content-type": "application/json",
+      "idempotency-key": idempotencyKey,
+    },
     body: JSON.stringify({
-      source: "311",
-      day: "2026-07-23",
-      kind: "Noise Report",
-      area: "Mission",
+      ...investigationInput,
+      kind: "Different request",
     }),
   });
-  const investigation = await investigationResponse.json();
+  if (conflictingStartResponse.status !== 409) {
+    throw new Error("An idempotency key accepted a different request");
+  }
+  const investigation = await getInvestigationResult(
+    origin,
+    await waitForInvestigationJob(origin, firstStart.id),
+  );
   if (
-    investigationResponse.status !== 201 ||
     investigation.submission?.outcome !== "investigate" ||
     investigation.submission?.evidence?.[0] !== "nearby:62" ||
     investigation.brief !== "# Fixture investigation"
@@ -319,26 +539,62 @@ try {
     throw new Error(`Investigation was not saved: ${JSON.stringify(saved)}`);
   }
 
-  const observationReplayResponse = await fetch(
-    `${origin}/investigations/replay`,
+  const replay = await runInvestigationJob(
+    origin,
+    "/investigations/replay",
     {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
         source: "311",
         day: "2026-07-23",
         kind: "Noise Report",
         area: "Mission",
-      }),
     },
   );
-  const replay = await observationReplayResponse.json();
   if (
-    observationReplayResponse.status !== 201 ||
     replay.submission?.outcome !== "investigate" ||
     replay.submission?.evidence?.[0] !== "nearby:62"
   ) {
     throw new Error(`Observation replay failed: ${JSON.stringify(replay)}`);
+  }
+
+  const nonRetryStart = await startInvestigationJob(
+    origin,
+    "/investigations/replay",
+    {
+      source: "dispatch-closed",
+      day: "2026-07-23",
+      kind: "Corrected Final Call",
+      area: "Mission",
+    },
+  );
+  const nonRetryJob = await waitForInvestigationJob(origin, nonRetryStart.id);
+  if (
+    nonRetryJob.status !== "failed" ||
+    nonRetryJob.retryable !== false ||
+    nonRetryJob.provider?.kind !== "authentication" ||
+    "detail" in (nonRetryJob.provider ?? {}) ||
+    "action" in (nonRetryJob.provider ?? {}) ||
+    "unexpected" in (nonRetryJob.provider ?? {}) ||
+    investigatorAttempts.get(nonRetryStart.id) !== 1
+  ) {
+    throw new Error(
+      `Nonretryable failure was not contained: ${JSON.stringify(nonRetryJob)}`,
+    );
+  }
+
+  const retryStart = await startInvestigationJob(
+    origin,
+    "/investigations/replay",
+    {
+      source: "dispatch-realtime",
+      day: "2026-07-23",
+      kind: "Initial Call",
+      area: "Mission",
+    },
+  );
+  const retryJob = await waitForInvestigationJob(origin, retryStart.id);
+  await getInvestigationResult(origin, retryJob);
+  if (investigatorAttempts.get(retryStart.id) !== 2) {
+    throw new Error("A retryable provider failure did not run twice");
   }
 
   const investigationListResponse = await fetch(`${origin}/investigations`);
@@ -435,17 +691,16 @@ try {
     );
   }
 
-  const secondInvestigationResponse = await fetch(`${origin}/investigations`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
+  const secondInvestigation = await runInvestigationJob(
+    origin,
+    "/investigations",
+    {
       source: "311",
       day: "2026-07-23",
       kind: "Noise Report",
       area: "Mission",
-    }),
-  });
-  const secondInvestigation = await secondInvestigationResponse.json();
+    },
+  );
   const revisionResponse = await fetch(
     `${origin}/investigations/${secondInvestigation.id}/publish`,
     {
@@ -459,7 +714,6 @@ try {
   );
   const revision = await revisionResponse.json();
   if (
-    !secondInvestigationResponse.ok ||
     revisionResponse.status !== 201 ||
     revision.revision !== 2 ||
     revision.investigationId !== secondInvestigation.id
@@ -639,6 +893,7 @@ try {
   throw new Error(`${error.message}\n${serverOutput}`);
 } finally {
   server.kill("SIGTERM");
+  attemptServer.close();
   await Promise.race([
     new Promise((resolve) => server.once("exit", resolve)),
     new Promise((resolve) => setTimeout(resolve, 2_000)),

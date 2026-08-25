@@ -20,6 +20,20 @@
       "service": "public-patterns-investigator"
     }
   ],
+  "r2_buckets": [
+    {
+      "binding": "ARCHIVE",
+      "bucket_name": "public-patterns-archive",
+      "preview_bucket_name": "public-patterns-archive-dev"
+    }
+  ],
+  "workflows": [
+    {
+      "binding": "INVESTIGATION_WORKFLOW",
+      "name": "public-patterns-investigations",
+      "class_name": "InvestigationWorkflow"
+    }
+  ],
   "triggers": {
     "crons": ["*/5 * * * *", "30 22 * * *", "30 23 * * *"]
   },

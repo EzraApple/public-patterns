@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { z } from "zod";
 
 const ingestionSources = [
   "311",
@@ -26,19 +27,25 @@ const burstSources = [
   "eviction-notices",
 ] as const;
 
-type Burst = {
-  day: string;
-  kind: string;
-  area: string | null;
-  observed: number;
-  expected: number;
-  ratio: number;
-};
+const ingestionSourceSchema = z.enum(ingestionSources);
+const burstSourceSchema = z.enum(burstSources);
 
-type BurstResult = {
-  ready: boolean;
-  bursts: Burst[];
-};
+const burstResultSchema = z.object({
+  ready: z.boolean(),
+  bursts: z.array(
+    z.object({
+      day: z.string(),
+      kind: z.string(),
+      area: z.string().nullable(),
+      observed: z.number(),
+      expected: z.number(),
+      ratio: z.number(),
+    }),
+  ),
+});
+
+type Burst = z.infer<typeof burstResultSchema>["bursts"][number];
+type BurstResult = z.infer<typeof burstResultSchema>;
 
 export function Lab() {
   const [token, setToken] = useState("");
@@ -62,7 +69,7 @@ export function Lab() {
           "content-type": "application/json",
         },
       });
-      const body = (await response.json()) as unknown;
+      const body: unknown = await response.json();
       setOutput(body);
       return response.ok ? body : undefined;
     } finally {
@@ -71,17 +78,18 @@ export function Lab() {
   }
 
   async function findBursts() {
-    const result = (await call(
-      `/bursts?source=${encodeURIComponent(source)}&day=${day}`,
-    )) as BurstResult | undefined;
-    if (result) {
-      setBursts(result);
+    const result = burstResultSchema.safeParse(
+      await call(`/bursts?source=${encodeURIComponent(source)}&day=${day}`),
+    );
+    if (result.success) {
+      setBursts(result.data);
     }
   }
 
   async function investigate(burst: Burst) {
     await call("/investigations", {
       method: "POST",
+      headers: { "idempotency-key": crypto.randomUUID() },
       body: JSON.stringify({
         source,
         day,
@@ -114,9 +122,7 @@ export function Lab() {
         <div className="lab-controls">
           <select
             onChange={(event) =>
-              setIngestion(
-                event.target.value as (typeof ingestionSources)[number],
-              )
+              setIngestion(ingestionSourceSchema.parse(event.target.value))
             }
             value={ingestion}
           >
@@ -138,7 +144,7 @@ export function Lab() {
         <div className="lab-controls">
           <select
             onChange={(event) =>
-              setSource(event.target.value as (typeof burstSources)[number])
+              setSource(burstSourceSchema.parse(event.target.value))
             }
             value={source}
           >

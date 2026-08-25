@@ -141,6 +141,14 @@ describe("investigateInSandbox", () => {
         id: "case-1",
         case: { observations: [123] },
       },
+      session: {
+        success: true,
+        exitCode: 0,
+        startedAt: expect.any(String),
+        completedAt: expect.any(String),
+        durationMs: expect.any(Number),
+        didExecutionThrow: false,
+      },
       result,
     });
     expect(sandbox.exec).toHaveBeenCalledWith(
@@ -403,6 +411,27 @@ describe("investigateInSandbox", () => {
       retryable: false,
       status: 402,
     });
+  });
+
+  it("marks an OpenCode transport exit retryable", async () => {
+    const { archive, sandbox } = createSandbox({});
+    sandbox.exec.mockResolvedValue({
+      success: false,
+      exitCode: 1,
+      stdout: '{"type":"error","error":{"message":"Transport"}}',
+      stderr: "",
+    });
+
+    const error = await investigateInSandbox({
+      archive,
+      sandbox,
+      input: { id: "case-transport", case: {} },
+      deepseekApiKey: "deepseek-key",
+      environment: "test",
+    }).catch((caught: unknown) => caught);
+
+    expect(error).toBeInstanceOf(InvestigationFailedError);
+    expect(error).toMatchObject({ retryable: true });
   });
 
   it("does not expose an archive key when failure archival fails", async () => {

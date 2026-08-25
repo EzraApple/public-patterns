@@ -1,5 +1,6 @@
-import { z } from "zod";
 import { publishArticleSchema } from "@public-patterns/contracts/article";
+import { investigationJobIdSchema } from "@public-patterns/contracts/investigation";
+import { z } from "zod";
 
 import {
   ArticlePublicationError,
@@ -24,14 +25,19 @@ import { getDispatchHistory } from "./features/dispatch/read.ts";
 import { ingestTransitAlerts } from "./features/transitAlerts/ingest.ts";
 import { calendarDaySchema } from "./ingestion.ts";
 import {
-  InvestigationUnavailableError,
-  getInvestigation,
+  findInvestigation,
   investigationRequestSchema,
-  investigateBurst,
   listInvestigations,
-  replayObservations,
   replayRequestSchema,
 } from "./investigations.ts";
+import {
+  getManualInvestigationJob,
+  investigationIdempotencyKeySchema,
+  InvestigationIdempotencyConflictError,
+  InvestigationJobNotFoundError,
+  startManualInvestigation,
+  type ManualInvestigationJob,
+} from "./manualInvestigationJobs.ts";
 import { sources } from "./observation.ts";
 import { getHistory } from "./observationStore.ts";
 import { apiFailureDiagnostic } from "./sources/apiFailure.ts";
@@ -153,56 +159,77 @@ export async function routeRequest(
     return json(await getBursts(env.DB, source.data, day.data));
   }
   if (request.method === "POST" && url.pathname === "/investigations") {
+    const idempotencyKey = investigationIdempotencyKeySchema.safeParse(
+      request.headers.get("idempotency-key"),
+    );
     const input = investigationRequestSchema.safeParse(
       await request.json().catch(() => undefined),
     );
-    if (!input.success) {
+    if (!idempotencyKey.success || !input.success) {
       return json({ error: "invalid investigation" }, 400);
     }
-    try {
-      return json(
-        await investigateBurst({
-          db: env.DB,
-          investigator: env.INVESTIGATOR,
-          input: input.data,
-          createdAt: observedAt,
-        }),
-        201,
-      );
-    } catch (error) {
-      if (error instanceof InvestigationUnavailableError) {
-        return json({ error: error.message }, error.status);
-      }
-      console.error("Investigation failed", error);
-      return json({ error: "investigation failed" }, 502);
-    }
+    return queueManualInvestigation(
+      env,
+      {
+        operation: "investigate",
+        input: input.data,
+        createdAt: observedAt,
+      },
+      idempotencyKey.data,
+    );
   }
   if (
     request.method === "POST" &&
     url.pathname === "/investigations/replay"
   ) {
+    const idempotencyKey = investigationIdempotencyKeySchema.safeParse(
+      request.headers.get("idempotency-key"),
+    );
     const input = replayRequestSchema.safeParse(
       await request.json().catch(() => undefined),
     );
-    if (!input.success) {
+    if (!idempotencyKey.success || !input.success) {
       return json({ error: "invalid replay" }, 400);
     }
+    return queueManualInvestigation(
+      env,
+      {
+        operation: "replay",
+        input: input.data,
+        createdAt: observedAt,
+      },
+      idempotencyKey.data,
+    );
+  }
+  if (
+    request.method === "GET" &&
+    url.pathname.startsWith("/investigation-jobs/")
+  ) {
+    const id = investigationJobIdSchema.safeParse(
+      url.pathname.slice("/investigation-jobs/".length),
+    );
+    if (!id.success) {
+      return json({ error: "investigation job not found" }, 404);
+    }
     try {
-      return json(
-        await replayObservations({
-          db: env.DB,
-          investigator: env.INVESTIGATOR,
-          input: input.data,
-          createdAt: observedAt,
-        }),
-        201,
+      const job = await getManualInvestigationJob(
+        env.INVESTIGATION_WORKFLOW,
+        id.data,
       );
+      return json(job);
     } catch (error) {
-      if (error instanceof InvestigationUnavailableError) {
-        return json({ error: error.message }, error.status);
+      if (error instanceof InvestigationJobNotFoundError) {
+        return json({ error: "investigation job not found" }, 404);
       }
-      console.error("Investigation replay failed", error);
-      return json({ error: "investigation failed" }, 502);
+      console.error("Investigation job lookup failed", {
+        event: "manual-investigation.lookup-failed",
+        id: id.data,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return json(
+        { error: "investigation job unavailable", retryable: true },
+        503,
+      );
     }
   }
   if (request.method === "GET" && url.pathname === "/investigations") {
@@ -237,7 +264,7 @@ export async function routeRequest(
     if (!id) {
       return json({ error: "investigation id is required" }, 400);
     }
-    const investigation = await getInvestigation(env.DB, id);
+    const investigation = await findInvestigation(env.DB, id);
     return investigation
       ? json(investigation)
       : json({ error: "investigation not found" }, 404);
@@ -289,6 +316,37 @@ export async function routeRequest(
   }
 
   return json({ error: "not found" }, 404);
+}
+
+async function queueManualInvestigation(
+  env: Env,
+  job: ManualInvestigationJob,
+  idempotencyKey: string,
+) {
+  try {
+    return json(
+      await startManualInvestigation(
+        env.DB,
+        env.INVESTIGATION_WORKFLOW,
+        job,
+        idempotencyKey,
+      ),
+      202,
+    );
+  } catch (error) {
+    if (error instanceof InvestigationIdempotencyConflictError) {
+      return json({ error: error.message }, 409);
+    }
+    console.error("Investigation job creation failed", {
+      event: "manual-investigation.creation-failed",
+      operation: job.operation,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return json(
+      { error: "investigation job unavailable", retryable: true },
+      503,
+    );
+  }
 }
 
 function json(value: unknown, status = 200): Response {

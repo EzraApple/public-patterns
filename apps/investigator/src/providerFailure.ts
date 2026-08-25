@@ -1,21 +1,6 @@
-export type ProviderFailureDiagnostic = {
-  provider: "DeepSeek";
-  operation: "agent investigation";
-  kind:
-    | "configuration"
-    | "authentication"
-    | "quota"
-    | "rate_limit"
-    | "timeout"
-    | "provider"
-    | "network";
-  retryable: boolean;
-  action: string;
-  status?: number;
-  providerCode?: string;
-  requestId?: string;
-  detail?: string;
-};
+import type { ProviderFailureDiagnostic } from "@public-patterns/contracts/investigation";
+
+export type { ProviderFailureDiagnostic } from "@public-patterns/contracts/investigation";
 
 export class ProviderFailureError extends Error {
   readonly diagnostic: ProviderFailureDiagnostic;
