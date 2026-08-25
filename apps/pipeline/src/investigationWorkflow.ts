@@ -44,7 +44,7 @@ export class InvestigationWorkflow extends WorkflowEntrypoint<
       return await step.do(
         "investigate",
         {
-          retries: { limit: 2, delay: "30 seconds" },
+          retries: { limit: 1, delay: "30 seconds" },
           timeout: "15 minutes",
         },
         async ({ attempt }) => {
