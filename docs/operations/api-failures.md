@@ -71,9 +71,9 @@ A terminal structured OpenCode error takes precedence over earlier tool output
 when classifying a failure. A tool command containing `timeout=120` is not
 proof that a later `Transport` error was a provider timeout.
 
-For a retryable terminal error with a valid session ID, the investigator can
-continue that same session once, preserving its working files. It does so only
-when no submission exists and at least 30 seconds remain of the original
-12-minute execution budget. It does not extend the Workflow retry budget.
-Session archives record the continuation count and both command outputs.
-Quota and authentication failures do not trigger this continuation.
+The July 27 OpenCode build (`0.0.0-next-16303`) ended long-running CLI event
+streams after Bun's default five-minute deadline. This could interrupt useful
+research and surface only `Transport`, independently of DeepSeek billing.
+The investigator now pins `0.0.0-beta-17823`, published August 21, after the
+[upstream event-stream fix](https://github.com/anomalyco/opencode/commit/d5bf8799c0e0706ec604324d9abef45cfae4dcd0).
+The existing 12-minute sandbox limit and Workflow retry budget remain in force.

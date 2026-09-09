@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 import { articleDraftSchema } from "@public-patterns/contracts/article";
 import {
   type InvestigationResult,
@@ -16,20 +18,27 @@ import {
 } from "./article-image.ts";
 import type { Env } from "./environment.ts";
 import {
-  type AgentSandbox,
-  type InvestigatorModel,
-  investigatorModelSchema,
-  runInvestigatorAgent,
-} from "./agentExecution.ts";
-import {
   deepSeekFailureFromOutput,
   missingDeepSeekKey,
   type ProviderFailureDiagnostic,
 } from "./providerFailure.ts";
 
-type InvestigationSandbox = ArticleImageSandbox & AgentSandbox & {
+type InvestigationSandbox = ArticleImageSandbox & {
   mkdir(path: string, options: { recursive: boolean }): Promise<unknown>;
   writeFile(path: string, content: string): Promise<unknown>;
+  exec(
+    command: string,
+    options: {
+      cwd: string;
+      env: Record<string, string>;
+      timeout: number;
+    },
+  ): Promise<{
+    success: boolean;
+    exitCode: number;
+    stdout: string;
+    stderr: string;
+  }>;
 };
 
 type InvestigationArchive = ArticleImageArchive & {
@@ -60,6 +69,12 @@ export class InvestigationCheckpointError extends Error {
   }
 }
 
+const investigatorModelSchema = z.enum([
+  "deepseek-v4-pro",
+  "deepseek-v4-flash",
+]);
+const agentPrompt =
+  '"Investigate the case in case/input.json. Submit the internal brief and, when warranted, a publishable article."';
 const maxArchivedOutput = 1_000_000;
 
 export async function investigateCase(
@@ -112,7 +127,7 @@ export async function investigateInSandbox({
   deepseekApiKey: string;
   openAiApiKey?: string;
   environment: string;
-  model?: InvestigatorModel;
+  model?: z.infer<typeof investigatorModelSchema>;
 }) {
   const checkpointKey = `investigations/by-id/${input.id}.json`;
   const inputHash = await hashInput(input);
@@ -147,27 +162,38 @@ export async function investigateInSandbox({
     investigationId: input.id,
     preparationDurationMs: executionStartedMs - Date.parse(archivedAt),
   });
-  const run = await runInvestigatorAgent({
-    sandbox,
-    model,
-    env: {
-      DEEPSEEK_API_KEY: deepseekApiKey,
-      ...(openAiApiKey
-        ? {
-            OPENAI_API_KEY: openAiApiKey,
-            PUBLIC_PATTERNS_IMAGE_SRC: articleImageSrc(input.id),
-          }
-        : {}),
-    },
-  });
-  const { didExecutionThrow } = run;
+  let run: Awaited<ReturnType<InvestigationSandbox["exec"]>>;
+  let didExecutionThrow = false;
+  try {
+    run = await sandbox.exec(
+      `opencode2 run --standalone --auto --agent investigator --format json --model deepseek/${model} ${agentPrompt}`, {
+      cwd: "/workspace",
+      env: {
+        DEEPSEEK_API_KEY: deepseekApiKey,
+        ...(openAiApiKey
+          ? {
+              OPENAI_API_KEY: openAiApiKey,
+              PUBLIC_PATTERNS_IMAGE_SRC: articleImageSrc(input.id),
+            }
+          : {}),
+      },
+      timeout: 720_000,
+    });
+  } catch (error) {
+    didExecutionThrow = true;
+    run = {
+      success: false,
+      exitCode: -1,
+      stdout: "",
+      stderr: error instanceof Error ? error.message : String(error),
+    };
+  }
   const execution = {
     startedAt: executionStartedAt,
     completedAt: new Date().toISOString(),
     durationMs: Date.now() - executionStartedMs,
     didExecutionThrow,
     model,
-    continuations: run.continuations,
   };
   console.info("Investigation agent finished", {
     event: "investigation.agent.finished",
@@ -385,7 +411,6 @@ async function archiveInvestigation({
     durationMs: number;
     didExecutionThrow: boolean;
     model: string;
-    continuations: number;
   };
   deepseekApiKey: string;
   openAiApiKey?: string;
