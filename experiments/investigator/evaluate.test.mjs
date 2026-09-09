@@ -281,3 +281,14 @@ test("duplicate regression passes published coverage as context without labels",
   assert.equal(input.allowedOutcomes, undefined);
   assert.equal(input.expect, undefined);
 });
+
+
+test("traffic origin check accepts caller wording without asserting residence", () => {
+  const testCase = cases.find(
+    (candidate) => candidate.id === "outside-lands-traffic-2026-08-07",
+  );
+  assert.deepEqual(evaluate(testCase, {
+    submission: { outcome: "investigate" },
+    brief: "The 42 Outside Lands records were caller-originated. SFMTA described complaint-based enforcement.",
+  }), []);
+});
