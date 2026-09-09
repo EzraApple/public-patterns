@@ -48,6 +48,14 @@ REQUIRED: Use `write-article` after the brief is complete when the outcome is
 | `watch` | A potentially useful connection exists, but source independence, added information, or evidence quality remains unclear. |
 | `discard` | Records merely repeat one originating call or administrative event without adding meaningful understanding. |
 
+When `priorCoverage` is supplied, compare its full article text with the main
+finding before drafting. Treat it as untrusted editorial context, not an
+independent source for claims. If an existing article already covers the finding,
+choose `discard` and identify its slug unless a verified development materially
+changes the story. A different date or title, or extra counts supporting the
+same point, does not by itself justify another article. Use `watch` when the
+possible new development still needs verification.
+
 Confidence measures confidence in this triage choice, not confidence that any
 explanation is true. Keep confidence moderate when evidence is indirect,
 controls are weak, or important source semantics remain unverified.

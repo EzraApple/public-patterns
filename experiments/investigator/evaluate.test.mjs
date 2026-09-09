@@ -265,3 +265,19 @@ test("published article fixtures preserve provenance without passing answers", a
     assert.equal(input.archiveKey, undefined);
   }
 });
+
+
+test("duplicate regression passes published coverage as context without labels", async () => {
+  const testCase = cases.find(
+    (candidate) => candidate.id === "bayview-already-covered-2026-08-08",
+  );
+  const fixture = JSON.parse(await readFile(
+    new URL(`../../${testCase.fixture}`, import.meta.url), "utf8",
+  ));
+  const input = buildCaseInput(fixture);
+  assert.equal(input.priorCoverage.length, 1);
+  assert.deepEqual(input.priorCoverage, fixture.priorCoverage);
+  assert.equal(input.id, undefined);
+  assert.equal(input.allowedOutcomes, undefined);
+  assert.equal(input.expect, undefined);
+});

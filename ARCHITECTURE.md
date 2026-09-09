@@ -225,11 +225,17 @@ An investigation does not need to uncover a mystery. It may advance when
 meaningfully distinct sources add enough context, consequences, comparison, or
 corroboration for a mildly interesting evidence-backed account, even if the
 event is already understood. A second dataset that only repeats an originating
-call does not qualify. The eventual article may be one paragraph with linked
+call does not qualify. A verified descriptive pattern can qualify when deduplicated
+records and a fair baseline establish a meaningful finding; its cause may remain
+unknown. Candidates receive current published articles as prior coverage so the
+agent can reject repeated findings across dates. Publication also atomically
+rejects a second slug for the same source, day, kind, and area. The eventual article may be one paragraph with linked
 sources or a useful visualization; richer presentation is optional.
 
 The investigator is a separate Worker because Containers, model spend, and
-failure isolation differ materially from ingestion. The private workbench is
+failure isolation differ materially from ingestion. DeepSeek V4 Pro remains the
+production default; isolated eval runs can select V4 Flash with the same reasoning
+effort and execution deadline. The private workbench is
 available for manual runs. During the initial tuning trial, one morning job
 selects one previously uninvestigated burst and publishes a valid
 `investigate` article. `watch`, `discard`, and failed publication outcomes stay

@@ -19,7 +19,8 @@ pnpm eval:investigator -- --run marina-fire-2025-10-15 \
 ```
 
 The runner passes only source rows or aggregate series, comparison windows,
-source queries, evidence URLs, and limitations to the agent. Labels, notes,
+source queries, evidence URLs, limitations, and intentionally supplied prior
+coverage to the agent. Labels, notes,
 roles, expectations, `independentEvidence`, and `absentEvidence` remain outside
 the sandbox for human scoring. `investigate` results include a publishable
 article for human editorial review. Results, HTTP status, elapsed time, and scoring failures are retained in the
@@ -82,3 +83,13 @@ For model comparisons, run identical cases on both models and retain separate
 output directories. Include a negative control such as
 `haight-traffic-stops-2026-08-06`; publication yield alone does not establish
 quality. Compare completed runs separately from transport failures.
+
+The `bayview-already-covered-2026-08-08` regression supplies the actual later
+Bayview article as `priorCoverage`: that article already discusses the Aug. 8
+intersection concentration. The investigator must recognize editorial overlap
+across dates, even when the case's own count and title are different. Coverage
+is intentional decision context, never independent corroboration.
+
+Run separate CLI evals sequentially. Wrangler can move its cached Docker image
+tag between dev workers, so unique Worker names alone do not make concurrent
+startup safe.

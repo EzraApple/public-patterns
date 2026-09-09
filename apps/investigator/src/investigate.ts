@@ -166,19 +166,21 @@ export async function investigateInSandbox({
   let didExecutionThrow = false;
   try {
     run = await sandbox.exec(
-      `opencode2 run --standalone --auto --agent investigator --format json --model deepseek/${model} ${agentPrompt}`, {
-      cwd: "/workspace",
-      env: {
-        DEEPSEEK_API_KEY: deepseekApiKey,
-        ...(openAiApiKey
-          ? {
-              OPENAI_API_KEY: openAiApiKey,
-              PUBLIC_PATTERNS_IMAGE_SRC: articleImageSrc(input.id),
-            }
-          : {}),
+      `opencode2 run --standalone --auto --agent investigator --format json --model deepseek/${model} ${agentPrompt}`,
+      {
+        cwd: "/workspace",
+        env: {
+          DEEPSEEK_API_KEY: deepseekApiKey,
+          ...(openAiApiKey
+            ? {
+                OPENAI_API_KEY: openAiApiKey,
+                PUBLIC_PATTERNS_IMAGE_SRC: articleImageSrc(input.id),
+              }
+            : {}),
+        },
+        timeout: 720_000,
       },
-      timeout: 720_000,
-    });
+    );
   } catch (error) {
     didExecutionThrow = true;
     run = {
@@ -249,15 +251,18 @@ export async function investigateInSandbox({
       review: reviewFile?.content ?? null,
     });
   } catch (submissionError) {
-    const output = `${run.stderr}\n${run.stdout}`;
-    const detail = redact(output, [deepseekApiKey, openAiApiKey]);
+    const secrets = [deepseekApiKey, openAiApiKey];
+    const safeStdout = redact(run.stdout, secrets);
+    const safeStderr = redact(run.stderr, secrets);
+    const detail = `${safeStdout}\n${safeStderr}`;
+    const unsubmittedArtifacts = await readUnsubmittedArtifacts(sandbox);
     const reason =
       submissionError instanceof Error
         ? submissionError.message
         : String(submissionError);
     const providerFailure =
       !run.success && !didExecutionThrow
-        ? deepSeekFailureFromOutput(detail)
+        ? deepSeekFailureFromOutput(safeStdout, safeStderr)
         : undefined;
     const failure =
       providerFailure ??
@@ -282,6 +287,7 @@ export async function investigateInSandbox({
         imageFailure,
         providerFailure: providerFailure?.diagnostic,
         failure,
+        unsubmittedArtifacts,
       });
     } catch (archiveError) {
       console.error("Failed to archive investigation failure", archiveError);
@@ -398,6 +404,7 @@ async function archiveInvestigation({
   providerFailure,
   result,
   failure,
+  unsubmittedArtifacts,
 }: {
   archive: InvestigationArchive;
   archiveKey: string;
@@ -419,7 +426,10 @@ async function archiveInvestigation({
   providerFailure?: ProviderFailureDiagnostic;
   result?: InvestigationResult;
   failure?: Error;
+  unsubmittedArtifacts?: Record<string, string>;
 }) {
+  const archiveText = (value: string) =>
+    limit(redact(value, [deepseekApiKey, openAiApiKey]));
   const status = result ? "completed" : "failed";
   await archive.put(
     archiveKey,
@@ -434,9 +444,19 @@ async function archiveInvestigation({
           success: run.success,
           exitCode: run.exitCode,
           ...execution,
-          stdout: limit(redact(run.stdout, [deepseekApiKey, openAiApiKey])),
-          stderr: limit(redact(run.stderr, [deepseekApiKey, openAiApiKey])),
+          stdout: archiveText(run.stdout),
+          stderr: archiveText(run.stderr),
         },
+        ...(unsubmittedArtifacts
+          ? {
+              unsubmittedArtifacts: Object.fromEntries(
+                Object.entries(unsubmittedArtifacts).map(([path, content]) => [
+                  path,
+                  archiveText(content),
+                ]),
+              ),
+            }
+          : {}),
         ...(generatedImage ? { generatedImage } : {}),
         ...(imageFailure ? { imageFailure } : {}),
         ...(providerFailure ? { providerFailure } : {}),
@@ -450,6 +470,17 @@ async function archiveInvestigation({
       customMetadata: { environment, status },
     },
   );
+}
+
+async function readUnsubmittedArtifacts(sandbox: InvestigationSandbox) {
+  const paths = ["output/brief.md", "output/article.json", "output/review.md"];
+  const entries = await Promise.all(
+    paths.map(async (path) => {
+      const file = await sandbox.readFile(`/workspace/${path}`).catch(() => null);
+      return file ? [[path, file.content] as const] : [];
+    }),
+  );
+  return Object.fromEntries(entries.flat());
 }
 
 function redact(value: string, secrets: (string | undefined)[]) {
