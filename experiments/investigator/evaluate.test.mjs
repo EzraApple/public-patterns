@@ -292,3 +292,19 @@ test("traffic origin check accepts caller wording without asserting residence", 
     brief: "The 42 Outside Lands records were caller-originated. SFMTA described complaint-based enforcement.",
   }), []);
 });
+
+
+test("duplicate control requires identifying the existing article", () => {
+  const testCase = cases.find(
+    (candidate) => candidate.id === "bayview-already-covered-2026-08-08",
+  );
+  const unrelatedHold = {
+    submission: { outcome: "watch" },
+    brief: "Palou and Selby had no duplicate CAD records. More research is needed.",
+  };
+  assert.notDeepEqual(evaluate(testCase, unrelatedHold), []);
+  assert.deepEqual(evaluate(testCase, {
+    submission: { outcome: "discard" },
+    brief: "The Palou and Selby finding is already covered by bayview-s-busiest-monday-for-traffic-stops-centered-on-two-intersections-2026-08-17.",
+  }), []);
+});
