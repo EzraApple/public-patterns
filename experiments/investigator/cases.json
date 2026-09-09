@@ -333,7 +333,8 @@
         "already published",
         "overlap",
         "duplicate",
-        "redundant"
+        "redundant",
+        "covered pattern"
       ]
     ]
   }

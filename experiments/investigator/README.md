@@ -93,3 +93,10 @@ is intentional decision context, never independent corroboration.
 Run separate CLI evals sequentially. Wrangler can move its cached Docker image
 tag between dev workers, so unique Worker names alone do not make concurrent
 startup safe.
+
+## Recorded comparisons
+
+[September 9 recovery and V4 comparison](./recovery-2026-09-09.md) records the
+published-case runs, duplicate controls, execution failures, manual review,
+and private evidence key. The production default remains Pro; the results do
+not justify switching the automatic publisher to Flash yet.

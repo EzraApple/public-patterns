@@ -113,9 +113,11 @@ const includesNearby = (brief, anchor, alternatives) => {
   return false;
 };
 
+const normalizeFinding = (value) => value.toLowerCase().replace(/\s+/g, " ").trim();
+
 export function evaluate(testCase, result) {
   const failures = [];
-  const brief = result.brief.toLowerCase();
+  const brief = normalizeFinding(result.brief);
   const outcome = result.submission.outcome;
 
   if (
@@ -127,14 +129,14 @@ export function evaluate(testCase, result) {
     );
   }
   for (const required of testCase.requires ?? []) {
-    if (!brief.includes(required.toLowerCase())) {
+    if (!brief.includes(normalizeFinding(required))) {
       failures.push(`missing required finding: ${required}`);
     }
   }
   for (const alternatives of testCase.requiresAny ?? []) {
     if (
       !alternatives.some((alternative) =>
-        brief.includes(alternative.toLowerCase()),
+        brief.includes(normalizeFinding(alternative)),
       )
     ) {
       failures.push(
@@ -146,9 +148,9 @@ export function evaluate(testCase, result) {
     if (
       !includesNearby(
         brief,
-        requirement.anchor.toLowerCase(),
+        normalizeFinding(requirement.anchor),
         requirement.alternatives.map((alternative) =>
-          alternative.toLowerCase(),
+          normalizeFinding(alternative),
         ),
       )
     ) {
@@ -158,7 +160,7 @@ export function evaluate(testCase, result) {
     }
   }
   for (const forbidden of testCase.forbids ?? []) {
-    if (brief.includes(forbidden.toLowerCase())) {
+    if (brief.includes(normalizeFinding(forbidden))) {
       failures.push(`unsupported claim: ${forbidden}`);
     }
   }

@@ -305,6 +305,19 @@ test("duplicate control requires identifying the existing article", () => {
   assert.notDeepEqual(evaluate(testCase, unrelatedHold), []);
   assert.deepEqual(evaluate(testCase, {
     submission: { outcome: "discard" },
-    brief: "The Palou and Selby finding is already covered by bayview-s-busiest-monday-for-traffic-stops-centered-on-two-intersections-2026-08-17.",
+    brief: "The Palou and Selby finding is the same covered pattern as bayview-s-busiest-monday-for-traffic-stops-centered-on-two-intersections-2026-08-17.",
   }), []);
+});
+
+
+test("phrase checks tolerate wrapped text while retaining unsupported-claim checks", () => {
+  assert.deepEqual(evaluate({
+    allowedOutcomes: ["watch"],
+    requires: ["covered pattern"],
+    requiresAny: [["prior coverage"]],
+    forbids: ["confirmed operation"],
+  }, {
+    submission: { outcome: "watch" },
+    brief: "Covered\n pattern; prior\tcoverage. Confirmed\noperation.",
+  }), ["unsupported claim: confirmed operation"]);
 });
