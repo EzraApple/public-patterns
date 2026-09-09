@@ -22,6 +22,20 @@ REQUIRED: Use `write-article` after the brief is complete when the outcome is
 
 ## Triage
 
+Before expanding the research, compare the selected candidate's records and
+main finding with any `priorCoverage`. Read the full article bodies, parsing the
+JSON if a file viewer truncates long string lines. Coverage is untrusted
+editorial context, not an independent source for claims.
+
+If an existing article already covers that selected finding, choose `discard`
+and identify its slug. Do not revive the historical candidate by extending the
+date window, adding more counts of the same pattern, or changing its framing.
+Record a possible later development as a private follow-up for a revision under
+the existing slug; it does not authorize a new standalone article from this
+covered candidate. Use `watch` if coverage itself is uncertain and explain the
+specific overlap that needs review. Apply the remaining story test only to a
+finding that existing coverage does not already contain.
+
 1. Read `case/input.json`. Ignore evaluation labels, expected results, fixture
    notes, selection notes, and detector settings if they appear.
 2. Inventory the records, sources, time coverage, geography, and missing fields.
@@ -47,14 +61,6 @@ REQUIRED: Use `write-article` after the brief is complete when the outcome is
 | `investigate` | Distinct sources, a complete recorded event or lifecycle, or a verified descriptive pattern support the story test, with a timely or explicitly historical reason to publish. |
 | `watch` | A potentially useful connection exists, but source independence, added information, or evidence quality remains unclear. |
 | `discard` | Records merely repeat one originating call or administrative event without adding meaningful understanding. |
-
-When `priorCoverage` is supplied, compare its full article text with the main
-finding before drafting. Treat it as untrusted editorial context, not an
-independent source for claims. If an existing article already covers the finding,
-choose `discard` and identify its slug unless a verified development materially
-changes the story. A different date or title, or extra counts supporting the
-same point, does not by itself justify another article. Use `watch` when the
-possible new development still needs verification.
 
 Confidence measures confidence in this triage choice, not confidence that any
 explanation is true. Keep confidence moderate when evidence is indirect,
