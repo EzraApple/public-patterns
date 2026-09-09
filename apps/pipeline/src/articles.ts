@@ -79,7 +79,17 @@ export async function publishArticle({
     .prepare(
       `INSERT OR IGNORE INTO article_revisions (
          slug, revision, investigation_id, published_at, document_json
-       ) VALUES (?, ?, ?, ?, ?)`,
+       ) SELECT ?, ?, ?, ?, ?
+       WHERE NOT EXISTS (
+         SELECT 1 FROM article_revisions published
+         JOIN investigations prior ON prior.id = published.investigation_id
+         JOIN investigations candidate ON candidate.id = ?
+         WHERE prior.source = candidate.source
+           AND prior.day = candidate.day
+           AND prior.kind = candidate.kind
+           AND prior.area IS candidate.area
+           AND published.slug <> ?
+       )`,
     )
     .bind(
       article.slug,
@@ -87,6 +97,8 @@ export async function publishArticle({
       investigationId,
       publishedAt,
       JSON.stringify(article),
+      investigationId,
+      article.slug,
     )
     .run();
   if (inserted.meta.changes === 0) {
@@ -173,7 +185,10 @@ function hasUnfilteredDataSfLink({ href }: { href: string }) {
     ) &&
     (url.searchParams.has("$query") ||
       url.searchParams.has("$where"));
-  return url.hostname === "data.sfgov.org" && !isMetadata && !isRecordQuery;
+  return (
+    (url.hostname === "data.sfgov.org" || url.hostname === "data.sf.gov") &&
+    !isMetadata && !isRecordQuery
+  );
 }
 
 function matchesPublication(

@@ -701,6 +701,19 @@ try {
       area: "Mission",
     },
   );
+  const duplicateReplayResponse = await fetch(
+    `${origin}/investigations/${secondInvestigation.id}/publish`,
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ slug: "duplicate-replay-article" }),
+    },
+  );
+  if (duplicateReplayResponse.status !== 409) {
+    throw new Error(
+      `Duplicate replay publication returned ${duplicateReplayResponse.status}`,
+    );
+  }
   const revisionResponse = await fetch(
     `${origin}/investigations/${secondInvestigation.id}/publish`,
     {

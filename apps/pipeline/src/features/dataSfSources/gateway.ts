@@ -19,7 +19,7 @@ import {
   type DataSfSourceRow,
 } from "./config.ts";
 
-const DATA_SF_ORIGIN = "https://data.sfgov.org";
+const DATA_SF_ORIGIN = "https://data.sf.gov";
 
 export type DataSfCursor = {
   cursorAt: string;

@@ -1,0 +1,109 @@
+{
+  "id": "outside-lands-traffic-2026-08-07",
+  "capturedAt": "2026-08-08T22:30:45.229Z",
+  "archiveKey": "investigations/2026-08-08/case-95f7f3fb0f03273c9e184c68e0d047f303fcd85e3f502bab2da563c6f081117d/e8240d11-7c44-4ba3-897e-284ed99a8214.json",
+  "datasets": [
+    {
+      "source": "dispatch",
+      "dataset": "2zdj-bwza",
+      "sampled": true,
+      "totalSelectedRows": 42,
+      "rows": [
+        {
+          "agency": "Municipal Transportation Agency",
+          "analysis_neighborhood": "Sunset/Parkside",
+          "cad_number": "262190693",
+          "call_type_final_desc": "TRAF VIOLATION CITE",
+          "call_type_original_desc": "TRAF VIOLATION CITE",
+          "close_datetime": "2026-08-07T10:49:57.000",
+          "dispatch_datetime": "2026-08-07T10:38:37.000",
+          "disposition": "NOM",
+          "intersection_name": "41ST AVE \\ KIRKHAM ST",
+          "onview_flag": "N",
+          "received_datetime": "2026-08-07T08:12:48.000"
+        },
+        {
+          "agency": "Municipal Transportation Agency",
+          "analysis_neighborhood": "Sunset/Parkside",
+          "cad_number": "262190861",
+          "call_type_final_desc": "TRAF VIOLATION CITE",
+          "call_type_original_desc": "TRAF VIOLATION CITE",
+          "close_datetime": "2026-08-07T10:38:28.000",
+          "dispatch_datetime": "2026-08-07T10:35:49.000",
+          "disposition": "GOA",
+          "intersection_name": "19TH AVE \\ CROSSOVER DR \\ LINCOLN WAY",
+          "onview_flag": "N",
+          "received_datetime": "2026-08-07T09:01:56.000"
+        },
+        {
+          "agency": "Municipal Transportation Agency",
+          "analysis_neighborhood": "Sunset/Parkside",
+          "cad_number": "262190896",
+          "call_type_final_desc": "TRAF VIOLATION CITE",
+          "call_type_original_desc": "TRAF VIOLATION CITE",
+          "close_datetime": "2026-08-07T13:49:39.000",
+          "dispatch_datetime": "2026-08-07T13:39:00.000",
+          "disposition": "GOA",
+          "intersection_name": "38TH AVE \\ TARAVAL ST",
+          "onview_flag": "N",
+          "received_datetime": "2026-08-07T09:14:12.000"
+        },
+        {
+          "agency": "Municipal Transportation Agency",
+          "analysis_neighborhood": "Sunset/Parkside",
+          "cad_number": "262193471",
+          "call_type_final_desc": "TRAF VIOLATION CITE",
+          "call_type_original_desc": "TRAF VIOLATION CITE",
+          "close_datetime": "2026-08-07T23:08:41.000",
+          "dispatch_datetime": "2026-08-07T23:04:31.000",
+          "disposition": "GOA",
+          "intersection_name": "26TH AVE \\ JUDAH ST",
+          "onview_flag": "N",
+          "received_datetime": "2026-08-07T21:17:05.000"
+        },
+        {
+          "agency": "Municipal Transportation Agency",
+          "analysis_neighborhood": "Sunset/Parkside",
+          "cad_number": "262193650",
+          "call_type_final_desc": "TRAF VIOLATION CITE",
+          "call_type_original_desc": "TRAF VIOLATION CITE",
+          "close_datetime": "2026-08-07T23:03:23.000",
+          "dispatch_datetime": "2026-08-07T22:54:10.000",
+          "disposition": "CIT",
+          "intersection_name": "35TH AVE \\ LAWTON ST",
+          "onview_flag": "N",
+          "received_datetime": "2026-08-07T22:22:32.000"
+        },
+        {
+          "agency": "Municipal Transportation Agency",
+          "analysis_neighborhood": "Sunset/Parkside",
+          "cad_number": "262193728",
+          "call_type_final_desc": "TRAF VIOLATION CITE",
+          "call_type_original_desc": "TRAF VIOLATION CITE",
+          "dispatch_datetime": "2026-08-08T09:01:29.000",
+          "intersection_name": "30TH AVE \\ MORAGA ST",
+          "onview_flag": "N",
+          "received_datetime": "2026-08-07T22:43:09.000"
+        }
+      ]
+    }
+  ],
+  "series": [
+    {
+      "source": "dispatch",
+      "day": "2026-08-07",
+      "kind": "TRAF VIOLATION CITE",
+      "area": "Sunset/Parkside",
+      "observed": 42,
+      "expected": 14
+    }
+  ],
+  "sourceQueries": [
+    "https://data.sf.gov/resource/2zdj-bwza.json?%24where=cad_number+IN+%28%27262190693%27%2C%27262190861%27%2C%27262190896%27%2C%27262190923%27%2C%27262190999%27%2C%27262191213%27%2C%27262191416%27%2C%27262191448%27%2C%27262191514%27%2C%27262191538%27%2C%27262191865%27%2C%27262191869%27%2C%27262191916%27%2C%27262191997%27%2C%27262192067%27%2C%27262192089%27%2C%27262192429%27%2C%27262192440%27%2C%27262192499%27%2C%27262192525%27%2C%27262192621%27%2C%27262192627%27%2C%27262192697%27%2C%27262192808%27%2C%27262192837%27%2C%27262192881%27%2C%27262192892%27%2C%27262192893%27%2C%27262192939%27%2C%27262192951%27%2C%27262193156%27%2C%27262193194%27%2C%27262193200%27%2C%27262193212%27%2C%27262193349%27%2C%27262193351%27%2C%27262193393%27%2C%27262193405%27%2C%27262193453%27%2C%27262193471%27%2C%27262193650%27%2C%27262193728%27%29&%24order=cad_number&%24limit=100"
+  ],
+  "limitations": [
+    "The embedded rows are a small frozen sample; use the exact source query for all selected records.",
+    "Dispatch entries describe administrative activity, not necessarily crimes or separate incidents.",
+    "Search for independent context; timing and proximity alone do not establish causation."
+  ]
+}

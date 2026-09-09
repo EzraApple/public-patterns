@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -9,6 +9,7 @@ const outcomes = new Set(["investigate", "watch", "discard"]);
 const caseFields = new Set([
   "id",
   "fixture",
+  "publishedSlug",
   "allowedOutcomes",
   "requires",
   "requiresAny",
@@ -46,6 +47,12 @@ export function validateCases(value) {
       !testCase.allowedOutcomes.every((outcome) => outcomes.has(outcome))
     ) {
       throw new Error(`Invalid eval case identity or outcomes: ${testCase.id}`);
+    }
+    if (
+      testCase.publishedSlug !== undefined &&
+      (typeof testCase.publishedSlug !== "string" || !testCase.publishedSlug.trim())
+    ) {
+      throw new Error(`Invalid publishedSlug for eval case ${testCase.id}`);
     }
     if (ids.has(testCase.id)) {
       throw new Error(`Duplicate eval case id: ${testCase.id}`);
@@ -194,20 +201,33 @@ async function main() {
     );
   }
 
-  const directory = await mkdtemp(
-    path.join(os.tmpdir(), "public-patterns-eval-"),
-  );
+  const modelIndex = args.indexOf("--model");
+  const model = modelIndex === -1 ? "deepseek-v4-pro" : args[modelIndex + 1];
+  if (!["deepseek-v4-pro", "deepseek-v4-flash"].includes(model)) {
+    throw new Error("Unsupported investigator model");
+  }
+  const outputIndex = args.indexOf("--output");
+  const directory = outputIndex === -1
+    ? await mkdtemp(path.join(os.tmpdir(), "public-patterns-eval-"))
+    : path.resolve(args[outputIndex + 1] ?? "");
+  if (outputIndex !== -1 && !args[outputIndex + 1]) throw new Error("--output needs a directory");
+  await mkdir(directory, { recursive: true });
   const resultPath = path.join(directory, "result.json");
 
   try {
     await run("node", [
       "scripts/smoke-investigator.mjs",
       selected.fixture,
+      "--model",
+      model,
       "--result",
       resultPath,
     ]);
     const result = JSON.parse(await readFile(resultPath, "utf8"));
     const failures = evaluate(selected, result);
+    await writeFile(path.join(directory, "evaluation.json"), JSON.stringify({
+      caseId: selected.id, model, status: failures.length ? "fail" : "pass", failures,
+    }, null, 2));
 
     if (failures.length > 0) {
       console.error(`\nFAIL ${selected.id}`);
@@ -218,8 +238,14 @@ async function main() {
     } else {
       console.log(`\nPASS ${selected.id}`);
     }
+  } catch (error) {
+    await writeFile(path.join(directory, "evaluation.json"), JSON.stringify({
+      caseId: selected.id, model, status: "execution_failed",
+      error: error instanceof Error ? error.message : String(error),
+    }, null, 2));
+    process.exitCode = 1;
   } finally {
-    await rm(directory, { recursive: true, force: true });
+    console.log(`Eval evidence retained at ${directory}`);
   }
 }
 

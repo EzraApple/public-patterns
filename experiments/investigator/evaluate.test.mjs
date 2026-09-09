@@ -131,6 +131,8 @@ test("passes only evidence fields into the sandbox case", () => {
       expect: { classification: "positive" },
       evalRole: "positive",
       capturedAt: "2026-07-27",
+      archiveKey: "private/success.json",
+      publishedSlug: "the-answer",
       independentEvidence: ["https://example.com/answer"],
       absentEvidence: [{ source: "answer", rows: 0 }],
       datasets: [{ source: "test" }],
@@ -245,4 +247,20 @@ test("traffic-stop regressions preserve the editorial threshold", () => {
     }),
     [],
   );
+});
+
+test("published article fixtures preserve provenance without passing answers", async () => {
+  const publishedCases = cases.filter((testCase) => testCase.publishedSlug);
+  assert.equal(publishedCases.length, 4);
+  for (const testCase of publishedCases) {
+    const fixture = JSON.parse(await readFile(
+      new URL(`../../${testCase.fixture}`, import.meta.url), "utf8",
+    ));
+    assert.ok(fixture.archiveKey.startsWith("investigations/"));
+    assert.ok(fixture.capturedAt);
+    const input = buildCaseInput(fixture);
+    assert.equal(input.sourceQueries.length, 1);
+    assert.ok(!JSON.stringify(input).includes(testCase.publishedSlug));
+    assert.equal(input.archiveKey, undefined);
+  }
 });

@@ -115,7 +115,7 @@ describe("publishArticle", () => {
     ).rejects.toThrow("article has no hero image");
   });
 
-  it("rejects an unfiltered DataSF citation", async () => {
+  it.each(["data.sfgov.org", "data.sf.gov"])("rejects an unfiltered %s citation", async (host) => {
     const db = {
       prepare: (sql: string) => ({
         bind: () => ({
@@ -128,7 +128,7 @@ describe("publishArticle", () => {
                     sources: [
                       {
                         label: "DataSF record",
-                        href: "https://data.sfgov.org/",
+                        href: `https://${host}/`,
                       },
                     ],
                   }),

@@ -11,7 +11,7 @@ import {
   imageModel,
   imageQuality,
   imageSize,
-} from "./image-generation.ts";
+} from "../image-generation.ts";
 
 const outputDirectory = "/workspace/output";
 const imagePath = `${outputDirectory}/hero.webp`;

@@ -36,6 +36,7 @@ describe("configured DataSF sources gateway", () => {
       });
       const select = url.searchParams.get("$select")?.split(",");
 
+      expect(url.origin).toBe("https://data.sf.gov");
       expect(url.pathname).toBe(`/resource/${dataset}.json`);
       expect(url.searchParams.get("$order")).toBe(
         `${cursor} ASC,cad_number ASC`,

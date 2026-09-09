@@ -1,4 +1,6 @@
 import { execFile, spawn } from "node:child_process";
+import { createHash } from "node:crypto";
+import { request } from "node:http";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -8,14 +10,41 @@ import { buildCaseInput } from "../experiments/investigator/case-input.mjs";
 
 const execute = promisify(execFile);
 
+function requestInvestigation(origin, input) {
+  return new Promise((resolve, reject) => {
+    const investigationRequest = request(`${origin}/investigations`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      signal: AbortSignal.timeout(960_000),
+    }, (response) => {
+      const chunks = [];
+      response.on("data", (chunk) => chunks.push(chunk));
+      response.once("error", reject);
+      response.once("end", () => resolve({
+        status: response.statusCode,
+        ok: response.statusCode >= 200 && response.statusCode < 300,
+        body: Buffer.concat(chunks).toString("utf8"),
+      }));
+    });
+    investigationRequest.once("error", reject);
+    investigationRequest.end(JSON.stringify(input));
+  });
+}
+
 const parseArguments = () => {
   const args = process.argv.slice(2).filter((argument) => argument !== "--");
   let fixture;
   let result;
+  let model = "deepseek-v4-pro";
 
   for (let index = 0; index < args.length; index += 1) {
     const argument = args[index];
-    if (argument === "--result") {
+    if (argument === "--model") {
+      model = args[++index];
+      if (!["deepseek-v4-pro", "deepseek-v4-flash"].includes(model)) {
+        throw new Error("Unsupported investigator model");
+      }
+    } else if (argument === "--result") {
       result = args[index + 1];
       if (!result) {
         throw new Error("--result requires a file path");
@@ -28,23 +57,20 @@ const parseArguments = () => {
     }
   }
 
-  return { fixture, result };
+  return { fixture, result, model };
 };
 
-const listInvestigatorProxies = async () => {
+const workerName = `pp-eval-${crypto.randomUUID()}`;
+
+const listInvestigatorContainers = async () => {
   const { stdout } = await execute("docker", [
     "ps",
     "--filter",
-    "name=workerd-public-patterns-investigator-Sandbox-",
+    `name=workerd-${workerName}-Sandbox-`,
     "--format",
     "{{.Names}}",
   ]);
-  return new Set(
-    stdout
-      .trim()
-      .split("\n")
-      .filter((name) => name.endsWith("-proxy")),
-  );
+  return stdout.trim().split("\n").filter(Boolean);
 };
 
 const repository = fileURLToPath(new URL("..", import.meta.url));
@@ -63,7 +89,6 @@ if (
   throw new Error("The investigator smoke fixture needs an id and evidence");
 }
 
-const existingProxies = await listInvestigatorProxies();
 const server = spawn(
   "doppler",
   [
@@ -73,8 +98,14 @@ const server = spawn(
     "--filter",
     "@public-patterns/investigator",
     "dev",
+    "--name",
+    workerName,
     "--port",
     "0",
+    "--inspector-port",
+    "0",
+    "--var",
+    `INVESTIGATOR_MODEL:${options.model}`,
   ],
   {
     cwd: repository,
@@ -120,16 +151,40 @@ try {
   }
 
   console.log(`Running evidence-only fixture ${fixture.id}...`);
-  const response = await fetch(`${origin}/investigations`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      id: `dev-smoke-${fixture.id}`,
-      case: buildCaseInput(fixture),
-    }),
-    signal: AbortSignal.timeout(960_000),
+  const caseInput = buildCaseInput(fixture);
+  const inputHash = createHash("sha256")
+    .update(JSON.stringify(caseInput)).digest("hex");
+  const startedAt = Date.now();
+  const response = await requestInvestigation(origin, {
+    id: `dev-eval-${fixture.id}-${options.model}-${crypto.randomUUID()}`,
+    case: caseInput,
   });
-  const body = await response.json();
+  const body = JSON.parse(response.body);
+  const durationMs = Date.now() - startedAt;
+  if (options.result) {
+    const resultPath = path.resolve(repository, options.result);
+    await writeFile(resultPath, `${JSON.stringify(body, null, 2)}\n`);
+    if (typeof body.archiveKey === "string") {
+      try {
+        await execute("pnpm", [
+          "--filter", "@public-patterns/investigator", "exec", "wrangler",
+          "r2", "object", "get", `public-patterns-archive-dev/${body.archiveKey}`,
+          "--local", "--file", `${resultPath}.archive.json`,
+        ], { cwd: repository });
+      } catch (error) {
+        console.warn("Could not export the local session archive", error.message);
+      }
+    }
+    await writeFile(`${resultPath}.run.json`, `${JSON.stringify({
+      fixture: fixture.id,
+      inputHash,
+      model: options.model,
+      startedAt: new Date(startedAt).toISOString(),
+      durationMs,
+      httpStatus: response.status,
+      archiveKey: body.archiveKey,
+    }, null, 2)}\n`);
+  }
 
   if (
     !response.ok ||
@@ -158,12 +213,6 @@ try {
     console.log("\n--- Self-review ---\n");
     console.log(body.review);
   }
-  if (options.result) {
-    await writeFile(
-      path.resolve(repository, options.result),
-      `${JSON.stringify(body, null, 2)}\n`,
-    );
-  }
 } catch (error) {
   const message = error instanceof Error ? error.message : String(error);
   throw new Error(`${message}\n${serverOutput}`);
@@ -177,13 +226,11 @@ try {
     clearTimeout(shutdownTimeout);
   }
   try {
-    const createdProxies = [...(await listInvestigatorProxies())].filter(
-      (name) => !existingProxies.has(name),
-    );
-    if (createdProxies.length > 0) {
-      await execute("docker", ["rm", "--force", ...createdProxies]);
+    const createdContainers = await listInvestigatorContainers();
+    if (createdContainers.length > 0) {
+      await execute("docker", ["rm", "--force", ...createdContainers]);
     }
   } catch (error) {
-    console.warn("Could not remove the smoke test proxy container", error);
+    console.warn("Could not remove the smoke test containers", error);
   }
 }

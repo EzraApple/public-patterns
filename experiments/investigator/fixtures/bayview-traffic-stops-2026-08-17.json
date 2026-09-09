@@ -1,0 +1,110 @@
+{
+  "id": "bayview-traffic-stops-2026-08-17",
+  "capturedAt": "2026-08-25T05:04:23.145Z",
+  "archiveKey": "investigations/2026-08-25/manual-bayview-traffic-stops-2026-08-17-v2/manual.json",
+  "datasets": [
+    {
+      "source": "dispatch",
+      "dataset": "2zdj-bwza",
+      "sampled": true,
+      "totalSelectedRows": 30,
+      "rows": [
+        {
+          "agency": "Police",
+          "analysis_neighborhood": "Bayview Hunters Point",
+          "cad_number": "262290468",
+          "call_type_final_desc": "TRAFFIC STOP",
+          "call_type_original_desc": "TRAFFIC STOP",
+          "close_datetime": "2026-08-17T06:56:36.000",
+          "dispatch_datetime": "2026-08-17T06:41:14.000",
+          "disposition": "CIT",
+          "intersection_name": "NEWCOMB AVE \\ PHELPS ST",
+          "onview_flag": "Y",
+          "received_datetime": "2026-08-17T06:41:14.000"
+        },
+        {
+          "agency": "Police",
+          "analysis_neighborhood": "Bayview Hunters Point",
+          "cad_number": "262290547",
+          "call_type_final_desc": "TRAFFIC STOP",
+          "call_type_original_desc": "TRAFFIC STOP",
+          "close_datetime": "2026-08-17T07:24:36.000",
+          "dispatch_datetime": "2026-08-17T07:18:13.000",
+          "disposition": "CIT",
+          "intersection_name": "HUDSON AVE \\ KEITH ST",
+          "onview_flag": "Y",
+          "received_datetime": "2026-08-17T07:18:13.000"
+        },
+        {
+          "agency": "Police",
+          "analysis_neighborhood": "Bayview Hunters Point",
+          "cad_number": "262290605",
+          "call_type_final_desc": "TRAFFIC STOP",
+          "call_type_original_desc": "TRAFFIC STOP",
+          "close_datetime": "2026-08-17T07:44:26.000",
+          "dispatch_datetime": "2026-08-17T07:36:52.000",
+          "disposition": "CIT",
+          "intersection_name": "OAKDALE AVE \\ RANKIN ST",
+          "onview_flag": "Y",
+          "received_datetime": "2026-08-17T07:36:52.000"
+        },
+        {
+          "agency": "Police",
+          "analysis_neighborhood": "Bayview Hunters Point",
+          "cad_number": "262292473",
+          "call_type_final_desc": "TRAFFIC STOP",
+          "call_type_original_desc": "TRAFFIC STOP",
+          "close_datetime": "2026-08-17T16:49:40.000",
+          "dispatch_datetime": "2026-08-17T16:39:36.000",
+          "disposition": "CIT",
+          "intersection_name": "KIRKWOOD AVE \\ MENDELL ST",
+          "onview_flag": "Y",
+          "received_datetime": "2026-08-17T16:39:36.000"
+        },
+        {
+          "agency": "Police",
+          "analysis_neighborhood": "Bayview Hunters Point",
+          "cad_number": "262293410",
+          "call_type_final_desc": "TRAFFIC STOP",
+          "call_type_original_desc": "TRAFFIC STOP",
+          "close_datetime": "2026-08-17T22:31:35.000",
+          "dispatch_datetime": "2026-08-17T22:18:52.000",
+          "disposition": "ADV",
+          "intersection_name": "03RD ST \\ DAVIDSON AVE",
+          "onview_flag": "Y",
+          "received_datetime": "2026-08-17T22:18:52.000"
+        },
+        {
+          "agency": "Police",
+          "analysis_neighborhood": "Bayview Hunters Point",
+          "cad_number": "262293592",
+          "call_type_final_desc": "TRAFFIC STOP",
+          "call_type_original_desc": "TRAFFIC STOP",
+          "close_datetime": "2026-08-17T23:53:30.000",
+          "dispatch_datetime": "2026-08-17T23:48:55.000",
+          "disposition": "ADV",
+          "intersection_name": "EVANS AVE \\ MENDELL ST",
+          "onview_flag": "Y",
+          "received_datetime": "2026-08-17T23:48:55.000"
+        }
+      ]
+    }
+  ],
+  "series": [
+    {
+      "source": "dispatch",
+      "day": "2026-08-17",
+      "kind": "TRAFFIC STOP",
+      "area": "Bayview Hunters Point",
+      "observed": 30
+    }
+  ],
+  "sourceQueries": [
+    "https://data.sf.gov/resource/2zdj-bwza.json?%24where=cad_number+IN+%28%27262290468%27%2C%27262290547%27%2C%27262290605%27%2C%27262290760%27%2C%27262290788%27%2C%27262290844%27%2C%27262290878%27%2C%27262291106%27%2C%27262291153%27%2C%27262291209%27%2C%27262291241%27%2C%27262291313%27%2C%27262291340%27%2C%27262291479%27%2C%27262291522%27%2C%27262291623%27%2C%27262291655%27%2C%27262291687%27%2C%27262291724%27%2C%27262291822%27%2C%27262291900%27%2C%27262291942%27%2C%27262291963%27%2C%27262291983%27%2C%27262292021%27%2C%27262292160%27%2C%27262292205%27%2C%27262292473%27%2C%27262293410%27%2C%27262293592%27%29&%24order=cad_number&%24limit=100"
+  ],
+  "limitations": [
+    "The embedded rows are a small frozen sample; use the exact source query for all selected records.",
+    "Dispatch entries describe administrative activity, not necessarily crimes or separate incidents.",
+    "Search for independent context; timing and proximity alone do not establish causation."
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "id": "presidio-water-rescue-2026-07-25",
+  "capturedAt": "2026-07-30T19:27:59.046Z",
+  "archiveKey": "investigations/2026-07-30/188c9ae2-837c-478c-b817-de030060b4b6/d9256b75-954f-4c64-8d48-10dd7502e6bd.json",
+  "datasets": [
+    {
+      "source": "fire-ems",
+      "dataset": "nuek-vuh3",
+      "sampled": false,
+      "totalSelectedRows": 2,
+      "rows": [
+        {
+          "address": "CALL BOX: US HWY 101 NB OR SB IN PRESIDIO",
+          "available_dttm": "2026-07-25T10:40:19.000",
+          "call_final_disposition": "Medical Examiner",
+          "call_number": "262060755",
+          "call_type": "Water Rescue",
+          "dispatch_dttm": "2026-07-25T08:34:14.000",
+          "neighborhoods_analysis_boundaries": "Presidio",
+          "received_dttm": "2026-07-25T08:33:30.000",
+          "rowid": "262060755-E35",
+          "unit_id": "E35"
+        },
+        {
+          "address": "CALL BOX: US HWY 101 NB OR SB IN PRESIDIO",
+          "available_dttm": "2026-07-25T10:40:21.000",
+          "call_final_disposition": "Medical Examiner",
+          "call_number": "262060755",
+          "call_type": "Water Rescue",
+          "dispatch_dttm": "2026-07-25T08:34:14.000",
+          "neighborhoods_analysis_boundaries": "Presidio",
+          "received_dttm": "2026-07-25T08:33:30.000",
+          "rowid": "262060755-FB3",
+          "unit_id": "FB3"
+        }
+      ]
+    }
+  ],
+  "series": [
+    {
+      "source": "fire-ems",
+      "day": "2026-07-25",
+      "kind": "Water Rescue",
+      "area": "Presidio",
+      "observed": 2
+    }
+  ],
+  "sourceQueries": [
+    "https://data.sf.gov/resource/nuek-vuh3.json?%24where=rowid+IN+%28%27262060755-E35%27%2C%27262060755-FB3%27%29&%24order=rowid&%24limit=100"
+  ],
+  "limitations": [
+    "The embedded rows are a small frozen sample; use the exact source query for all selected records.",
+    "Dispatch entries describe administrative activity, not necessarily crimes or separate incidents.",
+    "Search for independent context; timing and proximity alone do not establish causation."
+  ]
+}

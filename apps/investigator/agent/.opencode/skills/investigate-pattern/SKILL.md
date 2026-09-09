@@ -44,7 +44,7 @@ REQUIRED: Use `write-article` after the brief is complete when the outcome is
 
 | Outcome | Use when |
 | --- | --- |
-| `investigate` | Meaningfully distinct sources support the story test and there is a clear timely or explicitly historical reason to publish. |
+| `investigate` | Distinct sources, a complete recorded event or lifecycle, or a verified descriptive pattern support the story test, with a timely or explicitly historical reason to publish. |
 | `watch` | A potentially useful connection exists, but source independence, added information, or evidence quality remains unclear. |
 | `discard` | Records merely repeat one originating call or administrative event without adding meaningful understanding. |
 
@@ -55,7 +55,14 @@ controls are weak, or important source semantics remain unverified.
 When one administrative source shows an ambiguous pattern and external
 research does not explain or independently corroborate it, choose `watch`.
 A single source can still warrant `investigate` when its records directly and
-unambiguously establish a complete event or administrative lifecycle.
+unambiguously establish a complete event or administrative lifecycle, or a
+meaningful descriptive pattern. For a descriptive pattern, verify the unit of
+analysis and field meanings, deduplicate records, and test a fair baseline.
+Show what makes the finding distinctive in scale, concentration, recurrence,
+or change. A detector ratio alone, a diffuse small increase, or a coincident
+announcement is insufficient. Keep the article about what the records show;
+an unexplained cause is a limitation, not permission to invent an operation or
+link to a nearby event. If the pattern itself remains ambiguous, choose `watch`.
 
 Deduplication changes the unit of analysis; it does not automatically make the
 underlying event unimportant. Multiple datasets also do not automatically count

@@ -28,6 +28,25 @@
           "body": {
             "reasoning_effort": "max"
           }
+        },
+        "deepseek-v4-flash": {
+          "modelID": "deepseek-v4-flash",
+          "name": "DeepSeek V4 Flash Thinking",
+          "capabilities": {
+            "tools": true,
+            "input": ["text"],
+            "output": ["text"]
+          },
+          "limit": {
+            "context": 1000000,
+            "output": 393216
+          },
+          "compatibility": {
+            "reasoningField": "reasoning_content"
+          },
+          "body": {
+            "reasoning_effort": "max"
+          }
         }
       }
     }

@@ -131,3 +131,16 @@ isolates the agent or provider path.
 
 Before the first CI deployment, the `CLOUDFLARE_API_TOKEN` stored in Doppler
 must include account-level R2 object and bucket edit permission.
+
+## Recovery publication checks
+
+A replay is private until explicitly published. Before publishing recovered
+work, compare its full article, record IDs, dates, and main finding with the
+existing articles. A new date or title can still repeat a finding already
+covered in an older article.
+
+Publication atomically refuses a second slug for an already-published case
+with the same source, day, kind, and area, even when the replay uses a new
+investigation ID. A new investigation can still create a revision under the
+existing slug. This exact-case check does not recognize semantic overlap
+between different dates or sources; that still requires editorial review.

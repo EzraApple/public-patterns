@@ -203,5 +203,114 @@
         ]
       }
     ]
+  },
+  {
+    "id": "bayview-traffic-stops-2026-08-17",
+    "fixture": "experiments/investigator/fixtures/bayview-traffic-stops-2026-08-17.json",
+    "publishedSlug": "bayview-s-busiest-monday-for-traffic-stops-centered-on-two-intersections-2026-08-17",
+    "allowedOutcomes": [
+      "investigate"
+    ],
+    "requires": [
+      "30",
+      "palou",
+      "selby"
+    ],
+    "requiresAny": [
+      [
+        "officer-initiated",
+        "officer initiated",
+        "on-view",
+        "on view"
+      ],
+      [
+        "school",
+        "schools"
+      ],
+      [
+        "cannot",
+        "does not",
+        "unclear",
+        "unknown",
+        "no evidence"
+      ]
+    ]
+  },
+  {
+    "id": "outside-lands-trespasser-2026-08-09",
+    "fixture": "experiments/investigator/fixtures/outside-lands-trespasser-2026-08-09.json",
+    "publishedSlug": "sfpd-logged-24-trespasser-contacts-around-outside-lands-on-festival-s-final-day-2026-08-09",
+    "allowedOutcomes": [
+      "investigate"
+    ],
+    "requires": [
+      "24",
+      "outside lands"
+    ],
+    "requiresAny": [
+      [
+        "officer-initiated",
+        "officer initiated",
+        "on-view",
+        "on view"
+      ]
+    ],
+    "forbids": [
+      "24 arrests",
+      "24 crimes"
+    ]
+  },
+  {
+    "id": "outside-lands-traffic-2026-08-07",
+    "fixture": "experiments/investigator/fixtures/outside-lands-traffic-2026-08-07.json",
+    "publishedSlug": "traffic-complaints-triple-in-sunset-on-outside-lands-opening-day-2026-08-07",
+    "allowedOutcomes": [
+      "investigate"
+    ],
+    "requires": [
+      "42",
+      "outside lands"
+    ],
+    "requiresAny": [
+      [
+        "municipal transportation",
+        "sfmta"
+      ],
+      [
+        "citizen",
+        "resident",
+        "public calls",
+        "public complaints"
+      ]
+    ],
+    "forbids": [
+      "42 arrests",
+      "42 citations issued"
+    ]
+  },
+  {
+    "id": "presidio-water-rescue-2026-07-25",
+    "fixture": "experiments/investigator/fixtures/presidio-water-rescue-2026-07-25.json",
+    "publishedSlug": "volare-victim-recovered-point-diablo",
+    "allowedOutcomes": [
+      "investigate"
+    ],
+    "requires": [
+      "262060755",
+      "volare"
+    ],
+    "requiresAny": [
+      [
+        "medical examiner"
+      ],
+      [
+        "carol",
+        "boisa"
+      ]
+    ],
+    "forbids": [
+      "two bodies recovered",
+      "two separate water rescues"
+    ]
   }
 ]

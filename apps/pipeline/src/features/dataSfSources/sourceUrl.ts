@@ -16,7 +16,7 @@ export function getSourceUrl(
     observation.source,
   );
   const url = new URL(
-    `https://data.sfgov.org/resource/${datasetId}.json`,
+    `https://data.sf.gov/resource/${datasetId}.json`,
   );
   const id = observation.id.replaceAll("'", "''");
   url.searchParams.set("$where", `${idField} = '${id}'`);

@@ -1,0 +1,111 @@
+{
+  "id": "outside-lands-trespasser-2026-08-09",
+  "capturedAt": "2026-08-10T22:30:45.539Z",
+  "archiveKey": "investigations/2026-08-10/case-5cf4935d9e39432e8e7294b23364d60ea819f121e8512867fe333dba29654588/eb27b70f-9fda-4510-b432-a9f5b20945b1.json",
+  "datasets": [
+    {
+      "source": "dispatch",
+      "dataset": "2zdj-bwza",
+      "sampled": true,
+      "totalSelectedRows": 24,
+      "rows": [
+        {
+          "agency": "Police",
+          "analysis_neighborhood": "Golden Gate Park",
+          "cad_number": "262211534",
+          "call_type_final_desc": "TRESPASSER",
+          "call_type_original_desc": "TRESPASSER",
+          "close_datetime": "2026-08-09T13:32:58.000",
+          "dispatch_datetime": "2026-08-09T13:13:02.000",
+          "disposition": "GOA",
+          "intersection_name": "COLE ST \\ OAK ST",
+          "onview_flag": "N",
+          "received_datetime": "2026-08-09T12:58:24.000"
+        },
+        {
+          "agency": "Police",
+          "analysis_neighborhood": "Golden Gate Park",
+          "cad_number": "262212086",
+          "call_type_final_desc": "TRESPASSER",
+          "call_type_original_desc": "TRESPASSER",
+          "close_datetime": "2026-08-09T15:35:29.000",
+          "dispatch_datetime": "2026-08-09T15:35:24.000",
+          "disposition": "HAN",
+          "intersection_name": "36TH AVE \\ JOHN F KENNEDY DR",
+          "onview_flag": "Y",
+          "received_datetime": "2026-08-09T15:35:24.000"
+        },
+        {
+          "agency": "Police",
+          "analysis_neighborhood": "Golden Gate Park",
+          "cad_number": "262212145",
+          "call_type_final_desc": "TRESPASSER",
+          "call_type_original_desc": "TRESPASSER",
+          "close_datetime": "2026-08-09T16:22:46.000",
+          "dispatch_datetime": "2026-08-09T15:52:12.000",
+          "disposition": "HAN",
+          "intersection_name": "METSON RD \\ MIDDLE WEST DR",
+          "onview_flag": "Y",
+          "received_datetime": "2026-08-09T15:52:12.000"
+        },
+        {
+          "agency": "Police",
+          "analysis_neighborhood": "Golden Gate Park",
+          "cad_number": "262212904",
+          "call_type_final_desc": "TRESPASSER",
+          "call_type_original_desc": "TRESPASSER",
+          "close_datetime": "2026-08-09T19:27:39.000",
+          "dispatch_datetime": "2026-08-09T19:25:33.000",
+          "disposition": "HAN",
+          "intersection_name": "36TH AVE \\ JOHN F KENNEDY DR",
+          "onview_flag": "Y",
+          "received_datetime": "2026-08-09T19:25:33.000"
+        },
+        {
+          "agency": "Police",
+          "analysis_neighborhood": "Golden Gate Park",
+          "cad_number": "262212913",
+          "call_type_final_desc": "TRESPASSER",
+          "call_type_original_desc": "TRESPASSER",
+          "close_datetime": "2026-08-09T23:07:46.000",
+          "dispatch_datetime": "2026-08-09T19:29:52.000",
+          "disposition": "HAN",
+          "intersection_name": "36TH AVE \\ JOHN F KENNEDY DR",
+          "onview_flag": "Y",
+          "received_datetime": "2026-08-09T19:29:52.000"
+        },
+        {
+          "agency": "Police",
+          "analysis_neighborhood": "Golden Gate Park",
+          "cad_number": "262213077",
+          "call_type_final_desc": "TRESPASSER",
+          "call_type_original_desc": "TRESPASSER",
+          "close_datetime": "2026-08-09T23:23:59.000",
+          "dispatch_datetime": "2026-08-09T20:26:54.000",
+          "disposition": "HAN",
+          "intersection_name": "36TH AVE \\ JOHN F KENNEDY DR",
+          "onview_flag": "Y",
+          "received_datetime": "2026-08-09T20:26:54.000"
+        }
+      ]
+    }
+  ],
+  "series": [
+    {
+      "source": "dispatch",
+      "day": "2026-08-09",
+      "kind": "TRESPASSER",
+      "area": "Golden Gate Park",
+      "observed": 24,
+      "expected": 0.25
+    }
+  ],
+  "sourceQueries": [
+    "https://data.sf.gov/resource/2zdj-bwza.json?%24where=cad_number+IN+%28%27262211534%27%2C%27262212086%27%2C%27262212145%27%2C%27262212270%27%2C%27262212275%27%2C%27262212277%27%2C%27262212344%27%2C%27262212395%27%2C%27262212396%27%2C%27262212403%27%2C%27262212406%27%2C%27262212599%27%2C%27262212623%27%2C%27262212665%27%2C%27262212758%27%2C%27262212769%27%2C%27262212770%27%2C%27262212813%27%2C%27262212878%27%2C%27262212884%27%2C%27262212897%27%2C%27262212904%27%2C%27262212913%27%2C%27262213077%27%29&%24order=cad_number&%24limit=100"
+  ],
+  "limitations": [
+    "The embedded rows are a small frozen sample; use the exact source query for all selected records.",
+    "Dispatch entries describe administrative activity, not necessarily crimes or separate incidents.",
+    "Search for independent context; timing and proximity alone do not establish causation."
+  ]
+}

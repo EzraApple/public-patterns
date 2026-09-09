@@ -9,8 +9,8 @@ describe("DeepSeek failure diagnostics", () => {
   it("classifies the terminal transport error instead of earlier session text", () => {
     const error = deepSeekFailureFromOutput(
       [
-        '{"type":"step-start","text":"unauthorized was discussed"}',
-        '{"error":{"type":"unknown","message":"Transport"}}',
+        '{"type":"step-start","text":"timeout=120 and insufficient balance were discussed"}',
+        '{"type":"error","error":{"type":"unknown","message":"Transport"}}',
       ].join("\n"),
     );
 

@@ -16,27 +16,20 @@ import {
 } from "./article-image.ts";
 import type { Env } from "./environment.ts";
 import {
+  type AgentSandbox,
+  type InvestigatorModel,
+  investigatorModelSchema,
+  runInvestigatorAgent,
+} from "./agentExecution.ts";
+import {
   deepSeekFailureFromOutput,
   missingDeepSeekKey,
   type ProviderFailureDiagnostic,
 } from "./providerFailure.ts";
 
-type InvestigationSandbox = ArticleImageSandbox & {
+type InvestigationSandbox = ArticleImageSandbox & AgentSandbox & {
   mkdir(path: string, options: { recursive: boolean }): Promise<unknown>;
   writeFile(path: string, content: string): Promise<unknown>;
-  exec(
-    command: string,
-    options: {
-      cwd: string;
-      env: Record<string, string>;
-      timeout: number;
-    },
-  ): Promise<{
-    success: boolean;
-    exitCode: number;
-    stdout: string;
-    stderr: string;
-  }>;
 };
 
 type InvestigationArchive = ArticleImageArchive & {
@@ -67,8 +60,6 @@ export class InvestigationCheckpointError extends Error {
   }
 }
 
-const AGENT_COMMAND =
-  'opencode2 run --standalone --auto --agent investigator --format json "Investigate the case in case/input.json. Submit the internal brief and, when warranted, a publishable article."';
 const maxArchivedOutput = 1_000_000;
 
 export async function investigateCase(
@@ -79,6 +70,9 @@ export async function investigateCase(
     throw missingDeepSeekKey();
   }
 
+  const model = investigatorModelSchema.parse(
+    env.INVESTIGATOR_MODEL ?? "deepseek-v4-pro",
+  );
   const { getSandbox } = await import("@cloudflare/sandbox");
   const sandbox = getSandbox(
     env.Sandbox,
@@ -94,6 +88,7 @@ export async function investigateCase(
       deepseekApiKey: env.DEEPSEEK_API_KEY,
       openAiApiKey: env.OPENAI_API_KEY,
       environment: env.PUBLIC_PATTERNS_ENV,
+      model,
     });
   } finally {
     await sandbox
@@ -109,6 +104,7 @@ export async function investigateInSandbox({
   deepseekApiKey,
   openAiApiKey,
   environment,
+  model = "deepseek-v4-pro",
 }: {
   archive: InvestigationArchive;
   sandbox: InvestigationSandbox;
@@ -116,6 +112,7 @@ export async function investigateInSandbox({
   deepseekApiKey: string;
   openAiApiKey?: string;
   environment: string;
+  model?: InvestigatorModel;
 }) {
   const checkpointKey = `investigations/by-id/${input.id}.json`;
   const inputHash = await hashInput(input);
@@ -150,36 +147,27 @@ export async function investigateInSandbox({
     investigationId: input.id,
     preparationDurationMs: executionStartedMs - Date.parse(archivedAt),
   });
-  let run: Awaited<ReturnType<InvestigationSandbox["exec"]>>;
-  let didExecutionThrow = false;
-  try {
-    run = await sandbox.exec(AGENT_COMMAND, {
-      cwd: "/workspace",
-      env: {
-        DEEPSEEK_API_KEY: deepseekApiKey,
-        ...(openAiApiKey
-          ? {
-              OPENAI_API_KEY: openAiApiKey,
-              PUBLIC_PATTERNS_IMAGE_SRC: articleImageSrc(input.id),
-            }
-          : {}),
-      },
-      timeout: 720_000,
-    });
-  } catch (error) {
-    didExecutionThrow = true;
-    run = {
-      success: false,
-      exitCode: -1,
-      stdout: "",
-      stderr: error instanceof Error ? error.message : String(error),
-    };
-  }
+  const run = await runInvestigatorAgent({
+    sandbox,
+    model,
+    env: {
+      DEEPSEEK_API_KEY: deepseekApiKey,
+      ...(openAiApiKey
+        ? {
+            OPENAI_API_KEY: openAiApiKey,
+            PUBLIC_PATTERNS_IMAGE_SRC: articleImageSrc(input.id),
+          }
+        : {}),
+    },
+  });
+  const { didExecutionThrow } = run;
   const execution = {
     startedAt: executionStartedAt,
     completedAt: new Date().toISOString(),
     durationMs: Date.now() - executionStartedMs,
     didExecutionThrow,
+    model,
+    continuations: run.continuations,
   };
   console.info("Investigation agent finished", {
     event: "investigation.agent.finished",
@@ -235,7 +223,7 @@ export async function investigateInSandbox({
       review: reviewFile?.content ?? null,
     });
   } catch (submissionError) {
-    const output = run.stderr || run.stdout;
+    const output = `${run.stderr}\n${run.stdout}`;
     const detail = redact(output, [deepseekApiKey, openAiApiKey]);
     const reason =
       submissionError instanceof Error
@@ -396,6 +384,8 @@ async function archiveInvestigation({
     completedAt: string;
     durationMs: number;
     didExecutionThrow: boolean;
+    model: string;
+    continuations: number;
   };
   deepseekApiKey: string;
   openAiApiKey?: string;
