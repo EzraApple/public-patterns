@@ -75,6 +75,10 @@ const listInvestigatorContainers = async () => {
 
 const repository = fileURLToPath(new URL("..", import.meta.url));
 const options = parseArguments();
+const [revision, workingTree] = await Promise.all([
+  execute("git", ["rev-parse", "HEAD"], { cwd: repository }),
+  execute("git", ["status", "--porcelain"], { cwd: repository }),
+]);
 const fixturePath = path.resolve(
   repository,
   options.fixture ??
@@ -179,6 +183,8 @@ try {
       fixture: fixture.id,
       inputHash,
       model: options.model,
+      sourceRevision: revision.stdout.trim(),
+      sourceDirty: Boolean(workingTree.stdout.trim()),
       startedAt: new Date(startedAt).toISOString(),
       durationMs,
       httpStatus: response.status,
