@@ -312,5 +312,26 @@
       "two bodies recovered",
       "two separate water rescues"
     ]
+  },
+  {
+    "id": "bayview-already-covered-2026-08-08",
+    "fixture": "experiments/investigator/fixtures/bayview-already-covered-2026-08-08.json",
+    "allowedOutcomes": [
+      "watch",
+      "discard"
+    ],
+    "requires": [
+      "palou",
+      "selby"
+    ],
+    "requiresAny": [
+      [
+        "already covered",
+        "already published",
+        "overlap",
+        "duplicate",
+        "redundant"
+      ]
+    ]
   }
 ]

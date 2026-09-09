@@ -2,6 +2,7 @@ import {
   investigationFailureResponseSchema,
   investigationResultSchema,
 } from "@public-patterns/contracts/investigation";
+import { articleSchema } from "@public-patterns/contracts/article";
 import { z } from "zod";
 
 import { hashText, serializeJson } from "./canonicalJson.ts";
@@ -46,6 +47,14 @@ export const investigationCaseSchema = z.object({
 });
 
 export type InvestigationCase = z.infer<typeof investigationCaseSchema>;
+
+const priorCoverageSchema = articleSchema.pick({
+  slug: true,
+  title: true,
+  body: true,
+  sources: true,
+  publishedAt: true,
+});
 
 export class InvestigationUnavailableError extends Error {
   constructor(
@@ -372,6 +381,7 @@ async function getInvestigationCase({
     createdAt,
     data: {
       signal,
+      priorCoverage: await findPriorCoverage(db, input.area),
       observations: observations.map(withSourceUrl),
       nearbyObservations: context
         .filter(
@@ -381,6 +391,22 @@ async function getInvestigationCase({
         .map(withSourceUrl),
     },
   };
+}
+
+async function findPriorCoverage(db: D1Database, area: string | null) {
+  const rows = await db.prepare(
+    `SELECT article.document_json
+     FROM article_revisions article
+     JOIN investigations investigation ON investigation.id = article.investigation_id
+     WHERE article.revision = (
+       SELECT max(revision) FROM article_revisions WHERE slug = article.slug
+     )
+     ORDER BY investigation.area IS ? DESC, article.published_at DESC
+     LIMIT 20`,
+  ).bind(area).all<{ document_json: string }>();
+  return rows.results.map(({ document_json }) =>
+    priorCoverageSchema.parse(JSON.parse(document_json)),
+  );
 }
 
 function parseJson(value: string): unknown {

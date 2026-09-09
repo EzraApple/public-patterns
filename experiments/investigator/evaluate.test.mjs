@@ -139,6 +139,7 @@ test("passes only evidence fields into the sandbox case", () => {
       targetEvidence: ["https://example.com/evidence"],
     }),
     {
+      priorCoverage: [],
       datasets: [{ source: "test" }],
       series: [],
       targetWindows: [],

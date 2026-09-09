@@ -1,0 +1,78 @@
+{
+  "id": "bayview-already-covered-2026-08-08",
+  "capturedAt": "2026-09-09",
+  "sourceQueries": [
+    "https://data.sf.gov/resource/2zdj-bwza.json?%24select=cad_number%2Cdispatch_datetime%2Cclose_datetime%2Cintersection_name%2Cdisposition%2Conview_flag%2Cpolice_district%2Canalysis_neighborhood&%24where=call_type_final_desc%3D%27TRAFFIC%20STOP%27%20AND%20analysis_neighborhood%3D%27Bayview%20Hunters%20Point%27%20AND%20dispatch_datetime%3E%3D%272026-08-08T00%3A00%3A00%27%20AND%20dispatch_datetime%3C%272026-08-09T00%3A00%3A00%27&%24order=dispatch_datetime%2Ccad_number&%24limit=100"
+  ],
+  "series": [
+    {
+      "source": "dispatch",
+      "dataset": "2zdj-bwza",
+      "day": "2026-08-08",
+      "kind": "TRAFFIC STOP",
+      "area": "Bayview Hunters Point",
+      "observed": 50,
+      "expected": 5.5,
+      "ratio": 9.0909090909
+    }
+  ],
+  "limitations": [
+    "Calls for Service records describe administrative contacts, not the reason an enforcement detail was organized.",
+    "The on-view flag distinguishes officer-initiated contacts from resident calls but does not identify officers or units.",
+    "Mapped intersections are administrative locations and may not be exact stop coordinates."
+  ],
+  "priorCoverage": [
+    {
+      "slug": "bayview-s-busiest-monday-for-traffic-stops-centered-on-two-intersections-2026-08-17",
+      "publishedAt": "2026-08-25T05:04:32.538Z",
+      "title": "Bayview traffic stops hit a Monday high",
+      "body": "San Francisco law-enforcement dispatch records show 30 traffic-stop entries in Bayview Hunters Point on Monday, Aug. 17 \u2014 the neighborhood\u2019s highest Monday total from Jan. 1 through Aug. 18. The four preceding Mondays had 4, 16, 5 and 7 stops, an average of 8.\n\nThe increase was more local than citywide. San Francisco logged 149 traffic stops that day, about the same as two of the prior four Mondays, when it recorded 151 and 150. Bayview accounted for 20% of the citywide total and had more stops than any other neighborhood; South of Market was next with 19.\n\nAll 30 Bayview records were marked \u201con-view,\u201d meaning law-enforcement personnel initiated the records in the field rather than responding to a public call. Twenty-seven carried the disposition code CIT and three carried ADV. DataSF defines those codes as \u201ccited\u201d and \u201cadvised,\u201d but cautions that dispositions are broad, contextual labels and should not be treated as official enforcement statistics.\n\nThe activity was tightly concentrated. Nine stops were recorded at Palou Avenue and Selby Street, and four at Oakdale Avenue and Rankin Street. On the previous four Mondays, those two intersections had one stop combined. Both are within 500 meters of Willie L. Brown Jr. Middle School and Thurgood Marshall High School. Palou and Selby is also on San Francisco\u2019s 2024 High Injury Network.\n\nAug. 17 was SFUSD\u2019s first day of fall instruction, and SFMTA published an update that day describing lower school-zone speed limits, automated speed cameras, crossing guards and street redesigns. But neither the dispatch data nor the public announcements connect these Bayview stops to a school-safety operation. The dispatch records do not identify the violation, unit assignment or purpose of the activity.\n\nThe locations themselves were not new enforcement sites. Palou and Selby and Oakdale and Rankin recur throughout the 2026 records, including 24 stops between them on Aug. 8. The supported finding is narrower: Bayview saw an unusually concentrated Monday of officer-initiated traffic enforcement near two schools and a high-injury corridor. The public data cannot explain why.",
+      "sources": [
+        {
+          "label": "Aug. 17 Bayview traffic-stop records",
+          "href": "https://data.sfgov.org/resource/2zdj-bwza.json?%24select=cad_number%2Creceived_datetime%2Cintersection_name%2Cintersection_id%2Cdisposition%2Conview_flag%2Canalysis_neighborhood%2Cintersection_point&%24where=received_datetime+%3E%3D+%272026-08-17T00%3A00%3A00%27+AND+received_datetime+%3C+%272026-08-18T00%3A00%3A00%27+AND+call_type_original_desc+%3D+%27TRAFFIC+STOP%27+AND+analysis_neighborhood+%3D+%27Bayview+Hunters+Point%27&%24order=received_datetime&%24limit=100"
+        },
+        {
+          "label": "Bayview Monday traffic-stop totals in 2026",
+          "href": "https://data.sfgov.org/resource/2zdj-bwza.json?%24select=date_trunc_ymd%28received_datetime%29+as+day%2Ccount%28*%29+as+calls&%24where=received_datetime+%3E%3D+%272026-01-01T00%3A00%3A00%27+AND+received_datetime+%3C+%272026-08-19T00%3A00%3A00%27+AND+call_type_original_desc+%3D+%27TRAFFIC+STOP%27+AND+analysis_neighborhood+%3D+%27Bayview+Hunters+Point%27+AND+date_extract_dow%28received_datetime%29+%3D+1&%24group=day&%24order=day&%24limit=100"
+        },
+        {
+          "label": "Five-Monday intersection comparison",
+          "href": "https://data.sfgov.org/resource/2zdj-bwza.json?%24select=date_trunc_ymd%28received_datetime%29+as+day%2Cintersection_name%2Cintersection_id%2Ccount%28*%29+as+calls&%24where=received_datetime+%3E%3D+%272026-07-20T00%3A00%3A00%27+AND+received_datetime+%3C+%272026-08-18T00%3A00%3A00%27+AND+call_type_original_desc+%3D+%27TRAFFIC+STOP%27+AND+analysis_neighborhood+%3D+%27Bayview+Hunters+Point%27+AND+date_extract_dow%28received_datetime%29+%3D+1&%24group=day%2Cintersection_name%2Cintersection_id&%24order=day%2Ccalls+DESC&%24limit=500"
+        },
+        {
+          "label": "2026 recurrence at the two intersections",
+          "href": "https://data.sfgov.org/resource/2zdj-bwza.json?%24select=date_trunc_ymd%28received_datetime%29+as+day%2Cintersection_name%2Cintersection_id%2Ccount%28*%29+as+calls&%24where=received_datetime+%3E%3D+%272026-01-01T00%3A00%3A00%27+AND+received_datetime+%3C+%272026-08-19T00%3A00%3A00%27+AND+call_type_original_desc+%3D+%27TRAFFIC+STOP%27+AND+intersection_id+IN+%28%2720754000%27%2C%2720748000%27%29&%24group=day%2Cintersection_name%2Cintersection_id&%24order=day%2Ccalls+DESC&%24limit=500"
+        },
+        {
+          "label": "Citywide traffic-stop totals for five Mondays",
+          "href": "https://data.sfgov.org/resource/2zdj-bwza.json?%24select=date_trunc_ymd%28received_datetime%29+as+day%2Ccount%28*%29+as+calls&%24where=received_datetime+%3E%3D+%272026-07-20T00%3A00%3A00%27+AND+received_datetime+%3C+%272026-08-18T00%3A00%3A00%27+AND+call_type_original_desc+%3D+%27TRAFFIC+STOP%27+AND+date_extract_dow%28received_datetime%29+%3D+1&%24group=day&%24order=day&%24limit=100"
+        },
+        {
+          "label": "Aug. 17 traffic stops by neighborhood",
+          "href": "https://data.sfgov.org/resource/2zdj-bwza.json?%24select=analysis_neighborhood%2Ccount%28*%29+as+calls&%24where=received_datetime+%3E%3D+%272026-08-17T00%3A00%3A00%27+AND+received_datetime+%3C+%272026-08-18T00%3A00%3A00%27+AND+call_type_original_desc+%3D+%27TRAFFIC+STOP%27&%24group=analysis_neighborhood&%24order=calls+DESC&%24limit=100"
+        },
+        {
+          "label": "Public schools within 500 meters",
+          "href": "https://data.sfgov.org/resource/7e7j-59qk.json?%24select=school%2Cstreet_address%2Cpublic_yesno%2Clatitude%2Clongitude&%24where=within_circle%28point%2C37.739275902%2C-122.400246409%2C500%29+OR+within_circle%28point%2C37.738846648%2C-122.397809546%2C500%29&%24order=school&%24limit=100"
+        },
+        {
+          "label": "2024 High Injury Network segments at Palou and Selby",
+          "href": "https://data.sfgov.org/resource/enwt-3u8m.json?%24select=full_street_name%2Cf_node_cnn_intrsctn_fkey%2Ct_node_cnn_intrsctn_fkey&%24where=f_node_cnn_intrsctn_fkey+%3D+%2720754000%27+OR+t_node_cnn_intrsctn_fkey+%3D+%2720754000%27&%24order=full_street_name&%24limit=100"
+        },
+        {
+          "label": "DataSF guide to law-enforcement dispatch records",
+          "href": "https://sfdigitalservices.gitbook.io/dataset-explainers/law-enforcement-dispatched-calls-for-service"
+        },
+        {
+          "label": "SFUSD 2026\u201327 academic calendar",
+          "href": "https://www.sfusd.edu/sites/default/files/2026-01/ENGLISH%20%28Approved%29%20-%20SFUSD%202026-27%20SY%20Academic%20Calendar.pdf"
+        },
+        {
+          "label": "SFMTA back-to-school street-safety update",
+          "href": "https://www.sfmta.com/blog/making-streets-safer-families-back-school-updates"
+        }
+      ]
+    }
+  ]
+}
