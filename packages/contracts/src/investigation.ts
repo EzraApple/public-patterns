@@ -44,6 +44,12 @@ export const investigationFailureResponseSchema = z.object({
   provider: publicProviderFailureSchema.optional(),
 });
 
+export const investigationFollowUpSchema = z.object({
+  question: z.string().trim().min(1).max(500),
+  evidenceUrls: z.array(z.httpUrl()).min(1).max(5),
+  afterDays: z.number().int().min(1).max(30),
+});
+
 const outputPathSchema = z
   .string()
   .refine(isOutputPath, "must be a file under output/");
@@ -56,6 +62,7 @@ export const investigationSubmissionSchema = z
     articlePath: outputPathSchema.optional(),
     reviewPath: outputPathSchema.optional(),
     evidence: z.array(z.string()),
+    followUp: investigationFollowUpSchema.optional(),
   })
   .superRefine((submission, context) => {
     if (submission.outcome === "investigate") {
@@ -84,6 +91,7 @@ export const investigationResultSchema = z.object({
     outcome: z.enum(["investigate", "watch", "discard"]),
     confidence: z.number().min(0).max(1),
     evidence: z.array(z.string()),
+    followUp: investigationFollowUpSchema.optional(),
   }),
   brief: nonBlankString,
   article: articleDraftSchema.nullable(),

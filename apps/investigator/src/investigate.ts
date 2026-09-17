@@ -245,6 +245,7 @@ export async function investigateInSandbox({
         outcome: submission.outcome,
         confidence: submission.confidence,
         evidence: submission.evidence,
+        ...(submission.followUp ? { followUp: submission.followUp } : {}),
       },
       brief: briefFile.content,
       article,

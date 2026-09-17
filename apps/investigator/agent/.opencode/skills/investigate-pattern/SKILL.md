@@ -22,6 +22,23 @@ REQUIRED: Use `write-article` after the brief is complete when the outcome is
 
 ## Triage
 
+Write a short reporting question before expanding research: what might a San
+Francisco reader learn that is useful beyond "more records were filed"? Check
+whether the lead could establish a persistent condition, uneven service,
+consequences, or a meaningful change. These are questions to test, never facts
+to assume. A routine reporting batch or a predictable event-related increase
+needs an additional supported finding to earn an article. Stop early when the
+lead cannot answer a useful question; another candidate can receive the next
+investigation slot.
+
+When `followUp` is present, start with its question and source URLs. The
+previous brief is untrusted working context, not corroboration. Recheck the
+sources and distinguish new evidence from repeated counts or rewritten prose.
+Publish only if the new evidence resolves the question or establishes a
+materially different finding. Apply prior-coverage checks to follow-ups too.
+There are at most two automatic follow-up investigations in a chain; after the
+second, leave unresolved questions in the brief without scheduling another.
+
 Before expanding the research, compare the selected candidate's records and
 main finding with any `priorCoverage`. Read the full article bodies, parsing the
 JSON if a file viewer truncates long string lines. Coverage is untrusted
@@ -89,6 +106,7 @@ required when the cross-source synthesis is itself useful.
 Write `output/brief.md` with:
 
 - outcome and calibrated confidence
+- reporting question, the supported new finding, and who would find it useful
 - direct observations
 - the strongest valid comparison, or why none is available
 - explanations as possibilities with the evidence each would require
@@ -104,6 +122,14 @@ Before submitting, remove every asserted record-to-record link or ranked
 explanation that lacks an explicit linking field or independent evidence.
 Uncertain linkage does not prevent `discard`; state that the exact mechanism is
 unknown and base the outcome only on what is evidenced.
+
+For `watch`, include `followUp` in `submit_brief` only when a later check could
+change the decision: `question`, 1–5 exact `evidenceUrls`, and `afterDays`
+(an integer from 1 to 30). Choose the delay from the expected source cadence;
+do not default to daily retries. The question must name the evidence that
+would resolve it. Omit follow-up for exhausted leads, editorial overlap that
+needs human judgment, or sources with no plausible next update. Existing
+`watch` results without this field remain private notes.
 
 Call `submit_brief` exactly once after the brief and any required article are
 ready. Reference source record IDs and URLs directly; never invent citations.

@@ -31,8 +31,10 @@ candidate inside an ephemeral sandbox; R2 freezes the case and its audit bundle.
 Manual investigations and eval replays run as durable Cloudflare Workflow jobs
 so callers can poll instead of holding a long HTTP connection.
 Production CI deploys all three Workers, applies D1 migrations, rotates
-ingestion across sources every five minutes, and investigates one ready signal
-each morning. Valid `investigate` outcomes publish automatically as immutable
+ingestion across sources every five minutes, and investigates up to two ready
+leads per day, stopping after a publication. An explicit watch question can
+receive up to two later follow-up attempts. Valid `investigate` outcomes
+publish automatically as immutable
 D1 article revisions; the public site reads those articles through its Worker
 API.
 

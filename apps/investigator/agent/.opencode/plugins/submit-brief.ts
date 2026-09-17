@@ -9,6 +9,8 @@ import {
   hasUnfilteredDataSfLink,
 } from "../article-schema.ts";
 
+import { investigationFollowUpSchema } from "../follow-up-schema.ts";
+
 const WORKSPACE = "/workspace";
 const OUTPUT_DIRECTORY = `${WORKSPACE}/output`;
 const SUBMISSION_PATH = `${OUTPUT_DIRECTORY}/submission.json`;
@@ -53,6 +55,9 @@ export default Plugin.define({
               .describe(
                 "Final claim and editorial review path. Required for investigate outcomes.",
               ),
+            followUp: investigationFollowUpSchema.optional().describe(
+              "For watch only: a specific question, source URLs to recheck, and days to wait (1-30). Omit when another check would not change the decision.",
+            ),
             evidence: z
               .array(z.string())
               .describe("Source record IDs or URLs supporting the brief."),

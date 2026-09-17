@@ -158,10 +158,10 @@ figure. It cannot execute arbitrary code. Before submission, the agent writes a
 claim-by-claim review and revises the draft; both are retained in the R2 audit
 bundle.
 
-After review, the agent generates one understated, place-based hero. Every
-public article revision requires a stored hero; a failed image attempt leaves a
-valid private investigation but blocks publication until a later attempt
-succeeds. The image is contextual presentation rather than evidence: it must
+After review, the agent may generate one understated, place-based hero.
+Imagery is optional: a failed or skipped image attempt does not block an
+otherwise valid article. The existing web layout supports text-only articles.
+The image is contextual presentation rather than evidence: it must
 not reconstruct an incident or imply that pictured people or properties appear
 in the records. The sandbox receives a fixed low-cost OpenAI image tool, while
 the investigator Worker validates and moves the resulting WebP into R2. The
@@ -236,10 +236,26 @@ The investigator is a separate Worker because Containers, model spend, and
 failure isolation differ materially from ingestion. DeepSeek V4 Pro remains the
 production default; isolated eval runs can select V4 Flash with the same reasoning
 effort and execution deadline. The private workbench is
-available for manual runs. During the initial tuning trial, one morning job
-selects one previously uninvestigated burst and publishes a valid
-`investigate` article. `watch`, `discard`, and failed publication outcomes stay
-private for audit. The current prototype passes a limited DeepSeek key into
+available for manual runs. The two daily trigger slots can investigate up to
+two leads, stopping after
+one publication. After `watch` or `discard`, the next slot can choose another
+candidate. Among ready bursts, selection favors sources with fewer completed
+investigations in the preceding seven days, then ratio and excess. This is an
+explicit exploration policy, not a calibrated newsworthiness score; detector
+thresholds remain unchanged. The policy and scheduling day are frozen in the
+case for audit and retry recovery.
+
+A `watch` may include a concrete question, 1–5 evidence URLs, and a 1–30 day
+delay. Due questions share the daily budget, with at most one follow-up per day
+and two follow-up attempts per chain, including recorded failures. Terminal
+failures retire that follow-up; a failed check cannot repeatedly occupy every
+daily slot. The investigator receives fresh local records, current prior coverage, and the earlier question and brief, then rechecks the
+URLs for new evidence. Old watch results without a plan remain private notes.
+Historical daily replays do not consume due follow-ups. Follow-up state derives
+from saved investigation outputs and parent links; no separate queue is needed.
+`watch`, `discard`, and failed publication outcomes stay private for audit.
+
+The current prototype passes a limited DeepSeek key into
 each ephemeral sandbox; move that credential behind a short-lived proxy before
 this automatic trial expands or investigations accept untrusted inputs.
 Manual investigations and eval replays use a Workflow because sandbox sessions
@@ -258,8 +274,9 @@ timeouts, provider outages, and network failures without logging credentials.
 Structured diagnostics include the provider request ID and a concrete operator
 action, and only retryable failures are automatically attempted again. Blocking
 model failures and image failures remain in the private
-investigation archive for later audits. Image failures do not change the
-investigation outcome, but their drafts cannot be promoted publicly.
+investigation archive for later audits. Image-tool failures do not change the
+investigation outcome; a draft with no hero can still publish. Invalid image artifacts and storage failures remain
+execution errors.
 
 Each scheduled day has a compact current-state D1 record, while its attempts
 remain append-only: detector version and thresholds, per-source readiness and

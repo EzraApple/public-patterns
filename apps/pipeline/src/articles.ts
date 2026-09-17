@@ -57,9 +57,6 @@ export async function publishArticle({
       409,
     );
   }
-  if (!investigation.article.hero) {
-    throw new ArticlePublicationError("article has no hero image", 409);
-  }
   if (investigation.article.sources.some(hasUnfilteredDataSfLink)) {
     throw new ArticlePublicationError(
       "DataSF article sources must link to an exact query",

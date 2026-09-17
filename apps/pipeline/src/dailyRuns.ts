@@ -122,7 +122,7 @@ export async function runDailyInvestigation({
       const article = await publishArticle({
         db,
         investigationId: result.id,
-        publication: { slug: getArticleSlug(result.article.title, day) },
+        publication: { slug: getArticleSlug(result.article.title, selected.day) },
         publishedAt: startedAt,
       });
       return finish({
@@ -194,10 +194,15 @@ export async function runDailyInvestigation({
 async function getDailyInvestigation(db: D1Database, day: string) {
   const row = await db
     .prepare(
-      `SELECT source, day, kind, area, result_json
-       FROM investigations
-       WHERE day = ? AND id LIKE 'case-%'
-       ORDER BY created_at DESC
+      `SELECT i.source, i.day, i.kind, i.area, i.result_json
+       FROM investigations i
+       WHERE coalesce(json_extract(i.case_json, '$.scheduling.day'), i.day) = ?
+         AND i.id LIKE 'case-%'
+         AND NOT EXISTS (
+           SELECT 1 FROM daily_investigation_attempts a
+           WHERE a.investigation_id = i.id AND a.status IN ('watch', 'discard')
+         )
+       ORDER BY i.created_at DESC, i.id
        LIMIT 1`,
     )
     .bind(day)
@@ -296,6 +301,14 @@ async function claimDailyRun(
          error = NULL,
          retryable = NULL
        WHERE daily_investigation_runs.status = 'not_ready'
+          OR (
+            daily_investigation_runs.status IN ('watch', 'discard')
+            AND (
+              SELECT count(DISTINCT investigation_id)
+              FROM daily_investigation_attempts
+              WHERE day = excluded.day AND status IN ('watch', 'discard')
+            ) < 2
+          )
           OR (
             daily_investigation_runs.status = 'running'
             AND daily_investigation_runs.started_at < ?
