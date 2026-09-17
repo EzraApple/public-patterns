@@ -24,7 +24,11 @@ details, and next checks.
    supplied records as the origin of the story.
 4. Decide what each source adds. Several databases describing one originating
    call are one evidence chain, not several independent confirmations.
-5. Choose the shortest form that fully explains the story.
+5. State what the reader learns beyond the triggering count or existing
+   reporting. Name the supported consequence, comparison, or useful new fact.
+   If there is no clear reader benefit, return to triage; polished prose cannot
+   rescue an empty premise.
+6. Choose the shortest form that fully explains the story.
 
 | Form | Use when | Typical body |
 | --- | --- | --- |
@@ -128,18 +132,19 @@ comparison, or source trace would explain the evidence faster than prose. Put
 one supported figure in the structured `figure` field and explain its values in
 the investigation brief.
 
-After the article passes self-review, read `references/images.md` and call
-`generate_image` once. A neighborhood, shoreline, streetscape, or broader SF
-setting is enough; do not omit the hero merely because reconstructing the
-incident would be inappropriate. Submit `"hero": null` only when the tool fails
-or no honest place-based context exists. The image is presentation, not
-evidence.
+After the article passes self-review, an optional hero may add place-based
+context. Read `references/images.md` before calling `generate_image`, at most
+once. Submit `"hero": null` if time is short, the tool fails, or an image adds
+little. A reviewed article can publish without an image. Protect time for
+checking claims and submitting the result; imagery is presentation, not evidence.
 
 ## Mandatory self-review
 
 Draft first, then review the entire article as a skeptical editor before
 submitting. Write `output/review.md` with a compact claim audit:
 
+- reader benefit: the useful new fact, who it matters to, and what prior
+  coverage already said (or why no overlap was found)
 - each material claim and its exact supporting source
 - every recalculated total, ratio, list, and elapsed time
 - source dates and any status or continuity language they limit

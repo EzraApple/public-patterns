@@ -81,6 +81,7 @@ export class InvestigatorRequestError extends Error {
 
 export type DailyDetectorSnapshot = {
   detector: typeof weekdayBurstDetector;
+  followUp?: { investigationId: string; attempt: number };
   sources: Array<{
     source: BurstSource;
     isReady: boolean;
@@ -102,14 +103,44 @@ export async function investigateDailyBursts({
   const detected = await Promise.all(
     burstSources.map((source) => getBursts(db, source, day, createdAt)),
   );
-  const detectorSnapshot = {
+  const detectorSnapshot: DailyDetectorSnapshot = {
     detector: weekdayBurstDetector,
     sources: detected.map(({ source, ready, bursts }) => ({
       source,
       isReady: ready,
       candidates: bursts.map(({ observationIds: _, ...burst }) => burst),
     })),
-  } satisfies DailyDetectorSnapshot;
+  };
+  const followUp = await findDueFollowUp(db, day, createdAt);
+  if (followUp) {
+    detectorSnapshot.followUp = {
+      investigationId: followUp.context.investigationId,
+      attempt: followUp.context.attempt,
+    };
+    try {
+      const investigationCase = await getReplayInvestigationCase({
+        db, input: followUp.input, createdAt,
+      });
+      investigationCase.data.followUp = followUp.context;
+      investigationCase.data.scheduling = { day, policy: "source-rotation-v1" };
+      return {
+        detectorSnapshot,
+        input: followUp.input,
+        result: await investigateCase({
+          db, investigator, investigationCase, reuseCompletedResult: true,
+        }),
+        error: null,
+      };
+    } catch (error) {
+      return { detectorSnapshot, input: followUp.input, result: null, error };
+    }
+  }
+  const recent = await db.prepare(
+    `SELECT source, count(*) AS investigations FROM investigations
+     WHERE created_at >= ? AND created_at <= ? GROUP BY source`,
+  ).bind(`${shiftDay(createdAt.slice(0, 10), -7)}T00:00:00.000Z`, createdAt)
+    .all<{ source: string; investigations: number }>();
+  const sourceCounts = new Map(recent.results.map((row) => [row.source, row.investigations]));
   const candidates = detected
     .flatMap(({ source, ready, bursts }) =>
       ready
@@ -124,7 +155,11 @@ export async function investigateDailyBursts({
     )
     .sort(
       (left, right) =>
-        right.excess - left.excess || right.burst.ratio - left.burst.ratio,
+        (sourceCounts.get(left.source) ?? 0) - (sourceCounts.get(right.source) ?? 0) ||
+        right.burst.ratio - left.burst.ratio || right.excess - left.excess ||
+        left.source.localeCompare(right.source) ||
+        left.burst.kind.localeCompare(right.burst.kind) ||
+        (left.burst.area ?? "").localeCompare(right.burst.area ?? ""),
     );
 
   let selected:
@@ -163,6 +198,7 @@ export async function investigateDailyBursts({
           db,
           input: selected.input,
           createdAt,
+          scheduling: { day, policy: "source-rotation-v1" },
           signal: {
             detector: "weekday-burst",
             detectorVersion: weekdayBurstDetector.version,
@@ -187,6 +223,67 @@ export async function investigateDailyBursts({
       error,
     };
   }
+}
+
+async function findDueFollowUp(db: D1Database, day: string, createdAt: string) {
+  // Historical daily replays must not consume today's follow-up budget.
+  if (day !== shiftDay(createdAt.slice(0, 10), -1)) return;
+  const rows = await db.prepare(
+    `WITH watched AS (
+       SELECT i.*, (
+         SELECT count(*) FROM daily_investigation_attempts a
+         WHERE json_extract(a.detector_json, '$.followUp.investigationId') = i.id
+           AND a.status = 'failed'
+       ) AS failed_attempts
+       FROM investigations i
+       WHERE i.source IN (${burstSources.map(() => "?").join(",")})
+         AND json_extract(i.result_json, '$.submission.outcome') = 'watch'
+         AND json_type(i.result_json, '$.submission.followUp') = 'object'
+     )
+     SELECT i.id, i.source, i.day, i.kind, i.area, i.result_json, i.case_json, i.failed_attempts
+     FROM watched i
+     WHERE coalesce(json_extract(i.case_json, '$.followUp.attempt'), 0) + i.failed_attempts < 2
+       AND julianday(i.created_at) + json_extract(i.result_json, '$.submission.followUp.afterDays') <= julianday(?)
+       AND NOT EXISTS (
+         SELECT 1 FROM investigations child
+         WHERE json_extract(child.case_json, '$.followUp.investigationId') = i.id
+       )
+       AND NOT EXISTS (
+         SELECT 1 FROM daily_investigation_attempts a
+         WHERE json_extract(a.detector_json, '$.followUp.investigationId') = i.id
+           AND a.status = 'failed' AND a.retryable = 0
+       )
+       AND NOT EXISTS (
+         SELECT 1 FROM daily_investigation_attempts today
+         WHERE today.day = ? AND json_type(today.detector_json, '$.followUp') = 'object'
+       )
+       AND NOT EXISTS (
+         SELECT 1 FROM investigations saved
+         WHERE json_extract(saved.case_json, '$.scheduling.day') = ?
+           AND json_type(saved.case_json, '$.followUp') = 'object'
+       )
+     ORDER BY julianday(i.created_at) + json_extract(i.result_json, '$.submission.followUp.afterDays'), i.id
+     LIMIT 1`,
+  ).bind(...burstSources, createdAt, day, day).all<{
+    id: string; source: string; day: string; kind: string; area: string | null;
+    result_json: string; case_json: string; failed_attempts: number;
+  }>();
+  const row = rows.results[0];
+  if (!row) return;
+  const result = investigationResultSchema.parse(JSON.parse(row.result_json));
+  const followUp = result.submission.followUp;
+  if (!followUp) return;
+  const priorCase = JSON.parse(row.case_json) as { followUp?: { attempt: number } };
+  return {
+    input: investigationRequestSchema.parse(row),
+    context: {
+      investigationId: row.id,
+      attempt: (priorCase.followUp?.attempt ?? 0) + row.failed_attempts + 1,
+      question: followUp.question,
+      evidenceUrls: followUp.evidenceUrls,
+      previousBrief: result.brief,
+    },
+  };
 }
 
 export function shouldInvestigate(
@@ -345,12 +442,14 @@ async function getInvestigationCase({
   signal,
   observations,
   createdAt,
+  scheduling,
 }: {
   db: D1Database;
   input: ReplayRequest;
   signal: Record<string, unknown>;
   observations: Observation[];
   createdAt: string;
+  scheduling?: { day: string; policy: string };
 }): Promise<InvestigationCase> {
   const contextStart = `${shiftDay(input.day, -1)}T00:00:00`;
   const contextEnd = `${shiftDay(input.day, 2)}T00:00:00`;
@@ -380,6 +479,7 @@ async function getInvestigationCase({
     input,
     createdAt,
     data: {
+      ...(scheduling ? { scheduling } : {}),
       signal,
       priorCoverage: await findPriorCoverage(db, input.area),
       observations: observations.map(withSourceUrl),
@@ -499,6 +599,7 @@ export async function listInvestigations(db: D1Database) {
       area: row.area,
       outcome: investigation.submission.outcome,
       confidence: investigation.submission.confidence,
+      followUp: investigation.submission.followUp ?? null,
       articleTitle: investigation.article?.title ?? null,
       publishedSlug: row.published_slug,
       archiveKey: investigation.archiveKey,

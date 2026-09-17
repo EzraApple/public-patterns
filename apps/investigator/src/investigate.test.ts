@@ -89,6 +89,24 @@ function createSandbox(
 }
 
 describe("investigateInSandbox", () => {
+  it("retains a concrete watch follow-up in the result and archive", async () => {
+    const followUp = {
+      question: "Did the next inspection resolve the condition?",
+      evidenceUrls: ["https://example.com/inspection/1"],
+      afterDays: 7,
+    };
+    const { archive, archives, sandbox } = createSandbox({
+      outcome: "watch", confidence: 0.6, briefPath: "output/brief.md",
+      evidence: [], followUp,
+    });
+    const result = await investigateInSandbox({
+      archive, sandbox, input: { id: "watch-1", case: {} },
+      deepseekApiKey: "test-key", environment: "test",
+    });
+    expect(result.submission.followUp).toEqual(followUp);
+    expect(JSON.parse(String(archives.get(result.archiveKey))).result.submission.followUp).toEqual(followUp);
+  });
+
   it("returns a submitted brief after the agent exits", async () => {
     const submission = {
       outcome: "investigate",

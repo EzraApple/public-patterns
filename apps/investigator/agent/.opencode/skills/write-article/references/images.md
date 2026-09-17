@@ -51,5 +51,4 @@ standard disclosure caption.
 
 Copy the returned `hero` object into `output/article.json`. Call the tool at
 most once. If it fails, submit the reviewed article with `"hero": null`; image
-failure never downgrades a supported investigation, but the draft remains
-private until a later image attempt succeeds.
+failure never downgrades a supported investigation or blocks publication.

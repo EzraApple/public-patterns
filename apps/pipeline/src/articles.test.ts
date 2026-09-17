@@ -87,10 +87,11 @@ describe("publishArticle", () => {
     ).resolves.toEqual(article);
   });
 
-  it("rejects an article without a hero image", async () => {
+  it("publishes a reviewed article without a hero image", async () => {
     const db = {
       prepare: (sql: string) => ({
         bind: () => ({
+          run: async () => ({ meta: { changes: 1 } }),
           first: async () => {
             if (sql.startsWith("SELECT result_json FROM investigations")) {
               return {
@@ -112,7 +113,7 @@ describe("publishArticle", () => {
         publication: { slug: "fixture-article" },
         publishedAt: "2026-07-29T00:00:00.000Z",
       }),
-    ).rejects.toThrow("article has no hero image");
+    ).resolves.toMatchObject({ slug: "fixture-article", hero: null });
   });
 
   it.each(["data.sfgov.org", "data.sf.gov"])("rejects an unfiltered %s citation", async (host) => {

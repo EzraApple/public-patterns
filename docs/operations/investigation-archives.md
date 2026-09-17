@@ -5,9 +5,13 @@ bundle for every run: its input, redacted OpenCode output, result, brief, and
 article. Failed runs are archived too and can be inspected in the private R2
 bucket.
 
-The daily trial considers the previous calendar day, chooses one strong ready
-burst, and skips successful investigations already indexed in D1. Complete
-`investigate` outcomes publish automatically; `watch`, `discard`, and failed
+The daily trial considers the previous calendar day and skips investigations
+already indexed in D1. It favors sources investigated less often in the last
+seven days, then burst ratio and excess; this is source exploration, not a
+validated ranking of story quality. The two trigger slots can complete at most
+two investigations, stopping after publication. A watch or discard frees the
+next slot for another lead; retries recover a saved result before selecting
+anything new. Complete `investigate` outcomes publish automatically; `watch`, `discard`, and failed
 outcomes remain private.
 
 `daily_investigation_runs` holds the current result for each day, including
@@ -83,7 +87,9 @@ doppler run --config prd -- sh -c 'curl -fsS \
   https://publicpatterns.com/api/internal/daily-runs'
 ```
 
-Completed days return `409`. A day can be reclaimed when data was not ready,
+Published days and days with two completed watch/discard investigations return
+`409`. A first watch or discard permits one more candidate. A day can be
+reclaimed when data was not ready,
 detection failed, a retryable investigation failed, or a `running` lease is
 older than 30 minutes. Publication and nonretryable provider failures stay
 locked. Reclaimed work first resumes any saved daily investigation instead of
@@ -151,3 +157,21 @@ coverage is frozen with manual replay input. The agent uses it to identify
 repeated findings; it is not an independent source for factual claims.
 Coverage outside that bounded context, or published after the case was frozen,
 still requires a final editorial comparison before a manual backfill is published.
+
+## Watch follow-ups
+
+New watch submissions may supply `followUp: { question, evidenceUrls, afterDays }`.
+The question names evidence that could change the decision; the URL list has
+1–5 HTTP(S) sources and the delay is 1–30 days from the investigation record's
+creation time.
+At most one due follow-up takes a daily slot, and a chain ends after two
+attempts including recorded failures. Terminal failures retire the plan.
+The attempt ledger records the parent ID even when the check fails before
+saving a child investigation.
+Older watch results without a plan are not automatically replayed. Due checks
+only run for the current scheduler day, not during historical daily replays.
+The fresh case records its parent ID, follow-up attempt, previous brief, and
+scheduling day. Publication keeps the selected case's event day in its slug.
+
+Missing hero images no longer block publication. The public layout already
+supports a text-only article; citation and duplicate checks still apply.
