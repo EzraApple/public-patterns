@@ -44,5 +44,5 @@ For every completed draft, have a fresh reviewer record:
 
 Report attempted executions, completed model runs, drafts, factual approvals,
 and worthwhile articles separately, plus elapsed time and cost. A passing
-phrase check or nonblank self-review is not editorial approval. Keep this PR
-draft until the online comparison is reviewed; live sources can drift.
+phrase check or nonblank self-review is not editorial approval. Review the online comparison before claiming editorial improvement; live
+sources can drift. The deployed policy remains an experiment until then.
