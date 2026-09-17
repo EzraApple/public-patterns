@@ -131,12 +131,15 @@ test("passes only evidence fields into the sandbox case", () => {
       expect: { classification: "positive" },
       evalRole: "positive",
       capturedAt: "2026-07-27",
+      archiveKey: "private/success.json",
+      publishedSlug: "the-answer",
       independentEvidence: ["https://example.com/answer"],
       absentEvidence: [{ source: "answer", rows: 0 }],
       datasets: [{ source: "test" }],
       targetEvidence: ["https://example.com/evidence"],
     }),
     {
+      priorCoverage: [],
       datasets: [{ source: "test" }],
       series: [],
       targetWindows: [],
@@ -245,4 +248,76 @@ test("traffic-stop regressions preserve the editorial threshold", () => {
     }),
     [],
   );
+});
+
+test("published article fixtures preserve provenance without passing answers", async () => {
+  const publishedCases = cases.filter((testCase) => testCase.publishedSlug);
+  assert.equal(publishedCases.length, 4);
+  for (const testCase of publishedCases) {
+    const fixture = JSON.parse(await readFile(
+      new URL(`../../${testCase.fixture}`, import.meta.url), "utf8",
+    ));
+    assert.ok(fixture.archiveKey.startsWith("investigations/"));
+    assert.ok(fixture.capturedAt);
+    const input = buildCaseInput(fixture);
+    assert.equal(input.sourceQueries.length, 1);
+    assert.ok(!JSON.stringify(input).includes(testCase.publishedSlug));
+    assert.equal(input.archiveKey, undefined);
+  }
+});
+
+
+test("duplicate regression passes published coverage as context without labels", async () => {
+  const testCase = cases.find(
+    (candidate) => candidate.id === "bayview-already-covered-2026-08-08",
+  );
+  const fixture = JSON.parse(await readFile(
+    new URL(`../../${testCase.fixture}`, import.meta.url), "utf8",
+  ));
+  const input = buildCaseInput(fixture);
+  assert.equal(input.priorCoverage.length, 1);
+  assert.deepEqual(input.priorCoverage, fixture.priorCoverage);
+  assert.equal(input.id, undefined);
+  assert.equal(input.allowedOutcomes, undefined);
+  assert.equal(input.expect, undefined);
+});
+
+
+test("traffic origin check accepts caller wording without asserting residence", () => {
+  const testCase = cases.find(
+    (candidate) => candidate.id === "outside-lands-traffic-2026-08-07",
+  );
+  assert.deepEqual(evaluate(testCase, {
+    submission: { outcome: "investigate" },
+    brief: "The 42 Outside Lands records were caller-originated. SFMTA described complaint-based enforcement.",
+  }), []);
+});
+
+
+test("duplicate control requires identifying the existing article", () => {
+  const testCase = cases.find(
+    (candidate) => candidate.id === "bayview-already-covered-2026-08-08",
+  );
+  const unrelatedHold = {
+    submission: { outcome: "watch" },
+    brief: "Palou and Selby had no duplicate CAD records. More research is needed.",
+  };
+  assert.notDeepEqual(evaluate(testCase, unrelatedHold), []);
+  assert.deepEqual(evaluate(testCase, {
+    submission: { outcome: "discard" },
+    brief: "The Palou and Selby finding is the same covered pattern as bayview-s-busiest-monday-for-traffic-stops-centered-on-two-intersections-2026-08-17.",
+  }), []);
+});
+
+
+test("phrase checks tolerate wrapped text while retaining unsupported-claim checks", () => {
+  assert.deepEqual(evaluate({
+    allowedOutcomes: ["watch"],
+    requires: ["covered pattern"],
+    requiresAny: [["prior coverage"]],
+    forbids: ["confirmed operation"],
+  }, {
+    submission: { outcome: "watch" },
+    brief: "Covered\n pattern; prior\tcoverage. Confirmed\noperation.",
+  }), ["unsupported claim: confirmed operation"]);
 });

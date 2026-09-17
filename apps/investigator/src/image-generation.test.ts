@@ -4,7 +4,7 @@ import {
   buildImagePrompt,
   generateImage,
   ImageApiError,
-} from "../agent/.opencode/plugins/image-generation.ts";
+} from "../agent/.opencode/image-generation.ts";
 
 describe("article image generation", () => {
   it("wraps the article scene in the non-evidentiary house style", () => {

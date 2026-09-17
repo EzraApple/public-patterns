@@ -1,5 +1,6 @@
 export function buildCaseInput(fixture) {
   return {
+    priorCoverage: fixture.priorCoverage ?? [],
     datasets: fixture.datasets ?? [],
     series: fixture.series ?? [],
     targetWindows: fixture.targetWindows ?? [],

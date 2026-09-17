@@ -701,6 +701,29 @@ try {
       area: "Mission",
     },
   );
+  const replayCoverage = JSON.parse(
+    investigationCases.get(secondInvestigation.id),
+  ).priorCoverage;
+  if (
+    replayCoverage.length !== 1 ||
+    replayCoverage[0].slug !== "fixture-article" ||
+    replayCoverage[0].body !== "Fixture article body."
+  ) {
+    throw new Error("Replay did not receive the current article's full coverage");
+  }
+  const duplicateReplayResponse = await fetch(
+    `${origin}/investigations/${secondInvestigation.id}/publish`,
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ slug: "duplicate-replay-article" }),
+    },
+  );
+  if (duplicateReplayResponse.status !== 409) {
+    throw new Error(
+      `Duplicate replay publication returned ${duplicateReplayResponse.status}`,
+    );
+  }
   const revisionResponse = await fetch(
     `${origin}/investigations/${secondInvestigation.id}/publish`,
     {

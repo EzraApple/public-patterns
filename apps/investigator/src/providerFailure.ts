@@ -25,8 +25,12 @@ export function missingDeepSeekKey(): ProviderFailureError {
 
 export function deepSeekFailureFromOutput(
   output: string,
+  stderr = "",
 ): ProviderFailureError | undefined {
-  const terminalOutput = output.slice(-4_000);
+  const terminalOutput =
+    terminalFailureOutput(output) ??
+    terminalFailureOutput(stderr) ??
+    (stderr.trim() || output).slice(-4_000);
   const status = parseLastNumber(
     terminalOutput,
     /(?:HTTP|["']?status["']?)\s*[:=]?\s*(\d{3})\b/i,
@@ -170,4 +174,23 @@ function formatProviderFailure(
   const suffix = references.length ? ` (${references.join(", ")})` : "";
   const detail = diagnostic.detail ? ` ${diagnostic.detail}` : "";
   return `DeepSeek agent investigation failed [${diagnostic.kind}]${suffix}.${detail} Action: ${diagnostic.action}`;
+}
+
+function terminalFailureOutput(output: string): string | undefined {
+  for (const line of output.trim().split("\n").reverse()) {
+    try {
+      const event: unknown = JSON.parse(line);
+      if (
+        event &&
+        typeof event === "object" &&
+        "type" in event &&
+        event.type === "error" &&
+        "error" in event
+      ) {
+        return JSON.stringify(event.error);
+      }
+    } catch {
+      // Non-JSON CLI output is handled by the fallback classifier.
+    }
+  }
 }

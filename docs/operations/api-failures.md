@@ -64,3 +64,22 @@ synchronizes the updated secret into Cloudflare. DeepSeek and OpenAI belong to
 the investigator; 511 and Socrata belong to the pipeline; `LAB_TOKEN` belongs
 to the web Worker. A missing lab token fails closed and emits
 `credential.configuration.failed`.
+
+## Interrupted agent sessions
+
+A terminal structured OpenCode error takes precedence over earlier tool output
+when classifying a failure. A tool command containing `timeout=120` is not
+proof that a later `Transport` error was a provider timeout.
+
+The July 27 OpenCode build (`0.0.0-next-16303`) ended long-running CLI event
+streams after Bun's default five-minute deadline. This could interrupt useful
+research and surface only `Transport`, independently of DeepSeek billing.
+The investigator now pins `0.0.0-beta-17823`, published August 21, after the
+[upstream event-stream fix](https://github.com/anomalyco/opencode/commit/d5bf8799c0e0706ec604324d9abef45cfae4dcd0).
+The existing 12-minute sandbox limit and Workflow retry budget remain in force.
+
+When a run exits or times out without a valid submission, its failed archive
+also retains any standard `output/brief.md`, `output/article.json`, and
+`output/review.md` files under `unsubmittedArtifacts`. Text is redacted and
+bounded like session output. These are unvalidated recovery material; they do
+not create a completed checkpoint or authorize publication.

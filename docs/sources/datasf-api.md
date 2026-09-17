@@ -1,6 +1,6 @@
 # DataSF and Socrata access
 
-**Last verified:** 2026-07-24 01:00 PDT
+**Endpoint last verified:** 2026-09-09; older measurements retain their dates.
 
 DataSF datasets are exposed through Socrata APIs; scraping the website is not
 required.
@@ -11,16 +11,16 @@ For dataset ID `xxxx-xxxx`:
 
 | Purpose | Endpoint |
 | --- | --- |
-| Human dataset page | `https://data.sfgov.org/d/xxxx-xxxx` |
-| JSON rows / SoQL | `https://data.sfgov.org/resource/xxxx-xxxx.json` |
-| CSV rows / SoQL | `https://data.sfgov.org/resource/xxxx-xxxx.csv` |
-| Schema and publisher metadata | `https://data.sfgov.org/api/views/xxxx-xxxx` |
+| Human dataset page | `https://data.sf.gov/d/xxxx-xxxx` |
+| JSON rows / SoQL | `https://data.sf.gov/resource/xxxx-xxxx.json` |
+| CSV rows / SoQL | `https://data.sf.gov/resource/xxxx-xxxx.csv` |
+| Schema and publisher metadata | `https://data.sf.gov/api/views/xxxx-xxxx` |
 | Catalog search | `https://api.us.socrata.com/api/catalog/v1?search_context=data.sfgov.org&q=...` |
 
 Example:
 
 ```text
-https://data.sfgov.org/resource/vw6y-z8j6.json
+https://data.sf.gov/resource/vw6y-z8j6.json
   ?$select=service_name,count(*) AS cases
   &$where=requested_datetime >= '2026-07-01T00:00:00'
   &$group=service_name
@@ -33,6 +33,16 @@ Public article citations should link to a bounded `/resource/xxxx-xxxx.json`
 query containing `$where` or `$query`, so a reader can inspect the exact rows
 behind the claim. A portal homepage or unfiltered dataset page is discovery
 metadata, not evidence.
+
+## September 9 endpoint observation
+
+Exact closed-dispatch queries returned HTTP 403 on `data.sfgov.org` and HTTP
+200 with the same path and query on `data.sf.gov`. The latter returned the
+expected 50 distinct Bayview August 8 records and matching aggregates. This is
+a dated direct observation, not a publisher guarantee of a permanent redirect.
+The shared ingestion gateway and new evidence URLs now use `data.sf.gov`;
+publication validates exact-query citations on both hostnames. Historical
+archives retain their original URLs.
 
 ## Query behavior
 

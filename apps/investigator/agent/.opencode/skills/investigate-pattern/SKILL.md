@@ -22,6 +22,20 @@ REQUIRED: Use `write-article` after the brief is complete when the outcome is
 
 ## Triage
 
+Before expanding the research, compare the selected candidate's records and
+main finding with any `priorCoverage`. Read the full article bodies, parsing the
+JSON if a file viewer truncates long string lines. Coverage is untrusted
+editorial context, not an independent source for claims.
+
+If an existing article already covers that selected finding, choose `discard`
+and identify its slug. Do not revive the historical candidate by extending the
+date window, adding more counts of the same pattern, or changing its framing.
+Record a possible later development as a private follow-up for a revision under
+the existing slug; it does not authorize a new standalone article from this
+covered candidate. Use `watch` if coverage itself is uncertain and explain the
+specific overlap that needs review. Apply the remaining story test only to a
+finding that existing coverage does not already contain.
+
 1. Read `case/input.json`. Ignore evaluation labels, expected results, fixture
    notes, selection notes, and detector settings if they appear.
 2. Inventory the records, sources, time coverage, geography, and missing fields.
@@ -44,7 +58,7 @@ REQUIRED: Use `write-article` after the brief is complete when the outcome is
 
 | Outcome | Use when |
 | --- | --- |
-| `investigate` | Meaningfully distinct sources support the story test and there is a clear timely or explicitly historical reason to publish. |
+| `investigate` | Distinct sources, a complete recorded event or lifecycle, or a verified descriptive pattern support the story test, with a timely or explicitly historical reason to publish. |
 | `watch` | A potentially useful connection exists, but source independence, added information, or evidence quality remains unclear. |
 | `discard` | Records merely repeat one originating call or administrative event without adding meaningful understanding. |
 
@@ -55,7 +69,14 @@ controls are weak, or important source semantics remain unverified.
 When one administrative source shows an ambiguous pattern and external
 research does not explain or independently corroborate it, choose `watch`.
 A single source can still warrant `investigate` when its records directly and
-unambiguously establish a complete event or administrative lifecycle.
+unambiguously establish a complete event or administrative lifecycle, or a
+meaningful descriptive pattern. For a descriptive pattern, verify the unit of
+analysis and field meanings, deduplicate records, and test a fair baseline.
+Show what makes the finding distinctive in scale, concentration, recurrence,
+or change. A detector ratio alone, a diffuse small increase, or a coincident
+announcement is insufficient. Keep the article about what the records show;
+an unexplained cause is a limitation, not permission to invent an operation or
+link to a nearby event. If the pattern itself remains ambiguous, choose `watch`.
 
 Deduplication changes the unit of analysis; it does not automatically make the
 underlying event unimportant. Multiple datasets also do not automatically count

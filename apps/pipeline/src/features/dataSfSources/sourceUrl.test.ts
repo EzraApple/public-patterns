@@ -26,6 +26,7 @@ describe("getSourceUrl", () => {
     );
     const url = new URL(href!);
 
+    expect(url.origin).toBe("https://data.sf.gov");
     expect(url.pathname).toBe("/resource/nuek-vuh3.json");
     expect(url.searchParams.get("$where")).toBe(
       "rowid = '262060755-E35'",

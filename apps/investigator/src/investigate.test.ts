@@ -339,10 +339,11 @@ describe("investigateInSandbox", () => {
   });
 
   it("marks thrown sandbox failures retryable and redacts secrets", async () => {
-    const { archive, archives, sandbox } = createSandbox(
+    const { archive, archives, sandbox, files } = createSandbox(
       {},
       "provider rejected secret-test-key",
     );
+    files.set("/workspace/output/brief.md", "Unsubmitted research: secret-test-key");
     const error = await investigateInSandbox({
       archive,
       sandbox,
@@ -367,6 +368,14 @@ describe("investigateInSandbox", () => {
       "provider rejected [redacted]",
     );
     expect(String(archivedFailure)).not.toContain("secret-test-key");
+    const failedArchive = JSON.parse(String(archivedFailure));
+    expect(failedArchive.status).toBe("failed");
+    expect(failedArchive.result).toBeUndefined();
+    expect(failedArchive.unsubmittedArtifacts["output/brief.md"])
+      .toBe("Unsubmitted research: [redacted]");
+    expect(failedArchive.unsubmittedArtifacts["output/article.json"])
+      .toContain("Event headline");
+    expect([...archives.keys()].some((key) => key.includes("/by-id/"))).toBe(false);
 
     await investigateInSandbox({
       archive,
